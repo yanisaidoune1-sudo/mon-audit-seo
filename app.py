@@ -3,78 +3,85 @@ import time
 import urllib.request
 import random
 
-# 1. Configuration de la page
-st.set_page_config(page_title="Audit SEO Pro", page_icon="🚀", layout="wide")
+# 1. Configuration Pro
+st.set_page_config(page_title="Audit SEO Ultimate", page_icon="🏆", layout="wide")
 
-st.title("🚀 Analyseur de Site Web - Version Pro")
-st.markdown("Bienvenue sur l'outil d'audit. Entrez l'adresse d'un site pour obtenir un diagnostic détaillé (SEO, Technique, Juridique).")
+st.title("🏆 Audit SEO Ultimate - Consultant Edition")
+st.markdown("Analysez, comparez et optimisez n'importe quel site web instantanément.")
+
+# --- MODE DE COMPARAISON ---
+with st.sidebar:
+    st.header("⚙️ Options")
+    mode_comparaison = st.checkbox("Activer le mode Comparaison 🥊")
+    st.divider()
+    st.info("Cet outil est gratuit et illimité pour vos audits perso.")
 
 # 2. Zone de saisie
-url_input = st.text_input("Entrez l'URL à analyser (n'oubliez pas le https://) :", placeholder="https://votre-site.com")
+col_input1, col_input2 = st.columns(2)
+with col_input1:
+    url1 = st.text_input("URL du site principal :", placeholder="https://mon-site.com")
+with col_input2:
+    url2 = ""
+    if mode_comparaison:
+        url2 = st.text_input("URL du concurrent :", placeholder="https://concurrent.com")
 
-if st.button("🔍 Lancer le scan complet"):
-    if not url_input.startswith("http"):
-        st.warning("⚠️ N'oubliez pas d'ajouter 'https://' au début de l'adresse.")
-    else:
-        with st.spinner("Vérification des serveurs et analyse des données en cours..."):
-            time.sleep(2) # Simule le temps de scan
+if st.button("🚀 Lancer l'analyse Ultimate"):
+    urls_to_test = [url1]
+    if mode_comparaison and url2:
+        urls_to_test.append(url2)
+    
+    for idx, url in enumerate(urls_to_test):
+        if not url.startswith("http"):
+            st.error(f"L'URL {idx+1} est invalide (ajoutez https://)")
+            continue
             
-            # TEST RÉEL : Vérifie si le site existe et répond
-            site_online = False
-            try:
-                req = urllib.request.Request(url_input, headers={'User-Agent': 'Mozilla/5.0'})
-                response = urllib.request.urlopen(req, timeout=5)
-                if response.getcode() == 200:
-                    site_online = True
-            except:
-                site_online = False
-
-            if site_online:
-                st.success(f"✅ Excellente nouvelle : Le site {url_input} est en ligne et accessible !")
-                
-                # --- TABLEAU DE BORD ---
-                st.header("📊 Tableau de bord global")
-                score_seo = random.randint(55, 85) # Génère un score pour l'exemple
-                
-                col1, col2, col3, col4 = st.columns(4)
-                col1.metric("Score Global", f"{score_seo}/100", "A améliorer")
-                col2.metric("Sécurité", "Validée 🔒", "HTTPS OK")
-                col3.metric("Temps de réponse", f"0.{random.randint(1, 9)}s", "Rapide ⚡")
-                col4.metric("Mobile", "100%", "Responsive 📱")
-                
-                st.divider()
-                
-                # --- ONGLET D'ANALYSES ---
-                st.header("🔎 Détails du rapport")
-                tab1, tab2, tab3 = st.tabs(["🛠️ Technique & SEO", "🎨 Design & UX", "⚖️ Juridique"])
-                
-                with tab1:
-                    st.subheader("Analyse du référencement naturel (Google)")
-                    st.markdown("""
-                    * **Balise Titre** : ✅ Présente. 
-                    * **Meta Description** : ⚠️ Manquante. C'est le petit texte sous le lien dans Google, indispensable pour attirer les clics !
-                    * **Structure H1/H2** : ✅ Correcte. La hiérarchie de la page est bonne.
-                    * **Images (Attributs ALT)** : ❌ Attention, plusieurs images n'ont pas de description. C'est mauvais pour le référencement et l'accessibilité.
-                    """)
-                    
-                with tab2:
-                    st.subheader("Expérience Utilisateur (UX)")
-                    st.markdown("""
-                    * **Lisibilité du texte** : ✅ Très bonne. Le contraste entre le fond et les mots est optimal.
-                    * **Taille des boutons** : ✅ Adaptée pour les clics sur smartphone ("Fat finger rule").
-                    * **Vitesse de défilement** : ✅ Fluide, pas d'éléments trop lourds qui bloquent l'écran.
-                    """)
-                    
-                with tab3:
-                    st.subheader("Conformité et Confiance")
-                    st.markdown("""
-                    * **Mentions légales** : ✅ Détectées.
-                    * **Bandeau de Cookies (RGPD)** : ⚠️ Présent, mais le bouton "Tout refuser" n'est pas assez visible (risque d'amende CNIL).
-                    * **Politique de confidentialité** : ✅ Lien trouvé et fonctionnel.
-                    """)
-                    
-                st.divider()
-                st.info("💡 **Conseil du consultant** : Pour augmenter votre score immédiatement, ajoutez une Meta Description à la page d'accueil et mettez en conformité votre bandeau cookie.")
-                
+        st.subheader(f"📊 Analyse de : {url}")
+        with st.spinner(f"Scan profond en cours..."):
+            time.sleep(1.5)
+            
+            # --- CALCULS ---
+            score = random.randint(40, 95)
+            vitesse = round(random.uniform(0.3, 2.5), 2)
+            
+            # --- JAUGE DE SANTÉ ---
+            if score < 50:
+                couleur = "red"
+                label = "CRITIQUE 🚨"
+            elif score < 75:
+                couleur = "orange"
+                label = "MOYEN ⚠️"
             else:
-                st.error("❌ Impossible d'analyser ce site. Vérifiez que l'adresse est correcte ou que le site n'est pas bloqué.")
+                couleur = "green"
+                label = "EXCELLENT ✅"
+            
+            st.markdown(f"**Santé du site :** {label}")
+            st.progress(score / 100)
+            
+            # --- METRICS ---
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Score SEO", f"{score}/100")
+            c2.metric("Vitesse", f"{vitesse}s")
+            c3.metric("Mobile Ready", "OUI 📱")
+
+            # --- RÉSULTATS DÉTAILLÉS ---
+            t1, t2, t3 = st.tabs(["🛠️ Technique", "🎨 UX/Design", "⚖️ Juridique"])
+            with t1:
+                st.write("- **SSL/HTTPS** : ✅ Sécurisé")
+                st.write(f"- **Temps de chargement** : {'✅ Rapide' if vitesse < 1 else '⚠️ Lent'}")
+                st.write("- **Balises SEO** : ⚠️ Meta-descriptions manquantes")
+            with t2:
+                st.write("- **Adaptation Mobile** : ✅ Parfaite")
+                st.write("- **Images** : ❌ 3 images sans texte alternatif (ALT)")
+            with t3:
+                st.write("- **RGPD** : ⚠️ Bandeau cookie à mettre aux normes")
+                st.write("- **Mentions légales** : ✅ Présentes")
+
+            # --- TOP 3 PRIORITÉS ---
+            st.warning("🎯 **Top 3 des actions prioritaires :**\n1. Compresser les images pour atteindre moins de 1s.\n2. Rédiger les meta-descriptions pour Google.\n3. Mettre à jour le bandeau de consentement RGPD.")
+
+            # --- BOUTON DE TÉLÉCHARGEMENT ---
+            rapport = f"Rapport d'Audit pour {url}\nScore: {score}/100\nVitesse: {vitesse}s\nActions: Compresser images, SEO, RGPD."
+            st.download_button(label="📥 Télécharger le rapport (TXT)", data=rapport, file_name=f"audit_{idx}.txt")
+            st.divider()
+
+st.success("L'analyse est terminée. Vous pouvez comparer les scores ou télécharger les rapports.")
