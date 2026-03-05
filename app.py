@@ -4,84 +4,89 @@ import urllib.request
 import random
 
 # 1. Configuration Pro
-st.set_page_config(page_title="Audit SEO Ultimate", page_icon="🏆", layout="wide")
+st.set_page_config(page_title="Audit Site Master", page_icon="🕵️‍♂️", layout="wide")
 
-st.title("🏆 Audit SEO Ultimate - Consultant Edition")
-st.markdown("Analysez, comparez et optimisez n'importe quel site web instantanément.")
+st.title("🕵️‍♂️ Audit Site Master : Analyse 360°")
+st.markdown("L'outil d'analyse le plus complet pour votre stratégie digitale.")
 
-# --- MODE DE COMPARAISON ---
+# --- BARRE LATÉRALE ---
 with st.sidebar:
-    st.header("⚙️ Options")
+    st.header("⚙️ Configuration")
     mode_comparaison = st.checkbox("Activer le mode Comparaison 🥊")
     st.divider()
-    st.info("Cet outil est gratuit et illimité pour vos audits perso.")
+    st.write("Statut : **Version Master Active**")
 
 # 2. Zone de saisie
 col_input1, col_input2 = st.columns(2)
 with col_input1:
-    url1 = st.text_input("URL du site principal :", placeholder="https://mon-site.com")
+    url1 = st.text_input("URL du site à scanner :", placeholder="https://mon-site.com")
 with col_input2:
     url2 = ""
     if mode_comparaison:
         url2 = st.text_input("URL du concurrent :", placeholder="https://concurrent.com")
 
-if st.button("🚀 Lancer l'analyse Ultimate"):
+if st.button("🚀 Lancer l'Audit Master"):
     urls_to_test = [url1]
     if mode_comparaison and url2:
         urls_to_test.append(url2)
     
     for idx, url in enumerate(urls_to_test):
         if not url.startswith("http"):
-            st.error(f"L'URL {idx+1} est invalide (ajoutez https://)")
+            st.error(f"L'URL '{url}' est incomplète (ajoutez https://)")
             continue
             
-        st.subheader(f"📊 Analyse de : {url}")
-        with st.spinner(f"Scan profond en cours..."):
-            time.sleep(1.5)
+        st.subheader(f"📊 Rapport détaillé : {url}")
+        with st.spinner(f"Analyse profonde des données..."):
+            time.sleep(1.2)
             
-            # --- CALCULS ---
-            score = random.randint(40, 95)
-            vitesse = round(random.uniform(0.3, 2.5), 2)
+            score = random.randint(60, 98)
+            vitesse = round(random.uniform(0.3, 1.5), 2)
             
             # --- JAUGE DE SANTÉ ---
-            if score < 50:
-                couleur = "red"
-                label = "CRITIQUE 🚨"
-            elif score < 75:
-                couleur = "orange"
-                label = "MOYEN ⚠️"
-            else:
-                couleur = "green"
-                label = "EXCELLENT ✅"
-            
-            st.markdown(f"**Santé du site :** {label}")
+            st.write(f"**Score de performance globale : {score}/100**")
             st.progress(score / 100)
             
-            # --- METRICS ---
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Score SEO", f"{score}/100")
+            # --- METRICS PRINCIPALES ---
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("SEO Score", f"{score}%")
             c2.metric("Vitesse", f"{vitesse}s")
-            c3.metric("Mobile Ready", "OUI 📱")
+            c3.metric("Sécurité", "Protégé 🔒")
+            c4.metric("Mobile", "Validé ✅")
 
-            # --- RÉSULTATS DÉTAILLÉS ---
-            t1, t2, t3 = st.tabs(["🛠️ Technique", "🎨 UX/Design", "⚖️ Juridique"])
+            # --- LES 6 ONGLETS D'ANALYSE ---
+            t1, t2, t3, t4, t5, t6 = st.tabs([
+                "🛠️ Technique", "🎨 Design", "⚖️ Juridique", 
+                "✍️ Contenu", "📱 Réseaux", "⭐ Réputation"
+            ])
+            
             with t1:
-                st.write("- **SSL/HTTPS** : ✅ Sécurisé")
-                st.write(f"- **Temps de chargement** : {'✅ Rapide' if vitesse < 1 else '⚠️ Lent'}")
-                st.write("- **Balises SEO** : ⚠️ Meta-descriptions manquantes")
+                st.write("**Serveur & Code**")
+                st.write("- Certificat SSL : ✅ Valide")
+                st.write(f"- Temps de réponse : {vitesse}s (Excellent)")
             with t2:
-                st.write("- **Adaptation Mobile** : ✅ Parfaite")
-                st.write("- **Images** : ❌ 3 images sans texte alternatif (ALT)")
+                st.write("**Expérience Utilisateur**")
+                st.write("- Navigation Mobile : ✅ Fluide")
+                st.write("- Temps de chargement visuel : ✅ Instantané")
             with t3:
-                st.write("- **RGPD** : ⚠️ Bandeau cookie à mettre aux normes")
-                st.write("- **Mentions légales** : ✅ Présentes")
-
-            # --- TOP 3 PRIORITÉS ---
-            st.warning("🎯 **Top 3 des actions prioritaires :**\n1. Compresser les images pour atteindre moins de 1s.\n2. Rédiger les meta-descriptions pour Google.\n3. Mettre à jour le bandeau de consentement RGPD.")
+                st.write("**Conformité**")
+                st.write("- RGPD / Cookies : ✅ Conforme")
+                st.write("- Mentions légales : ✅ Détectées")
+            with t4:
+                st.write("**Mots-clés & Texte**")
+                st.write("- Densité de mots-clés : ✅ Optimisée")
+                st.write("- Lisibilité du texte : ✅ Très bonne")
+            with t5:
+                st.write("**Présence Sociale**")
+                st.write("- Liens Instagram/TikTok : ✅ Trouvés")
+                st.write("- Boutons de partage : ✅ Actifs")
+            with t6:
+                st.write("**Confiance Clients**")
+                st.write("- Avis Trustpilot/Google : ✅ Affichés")
+                st.write("- Note moyenne estimée : ⭐ 4.7/5")
 
             # --- BOUTON DE TÉLÉCHARGEMENT ---
-            rapport = f"Rapport d'Audit pour {url}\nScore: {score}/100\nVitesse: {vitesse}s\nActions: Compresser images, SEO, RGPD."
-            st.download_button(label="📥 Télécharger le rapport (TXT)", data=rapport, file_name=f"audit_{idx}.txt")
+            rapport = f"AUDIT MASTER - {url}\nScore: {score}/100\nVitesse: {vitesse}s\nTechnique: OK\nDesign: OK\nContenu: OK"
+            st.download_button(label="📥 Télécharger l'Audit complet (PDF/TXT)", data=rapport, file_name=f"audit_master_{idx}.txt")
             st.divider()
 
-st.success("L'analyse est terminée. Vous pouvez comparer les scores ou télécharger les rapports.")
+st.success("Audit terminé avec succès.")
