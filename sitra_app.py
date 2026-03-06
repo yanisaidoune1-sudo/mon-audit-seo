@@ -14,7 +14,7 @@ st.markdown("""
     .main { background-color: #f5f7f9; }
     .stProgress > div > div > div > div { background-color: #2997FF; }
     </style>
-    """, unsafe_allow_set=True)
+    """, unsafe_allow_html=True)
 
 # BARRE DE NAVIGATION
 tabs = st.tabs(["Previsions de resultats", "Analyse de la concurrence", "Design et Confort", "Mode Challenge"])
@@ -58,4 +58,4 @@ with tabs[3]:
     st.write(f"Score actuel : {progres}/100")
     
     st.checkbox("Ajuster la taille du menu tactile")
-    st.checkbox("Rendre la barre de navigation transparente", value=True
+    st.checkbox("Rendre la barre de navigation transparente", value=True)
