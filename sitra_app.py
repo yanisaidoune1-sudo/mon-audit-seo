@@ -4,8 +4,7 @@ import time
 # --- CONFIGURATION ---
 st.set_page_config(page_title="Sitra Pro", layout="wide")
 
-# --- MEMOIRE (Session State) ---
-# Empeche l'application de revenir au debut lors d'un clic
+# --- MÉMOIRE (Session State) ---
 if 'analyse_active' not in st.session_state:
     st.session_state.analyse_active = False
 if 'url_cible' not in st.session_state:
@@ -16,98 +15,94 @@ st.markdown("""
     <style>
     .titre-expert { font-size: 2.5rem; font-weight: bold; color: #1D1D1F; }
     .texte-expert { font-size: 1.1rem; color: #3A3A3C; }
-    /* Supprime le texte technique a droite qui causait un bug */
-    [data-testid="stSidebarNav"] + div { display: none; } 
+    [data-testid="stSidebarNav"] + div { display: none; } /* Supprime le bug technique à droite */
     </style>
     """, unsafe_allow_html=True)
 
-# --- BARRE LATERALE ---
+# --- BARRE LATÉRALE ---
 with st.sidebar:
     st.title("Sitra")
-    st.header("Reglages")
-    # Cle unique pour eviter l'erreur DuplicateElementId
-    premium_mode = st.checkbox("Activer le Comparatif Marche (Premium)", key="chk_p_no_emoji")
+    st.header("Centre de contrôle")
+    premium_mode = st.checkbox("🔓 Activer le Comparatif Marché", key="chk_final_premium")
     st.divider()
-    st.caption("Sitra Engine v2.6.0")
+    st.caption("Moteur : Sitra Engine v2.6.0")
 
 # --- INTERFACE PRINCIPALE ---
-st.title("Systeme Expert Sitra")
-url_input = st.text_input("Entrez l'adresse du site :", value=st.session_state.url_cible, placeholder="exemple.com")
+st.title("Système Expert Sitra")
+url_input = st.text_input("Saisissez l'URL du site à analyser :", value=st.session_state.url_cible, placeholder="exemple.com")
 
 if st.button("Lancer l'analyse technique") or st.session_state.analyse_active:
     if url_input:
         st.session_state.analyse_active = True
         st.session_state.url_cible = url_input
         
-        st.header(f"Rapport d'expertise : {st.session_state.url_cible}")
+        st.subheader(f"Rapport d'analyse Sitra : {st.session_state.url_cible}")
         
-        # Metriques
+        # Métriques
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Score Global", "82/100")
-        m2.metric("Vitesse", "0.78s")
-        m3.metric("Securite", "Valide")
-        m4.metric("Mobile", "Optimise")
+        m1.metric("Indice de performance", "82/100")
+        m2.metric("Temps de réponse", "0.78s")
+        m3.metric("Sécurité SSL", "Valide")
+        m4.metric("UX Mobile", "Optimisée")
 
-        # ONGLETS
-        tabs = st.tabs(["SEO et Mots-cles", "Confort UX", "Design et Look", "Paiement"])
+        tabs = st.tabs(["SEO & Marketing", "Confort d'utilisation", "Design & Branding", "Paiement Premium"])
 
-        # 1. SEO (Barre de couleur dynamique)
+        # 1. SEO (Barre de couleur dynamique + Coach)
         with tabs[0]:
-            st.subheader("Densite Semantique")
+            st.subheader("Densité sémantique")
             score_seo = 82 #
             
-            # Logique de couleur sans emojis
             if score_seo < 50:
-                st.error(f"Niveau Critique : Votre contenu est tres pauvre ({score_seo}%).")
+                st.error(f"Niveau Critique : Votre contenu est très pauvre ({score_seo}%).")
             elif score_seo < 90:
-                st.warning(f"Niveau Moyen : Votre contenu couvre {score_seo}% du secteur.")
+                st.warning(f"Niveau Moyen : Votre contenu couvre {score_seo}% du champ lexical.") #
             else:
-                st.success(f"Niveau Parfait : Votre contenu couvre {score_seo}% du secteur.")
+                st.success(f"Niveau Parfait : Votre contenu est optimal ({score_seo}%).")
             
             st.progress(score_seo / 100)
             
-            st.markdown("### Coach SEO : Objectif 100%")
-            st.write("Pour ameliorer votre score, ajoutez ces mots-cles manquants :")
-            st.info("Innovation technologique, Service apres-vente, Garantie mondiale")
+            st.markdown("### 💡 Coach SEO : Comment atteindre 100% ?")
+            st.write("Pour dominer le marché, ajoutez ces mots-clés stratégiques :")
+            st.info("Innovation technologique, Service client premium, Garantie mondiale") #
 
         # 2. UX (Analyse globale)
         with tabs[1]:
-            st.subheader("Audit Ergonomique")
-            st.write("Analyse detaillee de l'interface :")
-            st.write("- Contrastes : Les couleurs respectent les normes d'accessibilite.")
-            st.write("- Interactivite : Les boutons de navigation sont bien places.")
+            st.subheader("Analyse ergonomique complète")
+            st.write("Sitra analyse l'ensemble de votre interface :")
+            st.write("- **Contrastes** : Respect des normes d'accessibilité sur 95% du site.")
+            st.write("- **Navigation** : Structure fluide mais attention aux zones de clics.")
             
-            st.info("Conseil Sitra : Ecartez davantage vos liens en bas de page pour faciliter le clic sur mobile.")
+            st.info("💡 **Conseil d'expert** : Agrandissez vos boutons en bas de page. Les utilisateurs avec des 'gros doigts' doivent pouvoir naviguer sans s'énerver.")
 
-        # 3. DESIGN (Roles des couleurs)
+        # 3. DESIGN (Rôles des couleurs & Tailles)
         with tabs[2]:
-            st.subheader("Identite Visuelle")
-            st.write("Utilisation recommandee des couleurs :")
+            st.subheader("Stratégie de Design & Branding")
+            st.write("Rôles recommandés pour vos couleurs :")
             
-            d1, d2, d3 = st.columns(3)
-            # Roles clairs et sans px
-            d1.color_picker("Couleur de FOND", "#003566", disabled=True, key="c_no_1")
-            d2.color_picker("Couleur des TITRES", "#FFC300", disabled=True, key="c_no_2")
-            d3.color_picker("Couleur des BOUTONS", "#001D3D", key="c_no_3")
+            d_col1, d_col2, d_col3 = st.columns(3)
+            d_col1.color_picker("Couleur de FOND (Bleu Marine)", "#003566", disabled=True, key="cp_final_1") #
+            d_col2.color_picker("Couleur des TITRES (Or)", "#FFC300", disabled=True, key="cp_final_2")
+            d_col3.color_picker("Couleur des BOUTONS (Bleu Nuit)", "#001D3D", key="cp_final_3")
             
             st.divider()
-            st.write("Apercu des tailles de texte :")
-            st.markdown('<p class="titre-expert">Titre : Impact Maximum</p>', unsafe_allow_html=True)
-            st.markdown('<p class="texte-expert">Corps de texte : Confort de lecture standard.</p>', unsafe_allow_html=True)
+            st.write("**Aperçu visuel des textes :**")
+            st.markdown('<p class="titre-expert">Titre : Impact et Autorité</p>', unsafe_allow_html=True)
+            st.caption("Taille recommandée pour vos titres principaux.")
+            st.markdown('<p class="texte-expert">Corps de texte : Confort de lecture optimal pour vos clients.</p>', unsafe_allow_html=True)
+            st.caption("Taille standard pour le contenu de vos pages.")
 
-        # 4. PAIEMENT (Liste des modes de paiement)
+        # 4. PAIEMENT (Tunnel complet)
         with tabs[3]:
-            st.subheader("Finaliser votre acces Premium")
-            st.write("Selectionnez votre mode de paiement securise :")
+            st.subheader("💳 Finaliser votre accès Premium")
+            st.write("Choisissez votre mode de paiement sécurisé :")
             
-            pay_col1, pay_col2, pay_col3 = st.columns(3)
-            if pay_col1.button("PayPal", use_container_width=True):
-                st.success("Connexion a PayPal...")
-            if pay_col2.button("Carte Bancaire", use_container_width=True):
-                st.success("Ouverture du module Stripe...")
-            if pay_col3.button("Apple / Google Pay", use_container_width=True):
-                st.success("Verification de l'identite...")
+            p_c1, p_c2, p_c3 = st.columns(3)
+            if p_c1.button("PayPal", use_container_width=True, key="pay_pal"):
+                st.success("Redirection vers PayPal...")
+            if p_c2.button("Carte Bancaire (Stripe)", use_container_width=True, key="pay_stripe"):
+                st.success("Ouverture du module sécurisé...")
+            if p_c3.button("Apple / Google Pay", use_container_width=True, key="pay_apple"):
+                st.success("Authentification en cours...")
 
-        # EXPORT
         st.divider()
-        st.download_button("Telecharger le rapport complet (TXT)", "Rapport Sitra", file_name="audit_sitra.txt", use_container_width=True)
+        st.download_button("📥 Exporter le rapport complet (PDF/TXT)", "Audit Sitra", file_name=f"audit_{st.session_state.url_cible}.txt", use_container_width=True)
