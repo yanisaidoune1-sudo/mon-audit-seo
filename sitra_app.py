@@ -5,6 +5,15 @@ import random
 # Configuration sobre
 st.set_page_config(page_title="Sitra | Digital Intelligence", layout="wide")
 
+# Style CSS pour les exemples de texte (Design)
+st.markdown("""
+    <style>
+    .h1-sample { font-size: 48px; font-weight: bold; margin-bottom: 0px; }
+    .p-sample { font-size: 16px; margin-top: 0px; }
+    .stHelp { display: none; } /* Sécurité anti-bug help */
+    </style>
+    """, unsafe_allow_html=True)
+
 # Identité de marque
 st.title("Sitra")
 st.caption("Système Expert d'Analyse Prédictive et de Diagnostic Digital")
@@ -13,20 +22,18 @@ st.divider()
 # --- PANNEAU DE CONTRÔLE ---
 with st.sidebar:
     st.header("Centre de contrôle")
-    # 3. Business Model : Option payante mise en avant
     st.subheader("Options Premium")
-    mode_comparatif_disponible = True # Simulation d'accès
     
-    if mode_comparatif_disponible:
-        mode_comparaison = st.checkbox("🔓 Activer le Comparatif Marché (Option Premium)")
-    else:
-        st.info("💡 Le Comparatif Marché est une option Premium plus onéreuse.")
-        mode_comparaison = False
-        
+    # Correction Bug DuplicateId : Utilisation de keys uniques
+    mode_comparaison = st.checkbox("🔓 Activer le Comparatif Marché", key="premium_check")
+    
+    if mode_comparaison:
+        st.success("💳 Option Premium activée (Mode démo)")
+    
     st.divider()
     st.write("Moteur d'analyse : Sitra Engine v2.6.0")
 
-# Fonction d'analyse chromatique intelligente
+# Fonction d'analyse
 def analyser_couleurs_site(url):
     palettes = [
         {"nom": "Premium Dark", "couleurs": ["#1D1D1F", "#F5F5F7", "#0071E3"], "noms": ["Noir Sidéral", "Gris Argent", "Bleu Royal"]},
@@ -47,23 +54,19 @@ with col_in2:
         url2 = st.text_input("Domaine concurrent :", placeholder="concurrent.com")
 
 if st.button("Lancer l'analyse technique"):
-    urls = [url1]
-    if mode_comparaison and url2:
-        urls.append(url2)
+    urls = [url1] if not (mode_comparaison and url2) else [url1, url2]
     
     for idx, url in enumerate(urls):
         if not url: continue
         
         st.subheader(f"Rapport d'analyse Sitra : {url}")
         
-        with st.status(f"Analyse colorimétrique et technique de {url}...", expanded=False):
+        with st.status(f"Analyse de {url}...", expanded=False):
             time.sleep(1)
         
         palette = analyser_couleurs_site(url)
         score = random.randint(85, 95)
         vitesse = round(random.uniform(0.6, 0.9), 2)
-        
-        # Chiffre de boost dynamique (plus de 15% fixe)
         boost_reel = round(random.uniform(12.4, 28.9), 1)
         
         # Métriques
@@ -73,76 +76,73 @@ if st.button("Lancer l'analyse technique"):
         c3.metric("Sécurité SSL", "Valide")
         c4.metric("UX Mobile", "Optimisée")
 
-        # Renommage des onglets selon tes souhaits
-        t1, t2, t3, t4, t5, t6 = st.tabs([
+        tabs = st.tabs([
             "Estimation des résultats", "SEO & Marketing", "Confort d'utilisation", 
             "Design & Branding", "Comparatif Marché", "Mode Challenge"
         ])
 
-        with t1:
-            st.write("**Prévisions de trafic et d'impact :**")
-            # Utilisation du chiffre réel généré
-            st.info(f"Analyse Sitra : Pour {url}, une modification de la hiérarchie visuelle pourrait booster vos clics de **{boost_reel}%**.")
-            st.write("---")
-            st.write(f"**Palette recommandée (Style {palette['nom']}) :**")
-            
-            # Remplacement des codes par des noms
+        with tabs[0]:
+            st.write("**Prévisions de trafic :**")
+            st.info(f"Analyse Sitra : Pour {url}, une modification de la hiérarchie visuelle boostera vos clics de **{boost_reel}%**.")
             st.write(f"- Teinte de base : **{palette['noms'][0]}**")
             st.write(f"- Teinte d'accent : **{palette['noms'][1]}**")
             st.write(f"- Bouton d'action : **{palette['noms'][2]}**")
 
-        with t2:
-            st.write("**Stratégie SEO :**")
-            st.write(f"Vos mots-clés sont optimisés à {score-3}% par rapport au secteur.")
+        with tabs[1]:
+            st.write("**Stratégie SEO (Analyse Profonde) :**")
+            # Ajout de contenu pour ne plus être vide
+            st.write(f"Score d'optimisation : {score-3}%")
+            col_seo1, col_seo2 = st.columns(2)
+            with col_seo1:
+                st.write("**Mots-clés détectés :**")
+                st.code(f"1. Expertise {url}\n2. Solution Digitale\n3. Performance")
+            with col_seo2:
+                st.write("**Densité sémantique :**")
+                st.progress(0.82)
+                st.caption("Excellent : Votre contenu couvre 82% du champ lexical cible.")
 
-        with t3:
-            st.write("**Confort d'utilisation :**")
-            st.write("**Points d'attention :**") 
-            col_ux1, col_ux2 = st.columns([0.9, 0.1])
-            with col_ux1:
-                st.write("- Éléments peu visibles sur smartphone : Le menu 'Hamburger' en haut à droite manque de contraste.")
-            with col_ux2:
-                # 4. Bulle d'info "Pourquoi ?"
-                st.help("Si tu fais ça, les gens avec des gros doigts pourront enfin cliquer sur ton menu sans s'énerver.")
-            
-            st.write(f"Fluidité : Temps de chargement de {vitesse}s (Excellent).")
+        with tabs[2]:
+            st.write("**Points d'attention UX :**")
+            st.write("- Éléments peu visibles sur smartphone : Le menu 'Hamburger' manque de contraste.")
+            # Correction Bug st.help : Remplacé par une info-bulle propre
+            st.info("💡 **Pourquoi ?** Si vous augmentez la taille, les utilisateurs avec des gros doigts pourront cliquer sans s'énerver.")
+            st.write(f"Fluidité : Temps de chargement de {vitesse}s.")
 
-        with t4:
-            st.header("Design & Branding")
-            st.write("Sélectionnez une couleur pour l'appliquer à vos boutons d'action :")
-            
-            # 2. Palette visuelle cliquable
-            c_col1, c_col2, c_col3 = st.columns(3)
-            with c_col1:
-                st.color_picker(palette['noms'][0], palette['couleurs'][0], key=f"cp1_{url}")
-            with c_col2:
-                st.color_picker(palette['noms'][1], palette['couleurs'][1], key=f"cp2_{url}")
-            with c_col3:
-                st.color_picker(f"Action : {palette['noms'][2]}", palette['couleurs'][2], key=f"cp3_{url}")
-            
-            st.write("---")
-            st.write("**Tailles de texte recommandées :**")
-            st.write("- Titres (H1) : 48px | Corps : 16px")
-
-        with t5:
-            st.write("**Comparatif Marché :**")
-            st.write(f"Sitra surveille activement les changements sur {url} et vos concurrents.")
-            if not mode_comparaison:
-                st.warning("Passez à l'abonnement supérieur pour voir les données concurrentielles ici.")
-
-        with t6:
-            st.write("**Mode Challenge : Votre progression**")
-            # 3. Barre de progression Challenge
-            score_challenge = 65 # Exemple de progression
-            st.progress(score_challenge / 100)
-            st.write(f"Bravo ! Vous avez complété **{score_challenge}%** des optimisations recommandées.")
+        with tabs[3]:
+            st.write("**Design & Branding :**")
+            st.write("Couleurs recommandées par l'expert Sitra (Visualisation) :")
+            c_p1, c_p2, c_p3 = st.columns(3)
+            # Utilisation de color_picker en mode lecture seule (disabled) pour l'autorité de l'IA
+            c_p1.color_picker(palette['noms'][0], palette['couleurs'][0], key=f"c1_{idx}", disabled=True)
+            c_p2.color_picker(palette['noms'][1], palette['couleurs'][1], key=f"c2_{idx}", disabled=True)
+            c_p3.color_picker(f"Action : {palette['noms'][2]}", palette['couleurs'][2], key=f"c3_{idx}")
             
             st.write("---")
-            st.checkbox("Appliquer la nouvelle palette de couleurs", value=True)
-            st.checkbox("Ajuster la taille des menus tactiles", value=False)
-            st.checkbox("Optimiser les balises titres", value=True)
+            st.write("**Aperçu des tailles recommandées :**")
+            # Visualisation réelle de la taille
+            st.markdown(f'<p class="h1-sample">Titre H1 (48px)</p>', unsafe_allow_html=True)
+            st.markdown(f'<p class="p-sample">Corps de texte (16px) : Voici comment vos clients liront votre contenu.</p>', unsafe_allow_html=True)
 
-        st.download_button(f"Exporter l'expertise ({idx+1})", f"Audit Sitra pour {url}", file_name=f"sitra_audit_{idx}.txt")
-        st.divider()
+        with tabs[4]:
+            if mode_comparaison:
+                st.write("**Comparatif Marché :**")
+                st.write(f"Analyse comparative entre {url1} et {url2} en cours...")
+                st.line_chart([random.randint(50,100) for _ in range(10)])
+            else:
+                st.warning("⚠️ Cette section est réservée aux membres Premium.")
+                if st.button("Découvrir l'offre Premium", key=f"pay_{idx}"):
+                    st.write("Redirection vers la page de paiement...")
 
-st.write("Sitra : Anticiper pour dominer le marché.")
+        with tabs[5]:
+            st.write("**Mode Challenge**")
+            st.progress(65)
+            st.write("Progression : 65% - Vous dominez le marché !")
+            st.checkbox("Appliquer la palette", value=True, key=f"ch1_{idx}")
+            st.checkbox("Ajuster les menus", key=f"ch2_{idx}")
+
+        # Un seul bouton d'exportation propre en bas de chaque rapport
+        st.write("---")
+        st.download_button("📥 Exporter le rapport complet (PDF/TXT)", f"Audit Sitra pour {url}", file_name=f"audit_{url}.txt", key=f"exp_{idx}")
+
+st.divider()
+st.center = st.write("Sitra : Anticiper pour dominer le marché.")
