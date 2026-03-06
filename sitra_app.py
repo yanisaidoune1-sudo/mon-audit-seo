@@ -1,21 +1,23 @@
 import streamlit as st
 import time
+import random
 
-# --- CONFIGURATION ---
+# --- CONFIGURATION & MÉMOIRE ---
 st.set_page_config(page_title="Sitra Pro", layout="wide")
 
-# --- MÉMOIRE (Session State) ---
-if 'analyse_active' not in st.session_state:
-    st.session_state.analyse_active = False
-if 'url_cible' not in st.session_state:
-    st.session_state.url_cible = ""
+# Initialisation de la mémoire pour éviter que l'appli ne redémarre toute seule
+if 'analyse_lancee' not in st.session_state:
+    st.session_state.analyse_lancee = False
+if 'url_analyse' not in st.session_state:
+    st.session_state.url_analyse = ""
 
-# --- STYLE CSS ---
+# --- STYLE CSS DYNAMIQUE ---
 st.markdown("""
     <style>
-    .titre-expert { font-size: 2.5rem; font-weight: bold; color: #1D1D1F; }
-    .texte-expert { font-size: 1.1rem; color: #3A3A3C; }
-    [data-testid="stSidebarNav"] + div { display: none; } /* Supprime le bug technique à droite */
+    .h1-sample { font-size: 40px; font-weight: bold; color: #1D1D1F; }
+    .p-sample { font-size: 16px; color: #3A3A3C; }
+    /* Cache le menu help qui bugge */
+    [data-testid="stSidebarNav"] + div { display: none; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -23,86 +25,96 @@ st.markdown("""
 with st.sidebar:
     st.title("Sitra")
     st.header("Centre de contrôle")
-    premium_mode = st.checkbox("🔓 Activer le Comparatif Marché", key="chk_final_premium")
+    st.subheader("Options Premium")
+    # Utilisation d'une clé unique pour éviter l'erreur DuplicateElementId
+    premium = st.checkbox("🔓 Comparatif Marché", key="side_premium")
     st.divider()
     st.caption("Moteur : Sitra Engine v2.6.0")
 
 # --- INTERFACE PRINCIPALE ---
 st.title("Système Expert Sitra")
-url_input = st.text_input("Saisissez l'URL du site à analyser :", value=st.session_state.url_cible, placeholder="exemple.com")
+url_input = st.text_input("Saisissez l'URL du site à analyser :", placeholder="exemple.com")
 
-if st.button("Lancer l'analyse technique") or st.session_state.analyse_active:
+if st.button("Lancer l'analyse technique") or st.session_state.analyse_lancee:
     if url_input:
-        st.session_state.analyse_active = True
-        st.session_state.url_cible = url_input
+        st.session_state.analyse_lancee = True
+        st.session_state.url_analyse = url_input
         
-        st.subheader(f"Rapport d'analyse Sitra : {st.session_state.url_cible}")
+        st.subheader(f"Rapport d'analyse Sitra : {st.session_state.url_analyse}")
         
-        # Métriques
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Indice de performance", "82/100")
-        m2.metric("Temps de réponse", "0.78s")
-        m3.metric("Sécurité SSL", "Valide")
-        m4.metric("UX Mobile", "Optimisée")
+        # Métriques simulées
+        c1, c2, c3, c4 = st.columns(4)
+        score = 82 # On prend ton exemple de 82%
+        c1.metric("Indice de performance", f"{score}/100")
+        c2.metric("Temps de réponse", "0.78s")
+        c3.metric("Sécurité SSL", "Valide")
+        c4.metric("UX Mobile", "Optimisée")
 
-        tabs = st.tabs(["SEO & Marketing", "Confort d'utilisation", "Design & Branding", "Paiement Premium"])
+        tabs = st.tabs(["Estimation", "SEO & Marketing", "Confort d'utilisation", "Design & Branding", "Paiement Premium"])
 
-        # 1. SEO (Barre de couleur dynamique + Coach)
+        # --- TABS 1 : ESTIMATION ---
         with tabs[0]:
-            st.subheader("Densité sémantique")
-            score_seo = 82 #
-            
-            if score_seo < 50:
-                st.error(f"Niveau Critique : Votre contenu est très pauvre ({score_seo}%).")
-            elif score_seo < 90:
-                st.warning(f"Niveau Moyen : Votre contenu couvre {score_seo}% du champ lexical.") #
-            else:
-                st.success(f"Niveau Parfait : Votre contenu est optimal ({score_seo}%).")
-            
-            st.progress(score_seo / 100)
-            
-            st.markdown("### 💡 Coach SEO : Comment atteindre 100% ?")
-            st.write("Pour dominer le marché, ajoutez ces mots-clés stratégiques :")
-            st.info("Innovation technologique, Service client premium, Garantie mondiale") #
+            st.write("**Analyse des couleurs stratégiques :**")
+            st.info(f"Pour {st.session_state.url_analyse}, voici la hiérarchie visuelle recommandée :")
+            st.write("• **Couleur de fond (Base) :** Bleu Marine (Sérieux)")
+            st.write("• **Couleur des Titres (Accent) :** Or (Prestige)")
+            st.write("• **Couleur des Boutons (Action) :** Bleu Nuit (Confiance)")
 
-        # 2. UX (Analyse globale)
+        # --- TABS 2 : SEO AVEC BARRE DYNAMIQUE ---
         with tabs[1]:
-            st.subheader("Analyse ergonomique complète")
-            st.write("Sitra analyse l'ensemble de votre interface :")
-            st.write("- **Contrastes** : Respect des normes d'accessibilité sur 95% du site.")
-            st.write("- **Navigation** : Structure fluide mais attention aux zones de clics.")
+            st.write("**Densité sémantique :**")
             
-            st.info("💡 **Conseil d'expert** : Agrandissez vos boutons en bas de page. Les utilisateurs avec des 'gros doigts' doivent pouvoir naviguer sans s'énerver.")
+            # Système de couleur dynamique pour la barre
+            if score < 50:
+                bar_color = "red"
+                msg = f"Critique : Votre contenu ne couvre que {score}%."
+            elif score < 90:
+                bar_color = "orange" # Ton cas à 82%
+                msg = f"Moyen : Votre contenu couvre {score}% du champ lexical."
+            else:
+                bar_color = "green"
+                msg = f"Parfait : Vous couvrez {score}% du secteur."
+            
+            # Affichage de la barre personnalisée
+            st.markdown(f"**{msg}**")
+            st.progress(score / 100) # Streamlit ne gère pas les couleurs nativement, mais on peut simuler
+            
+            st.warning(f"💡 **Coach SEO :** Pour atteindre 100%, ajoutez les mots-clés : 'Innovation technologique', 'Service client premium' et 'Garantie mondiale'.")
 
-        # 3. DESIGN (Rôles des couleurs & Tailles)
+        # --- TABS 3 : UX GLOBALE ---
         with tabs[2]:
-            st.subheader("Stratégie de Design & Branding")
-            st.write("Rôles recommandés pour vos couleurs :")
-            
-            d_col1, d_col2, d_col3 = st.columns(3)
-            d_col1.color_picker("Couleur de FOND (Bleu Marine)", "#003566", disabled=True, key="cp_final_1") #
-            d_col2.color_picker("Couleur des TITRES (Or)", "#FFC300", disabled=True, key="cp_final_2")
-            d_col3.color_picker("Couleur des BOUTONS (Bleu Nuit)", "#001D3D", key="cp_final_3")
-            
-            st.divider()
-            st.write("**Aperçu visuel des textes :**")
-            st.markdown('<p class="titre-expert">Titre : Impact et Autorité</p>', unsafe_allow_html=True)
-            st.caption("Taille recommandée pour vos titres principaux.")
-            st.markdown('<p class="texte-expert">Corps de texte : Confort de lecture optimal pour vos clients.</p>', unsafe_allow_html=True)
-            st.caption("Taille standard pour le contenu de vos pages.")
+            st.write("**Analyse ergonomique complète :**")
+            st.write("• **Lisibilité :** Les contrastes sont bons sur 90% de la page.")
+            st.write("• **Accessibilité :** Attention aux boutons de bas de page trop petits.")
+            st.info("💡 **Conseil d'expert :** Agrandissez vos zones cliquables. Les utilisateurs avec des 'gros doigts' doivent pouvoir naviguer sans s'énerver.")
 
-        # 4. PAIEMENT (Tunnel complet)
+        # --- TABS 4 : DESIGN ---
         with tabs[3]:
+            st.write("**Guide de style recommandé :**")
+            col_d1, col_d2 = st.columns(2)
+            with col_d1:
+                st.markdown('<p class="h1-sample">Titre (Impact fort)</p>', unsafe_allow_html=True)
+                st.caption("Recommandé pour capter l'attention immédiatement.")
+            with col_d2:
+                st.markdown('<p class="p-sample">Texte de lecture (Confort standard)</p>', unsafe_allow_html=True)
+                st.caption("Taille optimale pour une lecture prolongée sans fatigue.")
+
+        # --- TABS 5 : TUNNEL DE PAIEMENT ---
+        with tabs[4]:
             st.subheader("💳 Finaliser votre accès Premium")
             st.write("Choisissez votre mode de paiement sécurisé :")
             
-            p_c1, p_c2, p_c3 = st.columns(3)
-            if p_c1.button("PayPal", use_container_width=True, key="pay_pal"):
+            # Liste des paiements sans recharger l'appli
+            p_col1, p_col2, p_col3 = st.columns(3)
+            if p_col1.button("🅿️ PayPal"):
                 st.success("Redirection vers PayPal...")
-            if p_c2.button("Carte Bancaire (Stripe)", use_container_width=True, key="pay_stripe"):
-                st.success("Ouverture du module sécurisé...")
-            if p_c3.button("Apple / Google Pay", use_container_width=True, key="pay_apple"):
-                st.success("Authentification en cours...")
+            if p_col2.button("💳 Carte Bancaire (Stripe)"):
+                st.success("Ouverture du module sécurisé Stripe...")
+            if p_col3.button("🍎 Apple / Google Pay"):
+                st.success("Authentification biométrique en cours...")
 
         st.divider()
-        st.download_button("📥 Exporter le rapport complet (PDF/TXT)", "Audit Sitra", file_name=f"audit_{st.session_state.url_cible}.txt", use_container_width=True)
+        st.download_button("📥 Exporter le rapport complet (PDF)", "Contenu du rapport", file_name="sitra_audit.txt", key="final_export")
+
+else:
+    st.info("En attente d'une URL pour débuter l'audit technique.")
