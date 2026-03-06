@@ -8,8 +8,8 @@ st.set_page_config(page_title="Sitra | Digital Intelligence", layout="wide")
 # Style CSS
 st.markdown("""
 <style>
-/* Souligner tous les titres */
-h1, h2, h3, h4, h5, h6 {
+/* Surligner uniquement les titres internes */
+h2, h3, h4, h5, h6, .internal-title {
     text-decoration: underline;
 }
 
@@ -22,7 +22,6 @@ h1, h2, h3, h4, h5, h6 {
     background-color: #000000;
     color: #ffffff;
 }
-
 /* Tous les labels dans la sidebar en blanc */
 [data-testid="stSidebar"] label, 
 [data-testid="stSidebar"] .stMarkdown {
@@ -55,6 +54,13 @@ input[type="text"]:focus {
     border: 1px solid #000;
     display: inline-block;
     margin-right: 10px;
+    vertical-align: middle;
+}
+.color-label {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 15px;
+    font-weight: bold;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -90,10 +96,8 @@ def analyser_couleurs_site(url):
 
 # INPUT
 col_in1, col_in2 = st.columns(2)
-
 with col_in1:
     url1 = st.text_input("Domaine cible :", placeholder="exemple.com")
-
 with col_in2:
     url2 = ""
     if mode_comparaison:
@@ -101,11 +105,9 @@ with col_in2:
 
 # ANALYSE
 if st.button("Lancer l'analyse technique"):
-
     urls = [url1] if not (mode_comparaison and url2) else [url1, url2]
 
     for idx, url in enumerate(urls):
-
         if not url:
             continue
 
@@ -120,7 +122,6 @@ if st.button("Lancer l'analyse technique"):
         boost_reel = round(random.uniform(12.4,28.9),1)
 
         c1,c2,c3,c4 = st.columns(4)
-
         c1.metric("Indice de performance",f"{score}/100")
         c2.metric("Temps de réponse",f"{vitesse}s")
         c3.metric("Sécurité SSL","Valide")
@@ -137,10 +138,10 @@ if st.button("Lancer l'analyse technique"):
 
         # ESTIMATION
         with tabs[0]:
-            st.write("**Prévisions de trafic :**")
+            st.markdown('<h3 class="internal-title">Prévisions de trafic :</h3>', unsafe_allow_html=True)
             st.info(f"Analyse Sitra : Pour **{url}**, améliorer l'organisation visuelle pourrait augmenter les clics d'environ **{boost_reel}%**.")
 
-            st.write("**Recommandation de couleurs :**")
+            st.markdown('<h3 class="internal-title">Recommandation de couleurs :</h3>', unsafe_allow_html=True)
             st.write(f"• **Couleur principale du site :** {palette['noms'][0]}")
             st.write("→ Utiliser pour le fond ou les sections principales.")
             st.write(f"• **Couleur secondaire :** {palette['noms'][1]}")
@@ -150,17 +151,17 @@ if st.button("Lancer l'analyse technique"):
 
         # SEO
         with tabs[1]:
-            st.write("**Stratégie SEO (Analyse Profonde) :**")
+            st.markdown('<h3 class="internal-title">Stratégie SEO (Analyse Profonde) :</h3>', unsafe_allow_html=True)
             score_seo = score-3
             st.write(f"Score d'optimisation : {score_seo}%")
 
             col_seo1,col_seo2 = st.columns(2)
             with col_seo1:
-                st.write("**Mots-clés détectés :**")
+                st.markdown('<h4 class="internal-title">Mots-clés détectés :</h4>', unsafe_allow_html=True)
                 st.code(f"1. Expertise {url}\n2. Solution Digitale\n3. Performance")
             with col_seo2:
                 densite = 0.82
-                st.write("**Couverture du champ lexical :**")
+                st.markdown('<h4 class="internal-title">Couverture du champ lexical :</h4>', unsafe_allow_html=True)
                 st.progress(densite)
                 st.caption("82% du champ lexical est couvert.")
                 st.write("**Pour atteindre 100%, vous pourriez ajouter :**")
@@ -176,7 +177,7 @@ if st.button("Lancer l'analyse technique"):
 
         # UX
         with tabs[2]:
-            st.write("**Analyse de l'expérience utilisateur (UX) :**")
+            st.markdown('<h3 class="internal-title">Analyse de l\'expérience utilisateur (UX) :</h3>', unsafe_allow_html=True)
             st.write("Points détectés par Sitra :")
             st.write("• Certains boutons importants ne sont pas assez visibles.")
             st.write("• Les titres pourraient être plus grands pour améliorer la lecture.")
@@ -187,16 +188,16 @@ if st.button("Lancer l'analyse technique"):
 
         # DESIGN
         with tabs[3]:
-            st.write("**Design & Branding :**")
+            st.markdown('<h3 class="internal-title">Design & Branding :</h3>', unsafe_allow_html=True)
             st.write("Ces couleurs sont recommandées pour renforcer l'identité visuelle du site.")
             st.write("• Couleur principale : fond du site ou sections principales.")
             st.write("• Couleur secondaire : organisation des blocs.")
             st.write("• Couleur d'action : boutons importants.")
 
             c_p1, c_p2, c_p3 = st.columns(3)
-            c_p1.markdown(f"<div class='color-block' style='background:{palette['couleurs'][0]}'></div>", unsafe_allow_html=True)
-            c_p2.markdown(f"<div class='color-block' style='background:{palette['couleurs'][1]}'></div>", unsafe_allow_html=True)
-            c_p3.markdown(f"<div class='color-block' style='background:{palette['couleurs'][2]}'></div>", unsafe_allow_html=True)
+            for i, (nom, couleur) in enumerate(zip(palette['noms'], palette['couleurs'])):
+                col = [c_p1, c_p2, c_p3][i]
+                col.markdown(f"<span class='color-label'>{nom}</span><div class='color-block' style='background:{couleur}'></div>", unsafe_allow_html=True)
 
             st.write("---")
             st.write("**Tailles de texte recommandées :**")
@@ -225,7 +226,7 @@ if st.button("Lancer l'analyse technique"):
 
         # CHALLENGE
         with tabs[5]:
-            st.write("**Mode Challenge**")
+            st.markdown('<h3 class="internal-title">Mode Challenge</h3>', unsafe_allow_html=True)
             progression = random.randint(30,100)
             if progression < 50:
                 st.error(f"Progression : {progression}% - Niveau faible")
