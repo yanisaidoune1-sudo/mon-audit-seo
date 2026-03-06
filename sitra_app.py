@@ -8,8 +8,33 @@ st.set_page_config(page_title="Sitra | Digital Intelligence", layout="wide")
 # Style CSS
 st.markdown("""
 <style>
-.h1-sample { font-size: 48px; font-weight: bold; margin-bottom: 0px; }
+/* Titre et texte */
+.h1-sample { font-size: 48px; font-weight: bold; margin-bottom: 0px; text-decoration: underline; }
 .p-sample { font-size: 16px; margin-top: 0px; }
+
+/* Sidebar noire */
+[data-testid="stSidebar"] {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+/* Text input vert au focus */
+input[type="text"] {
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    padding: 6px;
+}
+input[type="text"]:focus {
+    border: 2px solid #28a745; /* vert */
+    outline: none;
+}
+
+/* Fond principal pour combler espace vide */
+.main .block-container {
+    background-color: #f7f7f7; /* un gris très clair */
+    padding: 20px;
+    border-radius: 10px;
+}
 </style>
 """, unsafe_allow_html=True)
 
