@@ -9,7 +9,7 @@ def get_dynamic_boost():
 # Correction technique pour eviter le bug precedent
 st.markdown("""<style>.main { background-color: #f5f7f9; }</style>""", unsafe_allow_html=True)
 
-tabs = st.tabs(["Previsions de resultats", "Analyse de la concurrence", "Design et Confort", "Mode Challenge"])
+tabs = st.tabs(["resultats", "Analyse de la concurrence", "Design et Confort", "Mode Challenge"])
 
 with tabs[0]:
     st.header("Previsions de resultats")
