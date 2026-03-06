@@ -74,3 +74,4 @@ with tabs[3]:
     st.checkbox("Ajuster la taille du menu tactile (Taille XL)")
     st.checkbox("Rendre la barre de navigation transparente", value=True)
     st.checkbox("Optimiser le contraste du texte (Taille M)")
+    
