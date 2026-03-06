@@ -8,21 +8,21 @@ st.set_page_config(page_title="Sitra | Digital Intelligence", layout="wide")
 # Style CSS
 st.markdown("""
 <style>
-/* Surligner uniquement les titres internes */
+/* Surligner uniquement les titres internes et sections, pas la sidebar ni titre principal */
 h2, h3, h4, h5, h6, .internal-title {
     text-decoration: underline;
 }
-
-/* Titres et texte exemple */
-.h1-sample { font-size: 48px; font-weight: bold; margin-bottom: 0px; text-decoration: underline; }
-.p-sample { font-size: 16px; margin-top: 0px; }
 
 /* Sidebar noire avec texte blanc */
 [data-testid="stSidebar"] {
     background-color: #000000;
     color: #ffffff;
 }
-/* Tous les labels dans la sidebar en blanc */
+/* Titres sidebar non soulignés */
+[data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+    text-decoration: none;
+}
+/* Tous les labels et checkbox dans la sidebar en blanc */
 [data-testid="stSidebar"] label, 
 [data-testid="stSidebar"] .stMarkdown {
     color: #ffffff;
@@ -72,8 +72,8 @@ st.divider()
 
 # SIDEBAR
 with st.sidebar:
-    st.header("Centre de contrôle")
-    st.subheader("Options Premium")
+    st.header("Centre de contrôle")  # Non souligné grâce au CSS
+    st.subheader("Options Premium")  # Non souligné grâce au CSS
 
     mode_comparaison = st.checkbox("🔓 Activer le Comparatif Marché", key="premium_check")
 
@@ -209,10 +209,12 @@ if st.button("Lancer l'analyse technique"):
 
         # COMPARATIF
         with tabs[4]:
-            if mode_comparaison:
+            if mode_comparaison and url2:
                 st.write("**Comparatif Marché :**")
                 st.write(f"Analyse comparative entre {url1} et {url2}.")
                 st.line_chart([random.randint(50,100) for _ in range(10)])
+                # Nouveau : suggestion amélioration
+                st.info("💡 Pour être plus performant que ce concurrent, nous recommandons d'améliorer l'organisation visuelle, la vitesse de chargement et la stratégie SEO.")
             else:
                 st.warning("⚠️ Cette section est réservée aux membres Premium.")
                 if st.button("Découvrir l'offre Premium",key=f"pay_{idx}"):
