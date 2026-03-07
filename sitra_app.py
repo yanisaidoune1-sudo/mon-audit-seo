@@ -1,14 +1,6 @@
 import streamlit as st
 import time
 import random
-import requests
-from bs4 import BeautifulSoup
-from collections import Counter
-from urllib.parse import urlparse
-from PIL import Image
-from io import BytesIO
-from colorthief import ColorThief  # pip install colorthief
-import colorsys
 
 # Configuration
 st.set_page_config(page_title="Sitra | Digital Intelligence", layout="wide")
@@ -16,7 +8,7 @@ st.set_page_config(page_title="Sitra | Digital Intelligence", layout="wide")
 # CSS
 st.markdown("""
 <style>
-/* Surligner uniquement les titres internes et sections, pas la sidebar ni titre principal */
+/* Surligner uniquement les titres internes et sections */
 h2, h3, h4, h5, h6, .internal-title {
     text-decoration: underline;
 }
@@ -55,12 +47,12 @@ input[type="text"]:focus {
 
 /* Fond principal pour combler espace vide */
 .main .block-container {
-    background-color: #f7f7f7; /* gris très clair */
+    background-color: #f7f7f7;
     padding: 20px;
     border-radius: 10px;
 }
 
-/* Blocs couleur pour Design & Branding */
+/* Blocs couleur */
 .color-block {
     width: 60px;
     height: 60px;
@@ -90,7 +82,7 @@ st.title("Sitra")
 st.caption("Système Expert d'Analyse Prédictive et de Diagnostic Digital")
 st.divider()
 
-# Sidebar
+# SIDEBAR
 with st.sidebar:
     st.header("Centre de contrôle")
     st.subheader("Options Premium")
@@ -99,55 +91,6 @@ with st.sidebar:
         st.success("💳 Option Premium activée (Mode démo)")
     st.divider()
     st.write("Moteur d'analyse : Sitra Engine v2.6.0")
-
-# Récupération texte du site
-def get_site_text(url):
-    try:
-        response = requests.get(url, timeout=5)
-        soup = BeautifulSoup(response.text, "html.parser")
-        texts = soup.find_all(["h1","h2","h3","p","span","li"])
-        content = " ".join([t.get_text() for t in texts])
-        return content
-    except:
-        return ""
-
-# Extraction mots-clés
-def extract_keywords(text, top_n=5):
-    words = [w.lower() for w in text.split() if len(w)>3]
-    counter = Counter(words)
-    most_common = counter.most_common(top_n)
-    return [w for w,c in most_common]
-
-# Extraction couleur principale via logo ou images
-def get_main_color(url):
-    try:
-        response = requests.get(url, timeout=5)
-        soup = BeautifulSoup(response.text, "html.parser")
-        imgs = soup.find_all("img")
-        if not imgs:
-            return "#0071E3"  # fallback
-        img_url = imgs[0].get("src")
-        if not img_url.startswith("http"):
-            parsed = urlparse(url)
-            img_url = f"{parsed.scheme}://{parsed.netloc}/{img_url.lstrip('/')}"
-        img_resp = requests.get(img_url)
-        img = Image.open(BytesIO(img_resp.content))
-        color_thief = ColorThief(BytesIO(img_resp.content))
-        dominant = color_thief.get_color(quality=1)
-        return '#%02x%02x%02x' % dominant
-    except:
-        return "#0071E3"
-
-# Générer palette complémentaire
-def generate_palette(hex_color):
-    r,g,b = int(hex_color[1:3],16), int(hex_color[3:5],16), int(hex_color[5:7],16)
-    h,l,s = colorsys.rgb_to_hls(r/255,g/255,b/255)
-    colors = []
-    for i in [0, 0.1, -0.1]:
-        nh = (h+i)%1
-        nr,nl,ns = colorsys.hls_to_rgb(nh,l,s)
-        colors.append('#%02x%02x%02x'%(int(nr*255),int(nl*255),int(ns*255)))
-    return colors
 
 # INPUT
 col_in1, col_in2 = st.columns(2)
@@ -170,11 +113,12 @@ if st.button("Lancer l'analyse technique") and url1:
         with st.status(f"Analyse de {url}...", expanded=False):
             time.sleep(1)
 
-        # Score simulé
+        # Simulations
         score = random.randint(85,95)
         vitesse = round(random.uniform(0.6,0.9),2)
         boost_reel = round(random.uniform(12.4,28.9),1)
 
+        # Metrics
         c1,c2,c3,c4 = st.columns(4)
         c1.metric("Indice de performance",f"{score}/100")
         c2.metric("Temps de réponse",f"{vitesse}s")
@@ -190,27 +134,76 @@ if st.button("Lancer l'analyse technique") and url1:
             "Mode Challenge"
         ])
 
-        # ESTIMATION
+        # Estimation
         with tabs[0]:
             st.markdown('<h3 class="internal-title">Prévisions de trafic :</h3>', unsafe_allow_html=True)
-            st.info(f"Pour **{url}**, améliorer l'organisation visuelle pourrait augmenter les clics d'environ **{boost_reel}%**.")
+            st.info(f"Pour **{url}**, améliorer l'organisation visuelle pourrait augmenter les clics d\'environ **{boost_reel}%**.")
 
-        # SEO dynamique
+        # SEO
         with tabs[1]:
             st.markdown('<h3 class="internal-title">Stratégie SEO :</h3>', unsafe_allow_html=True)
-            text = get_site_text(url)
-            keywords = extract_keywords(text)
-            st.write(f"Score d'optimisation : {score-3}%")
+            mots = ["innovation", "performance", "UX", "marketing", "digital"]
             st.markdown('<h4 class="internal-title">Mots-clés détectés :</h4>', unsafe_allow_html=True)
-            for mot in keywords:
-                st.write(f"• {mot}")
+            for m in mots:
+                st.write(f"• {m}")
 
-        # DESIGN dynamique
+        # Confort d'utilisation
+        with tabs[2]:
+            st.markdown('<h3 class="internal-title">Expérience Utilisateur :</h3>', unsafe_allow_html=True)
+            st.write("Points détectés :")
+            st.write("• Boutons importants à rendre plus visibles")
+            st.write("• Titres à augmenter pour lisibilité")
+            st.write(f"• Temps de chargement : {vitesse}s")
+
+        # Design & Branding
         with tabs[3]:
             st.markdown('<h3 class="internal-title">Design & Branding :</h3>', unsafe_allow_html=True)
-            main_color = get_main_color(url)
-            palette = generate_palette(main_color)
-            usages = ["Fond principal / sections", "Sections secondaires", "Boutons et actions"]
+            palette = ["#0071E3","#F5F5F7","#1D1D1F"]
+            usages = ["Fond principal / sections","Sections secondaires","Boutons / Actions"]
             c_p1, c_p2, c_p3 = st.columns(3)
-            for col, nom, couleur, usage in zip([c_p1,c_p2,c_p3], ["Couleur 1","Couleur 2","Couleur 3"], palette, usages):
-                col.markdown(f"<span class='color-label'>{nom}</span><div class='color-block' style='background:{couleur}'></div><span class='color-usage'>→ {usage}</span>", unsafe_allow_html=True)
+            for col, couleur, usage in zip([c_p1,c_p2,c_p3], palette, usages):
+                col.markdown(f"<div class='color-block' style='background:{couleur}'></div><span class='color-usage'>→ {usage}</span>", unsafe_allow_html=True)
+
+        # Comparatif Marché
+        with tabs[4]:
+            if mode_comparaison and url2:
+                st.markdown('<h3 class="internal-title">Comparatif Marché :</h3>', unsafe_allow_html=True)
+                metrics = {
+                    "Performance": score,
+                    "UX": random.randint(70,100),
+                    "Vitesse": round((1-vitesse)*100,0),
+                    "SEO": score-3,
+                    "Design": random.randint(75,95)
+                }
+                st.bar_chart(metrics)
+                st.info("💡 Légende des scores : 0-39 Très mauvais, 40-69 Moyen, 70-89 Bon, 90-100 Excellent")
+                st.info("💡 Pour améliorer votre site et dépasser le concurrent, travaillez sur ces indicateurs.")
+            else:
+                st.warning("⚠️ Cette section est réservée aux membres Premium.")
+
+        # Mode Challenge
+        with tabs[5]:
+            st.markdown('<h3 class="internal-title">Mode Challenge</h3>', unsafe_allow_html=True)
+            objectifs = [
+                "Changer couleur du bouton principal",
+                "Augmenter H2 à 28px",
+                "Réduire temps de chargement <0.8s",
+                "Ajouter 3 mots-clés SEO pertinents",
+                "Simplifier menu mobile"
+            ]
+            total = len(objectifs)
+            score_challenge = 0
+            for i, obj in enumerate(objectifs):
+                if st.checkbox(obj, key=f"ch_{idx}_{i}"):
+                    score_challenge += 100 / total
+            st.progress(score_challenge/100)
+
+        st.download_button(
+            "📥 Exporter le rapport complet (TXT)",
+            f"Audit Sitra pour {url}",
+            file_name=f"audit_{url}.txt",
+            key=f"exp_{idx}"
+        )
+
+st.divider()
+st.write("Sitra : Anticiper pour dominer le marché.")
