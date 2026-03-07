@@ -26,9 +26,15 @@ h2, h3, h4, h5, h6, .internal-title {
 }
 
 /* Checkbox sidebar : texte blanc et aligné verticalement */
-[data-testid="stSidebar"] .stCheckbox label {
+.sidebar-checkbox-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.sidebar-checkbox-label {
     color: #ffffff !important;
     font-weight: bold;
+    margin-left: 8px;
 }
 
 /* Text input vert au focus */
@@ -78,8 +84,17 @@ with st.sidebar:
     st.header("Centre de contrôle")
     st.subheader("Options Premium")
     
-    # Checkbox unique pour le mode comparatif
-    mode_comparaison = st.checkbox("🔓 Activer le mode comparatif", key="premium_check")
+    # Phrase en blanc + checkbox alignée
+    st.markdown("""
+    <div class="sidebar-checkbox-container">
+        <input type="checkbox" id="mode_comparatif" name="mode_comparatif" />
+        <label class="sidebar-checkbox-label" for="mode_comparatif">🔓 Activer le mode comparatif</label>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # On synchronise avec Streamlit pour récupérer si l'utilisateur veut activer le mode
+    mode_comparaison = st.checkbox("", key="premium_check", value=False, label_visibility="collapsed")
+    
     if mode_comparaison:
         st.success("💳 Option Premium activée (Mode démo)")
 
@@ -156,40 +171,33 @@ if st.button("Lancer l'analyse technique"):
             col_seo1,col_seo2 = st.columns(2)
             with col_seo1:
                 st.markdown('<h4 class="internal-title">Mots-clés recommandés et leur usage :</h4>', unsafe_allow_html=True)
-                mots_cles = [
-                    f"Ajouter 'Expertise {url}' dans H1",
-                    "Ajouter 'Solution Digitale' dans meta description",
-                    "Ajouter 'Performance' dans titres H2"
-                ]
-                for mot in mots_cles:
-                    st.write(f"• {mot}")
+                st.code(f"1. Expertise {url}\n2. Solution Digitale\n3. Performance")
             with col_seo2:
                 densite = 0.82
-                st.markdown('<h4 class="internal-title">Positionnement sur les moteurs :</h4>', unsafe_allow_html=True)
+                st.markdown('<h4 class="internal-title">Positionnement SEO :</h4>', unsafe_allow_html=True)
                 st.progress(densite)
-                st.caption("💡 Ces indicateurs montrent comment positionner votre site sur les moteurs de recherche par rapport aux mots-clés.")
+                st.caption("Cette section indique comment positionner votre site sur les moteurs de recherche.")
+                suggestions = ["innovation digitale","optimisation web","expérience utilisateur","stratégie marketing","analyse de performance"]
+                for mot in suggestions:
+                    st.write(f"• {mot} — utilisez-le dans vos titres, sous-titres ou paragraphes importants")
 
         # UX
         with tabs[2]:
             st.markdown('<h3 class="internal-title">Expérience Utilisateur :</h3>', unsafe_allow_html=True)
-            ux_points = [
-                "Certains boutons importants ne sont pas assez visibles",
-                "Les titres pourraient être plus grands pour améliorer la lecture",
-                "Le menu mobile pourrait être simplifié"
-            ]
             st.write("Points détectés :")
-            for point in ux_points:
-                st.write(f"• {point}")
+            st.write("• Certains boutons importants ne sont pas assez visibles.")
+            st.write("• Les titres pourraient être plus grands pour améliorer la lecture.")
+            st.write("• Le menu mobile pourrait être simplifié.")
             st.info(f"💡 Temps de chargement : {vitesse}s")
 
         # DESIGN
         with tabs[3]:
             st.markdown('<h3 class="internal-title">Design & Branding :</h3>', unsafe_allow_html=True)
             c_p1, c_p2, c_p3 = st.columns(3)
-            positions = ["Boutons principaux", "Bannières", "Éléments d'action"]
+            emplacements = ["Header / bouton principal", "Sections importantes", "Call-to-action / Footer"]
             for i, (nom, couleur) in enumerate(zip(palette['noms'], palette['couleurs'])):
                 col = [c_p1, c_p2, c_p3][i]
-                col.markdown(f"<span class='color-label'>{nom}</span> ({positions[i]})<div class='color-block' style='background:{couleur}'></div>", unsafe_allow_html=True)
+                col.markdown(f"<span class='color-label'>{nom}</span><div class='color-block' style='background:{couleur}'></div><br>Proposé pour : {emplacements[i]}", unsafe_allow_html=True)
 
         # COMPARATIF
         with tabs[4]:
@@ -219,24 +227,16 @@ Chaque barre représente un indice pour votre site : **Performance**, **UX**, **
         # MODE CHALLENGE
         with tabs[5]:
             st.markdown('<h3 class="internal-title">Mode Challenge</h3>', unsafe_allow_html=True)
-            # Checklist automatique à partir des points détectés
-            challenge_objectifs = []
-
-            # UX
-            for point in ux_points:
-                challenge_objectifs.append(f"Corriger UX : {point}")
-
-            # Design
-            for i, pos in enumerate(positions):
-                challenge_objectifs.append(f"Améliorer Design : {palette['noms'][i]} sur {pos}")
-
-            # SEO
-            for mot in mots_cles:
-                challenge_objectifs.append(f"Optimiser SEO : {mot}")
-
-            total = len(challenge_objectifs)
+            objectifs = [
+                "Changer la couleur du bouton principal pour attirer l'attention",
+                "Augmenter les titres H2 à 28px pour une meilleure lisibilité",
+                "Réduire le temps de chargement à <0.8s",
+                "Ajouter 3 mots-clés SEO pertinents sur la page d'accueil",
+                "Simplifier le menu mobile et rendre les boutons cliquables facilement"
+            ]
+            total = len(objectifs)
             score_challenge = 0
-            for i, obj in enumerate(challenge_objectifs):
+            for i, obj in enumerate(objectifs):
                 if st.checkbox(obj, key=f"ch_{idx}_{i}"):
                     score_challenge += 100 / total
             st.progress(score_challenge/100)
