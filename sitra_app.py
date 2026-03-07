@@ -186,16 +186,27 @@ if st.button("Lancer l'analyse technique"):
         with tabs[4]:
             if mode_comparaison:
                 st.markdown('<h3 class="internal-title">Comparatif Marché :</h3>', unsafe_allow_html=True)
+                
+                # Explication des scores
+                st.info("""
+**💡 Légende des scores (0-100) :**  
+- 0-39 : Très mauvais  
+- 40-69 : Moyen  
+- 70-89 : Bon  
+- 90-100 : Excellent  
+
+Chaque barre représente un indice pour votre site : **Performance**, **UX**, **Vitesse**, **SEO**, **Design**
+                """)
+                
                 # Graphique uniquement pour ton site
                 metrics = {
                     "Performance": score,
                     "UX": random.randint(70,100),
-                    "Vitesse": round((1-vitesse)*100,0),  # plus le temps est bas, mieux c'est
+                    "Vitesse": round((1-vitesse)*100,0),
                     "SEO": score_seo,
                     "Design": random.randint(75,95)
                 }
                 st.bar_chart(metrics)
-                st.caption("Barres : indice 0-100 pour chaque critère de votre site : Performance, UX, Vitesse, SEO, Design")
                 st.info("💡 Pour améliorer votre site et dépasser le concurrent, travaillez sur ces indicateurs.")
             else:
                 st.warning("⚠️ Cette section est réservée aux membres Premium.")
