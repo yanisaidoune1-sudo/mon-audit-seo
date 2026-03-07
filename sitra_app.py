@@ -2,11 +2,38 @@ import streamlit as st
 import time
 import random
 import pandas as pd
+from streamlit_lottie import st_lottie
+import requests
 
-# Configuration
+# --- Fonctions Lottie ---
+def load_lottieurl(url: str):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
+# --- Animation d'intro ---
+lottie_robot = load_lottieurl("URL_DE_TON_LOTTIE_ROBOT.json")  # Remplacer par ton URL Lottie
+intro_placeholder = st.empty()
+
+if lottie_robot:
+    st_lottie(lottie_robot, height=300)
+    phrases_intro = [
+        "Bienvenue sur Sitra ! Je vais analyser votre site et vous donner des recommandations.",
+        "Je vais vous montrer comment améliorer votre positionnement sur les moteurs de recherche.",
+        "Je vais aussi vous aider à optimiser l'expérience utilisateur et le design.",
+        "Vous pourrez comparer votre site et suivre un challenge pour progresser."
+    ]
+    for phrase in phrases_intro:
+        intro_placeholder.markdown(f"**🤖 {phrase}**")
+        time.sleep(2.5)
+    if st.button("🚀 Commencer"):
+        intro_placeholder.empty()
+
+# --- Configuration ---
 st.set_page_config(page_title="Sitra | Digital Intelligence", layout="wide")
 
-# Style CSS
+# --- Style CSS ---
 st.markdown("""
 <style>
 /* Surligner uniquement les titres internes et sections, pas la sidebar ni titre principal */
@@ -65,46 +92,54 @@ input[type="text"]:focus {
     margin-right: 15px;
     font-weight: bold;
 }
-
-/* Emplacement des couleurs dans le site */
-.color-usage {
-    font-style: italic;
-    color: #333;
-    margin-bottom: 8px;
-}
 </style>
 """, unsafe_allow_html=True)
 
-# Identité
+# --- Identité ---
 st.title("Sitra")
 st.caption("Système Expert d'Analyse Prédictive et de Diagnostic Digital")
 st.divider()
 
-# SIDEBAR
+# --- SIDEBAR ---
 with st.sidebar:
     st.header("Centre de contrôle")
     st.subheader("Options Premium")
-    
-    # Checkbox unique pour le mode comparatif
     mode_comparaison = st.checkbox("🔓 Activer le mode comparatif", key="premium_check")
     if mode_comparaison:
         st.success("💳 Option Premium activée (Mode démo)")
-
     st.divider()
     st.write("Moteur d'analyse : Sitra Engine v2.6.0")
 
-# Fonction palette
+# --- Fonction palette ---
 def analyser_couleurs_site(url):
     palettes = [
-        {"nom": "Premium Dark", "couleurs": ["#1D1D1F", "#F5F5F7", "#0071E3"], "noms": ["Noir Sidéral", "Gris Argent", "Bleu Royal"], "usage":["Fond principal","Texte secondaire","Boutons principaux"]},
-        {"nom": "Innovation & Tech", "couleurs": ["#000000", "#8E8E93", "#2997FF"], "noms": ["Noir", "Gris Acier", "Bleu Électrique"], "usage":["Menu","Titres","CTA"]},
-        {"nom": "Énergie Créative", "couleurs": ["#F4A261", "#264653", "#E76F51"], "noms": ["Sable", "Bleu Pétrole", "Terracotta"], "usage":["Background sections","Textes","Boutons secondaires"]},
-        {"nom": "Corporate Trust", "couleurs": ["#003566", "#FFC300", "#001D3D"], "noms": ["Bleu Marine", "Or", "Bleu Nuit"], "usage":["Header","Accents","Footer"]}
+        {"nom": "Premium Dark", "couleurs": ["#1D1D1F", "#F5F5F7", "#0071E3"], "noms": ["Noir Sidéral", "Gris Argent", "Bleu Royal"]},
+        {"nom": "Innovation & Tech", "couleurs": ["#000000", "#8E8E93", "#2997FF"], "noms": ["Noir", "Gris Acier", "Bleu Électrique"]},
+        {"nom": "Énergie Créative", "couleurs": ["#F4A261", "#264653", "#E76F51"], "noms": ["Sable", "Bleu Pétrole", "Terracotta"]},
+        {"nom": "Corporate Trust", "couleurs": ["#003566", "#FFC300", "#001D3D"], "noms": ["Bleu Marine", "Or", "Bleu Nuit"]}
     ]
     index = sum(ord(char) for char in url) % len(palettes) if url else 0
     return palettes[index]
 
-# INPUT
+# --- Fonction mots-clés dynamiques ---
+def generer_mots_cles(url):
+    base_mots = [
+        "Ajouter un bouton 'Contactez-nous' visible sur la page d'accueil",
+        "Mettre une section témoignages clients pour renforcer la confiance",
+        "Optimiser le menu pour une navigation plus fluide",
+        "Mettre en avant les produits/services principaux dès l'arrivée sur le site",
+        "Ajouter un appel à l'action clair sur chaque page",
+        "Améliorer la lisibilité des titres et sous-titres",
+        "Rendre le site responsive sur mobile et tablette",
+        "Ajouter des mots-clés relatifs à votre secteur dans les titres et textes",
+        "Créer une section FAQ pour répondre aux questions fréquentes",
+        "Mettre en avant les avantages concurrentiels de votre service"
+    ]
+    random.seed(sum(ord(c) for c in url))
+    random.shuffle(base_mots)
+    return base_mots[:5]
+
+# --- INPUT ---
 col_in1, col_in2 = st.columns(2)
 with col_in1:
     url1 = st.text_input("Domaine cible :", placeholder="exemple URL ou .com")
@@ -115,7 +150,7 @@ with col_in2:
     if mode_comparaison:
         url2 = st.text_input("Domaine concurrent :", placeholder="exemple URL ou .com")
 
-# ANALYSE
+# --- ANALYSE ---
 if st.button("Lancer l'analyse technique"):
     urls = [url1] if not (mode_comparaison and url2) else [url1, url2]
     for idx, url in enumerate(urls):
@@ -123,7 +158,7 @@ if st.button("Lancer l'analyse technique"):
             continue
 
         st.subheader(f"Rapport d'analyse Sitra : {url}")
-        with st.spinner(f"Analyse de {url}..."):
+        with st.status(f"Analyse de {url}...", expanded=False):
             time.sleep(1)
 
         palette = analyser_couleurs_site(url)
@@ -146,7 +181,7 @@ if st.button("Lancer l'analyse technique"):
             "Mode Challenge"
         ])
 
-        # ESTIMATION
+        # --- ESTIMATION ---
         with tabs[0]:
             st.markdown('<h3 class="internal-title">Prévisions de trafic :</h3>', unsafe_allow_html=True)
             st.info(f"Pour **{url}**, améliorer l'organisation visuelle pourrait augmenter les clics d'environ **{boost_reel}%**.")
@@ -155,7 +190,7 @@ if st.button("Lancer l'analyse technique"):
             st.write(f"• **Couleur secondaire :** {palette['noms'][1]}")
             st.write(f"• **Couleur d'action :** {palette['noms'][2]}")
 
-        # SEO
+        # --- SEO ---
         with tabs[1]:
             st.markdown('<h3 class="internal-title">Stratégie SEO :</h3>', unsafe_allow_html=True)
             score_seo = score-3
@@ -163,15 +198,17 @@ if st.button("Lancer l'analyse technique"):
             col_seo1,col_seo2 = st.columns(2)
             with col_seo1:
                 st.markdown('<h4 class="internal-title">Mots-clés recommandés et leur usage :</h4>', unsafe_allow_html=True)
-                st.code(f"1. Expertise {url}\n2. Solution Digitale\n3. Performance")
-                st.caption("Ces mots-clés doivent être intégrés dans le contenu de votre site pour améliorer sa visibilité.")
+                phrases = generer_mots_cles(url)
+                for i, phrase in enumerate(phrases, 1):
+                    st.write(f"{i}. {phrase}")
+                st.caption("💡 Ces actions sont recommandées pour améliorer la structure et le contenu de votre site.")
             with col_seo2:
                 densite = 0.82
                 st.markdown('<h4 class="internal-title">Positionnement sur les moteurs de recherche :</h4>', unsafe_allow_html=True)
                 st.progress(densite)
-                st.caption("Indique dans quelle mesure votre site est optimisé pour apparaître dans les résultats Google.")
+                st.caption("💡 Cette métrique montre comment votre site est référencé sur Google et autres moteurs.")
 
-        # UX
+        # --- UX ---
         with tabs[2]:
             st.markdown('<h3 class="internal-title">Expérience Utilisateur :</h3>', unsafe_allow_html=True)
             st.write("Points détectés :")
@@ -180,16 +217,16 @@ if st.button("Lancer l'analyse technique"):
             st.write("• Le menu mobile pourrait être simplifié.")
             st.info(f"💡 Temps de chargement : {vitesse}s")
 
-        # DESIGN
+        # --- DESIGN ---
         with tabs[3]:
             st.markdown('<h3 class="internal-title">Design & Branding :</h3>', unsafe_allow_html=True)
             c_p1, c_p2, c_p3 = st.columns(3)
-            for i, (nom, couleur, usage) in enumerate(zip(palette['noms'], palette['couleurs'], palette['usage'])):
+            emplacements = ["Header / navigation", "Section principale", "Boutons / actions"]
+            for i, (nom, couleur) in enumerate(zip(palette['noms'], palette['couleurs'])):
                 col = [c_p1, c_p2, c_p3][i]
-                col.markdown(f"<span class='color-label'>{nom}</span><div class='color-block' style='background:{couleur}'></div>", unsafe_allow_html=True)
-                col.markdown(f"<div class='color-usage'>Utilisation suggérée : {usage}</div>", unsafe_allow_html=True)
+                col.markdown(f"<span class='color-label'>{nom} ({emplacements[i]})</span><div class='color-block' style='background:{couleur}'></div>", unsafe_allow_html=True)
 
-        # COMPARATIF
+        # --- COMPARATIF ---
         with tabs[4]:
             if mode_comparaison:
                 st.markdown('<h3 class="internal-title">Comparatif Marché :</h3>', unsafe_allow_html=True)
@@ -214,7 +251,7 @@ Chaque barre représente un indice pour votre site : **Performance**, **UX**, **
             else:
                 st.warning("⚠️ Cette section est réservée aux membres Premium.")
 
-        # MODE CHALLENGE
+        # --- MODE CHALLENGE ---
         with tabs[5]:
             st.markdown('<h3 class="internal-title">Mode Challenge</h3>', unsafe_allow_html=True)
             objectifs = [
