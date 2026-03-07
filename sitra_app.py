@@ -27,10 +27,7 @@ h2, h3, h4, h5, h6, .internal-title {
 
 /* Checkbox sidebar : texte blanc */
 [data-testid="stSidebar"] .stCheckbox label {
-    color: #ffffff !important;  /* texte blanc */
-    background-color: #000000 !important;
-    padding: 4px 6px;
-    border-radius: 4px;
+    color: #ffffff !important;
 }
 
 /* Text input vert au focus */
@@ -79,18 +76,17 @@ st.divider()
 with st.sidebar:
     st.header("Centre de contrôle")
     st.subheader("Options Premium")
-
-    # Colonnes pour checkbox + texte blanc à côté, case relevée
+    
+    # Colonne pour aligner checkbox et texte
     col_cb, col_txt = st.columns([1,9])
     with col_cb:
-        # Remonter la checkbox avec padding
-        st.markdown("<div style='padding-top:6px;'>" 
-                    + st.checkbox("", key="premium_check", label_visibility="collapsed")._repr_html_() 
-                    + "</div>", unsafe_allow_html=True)
+        # Checkbox sans texte
+        premium_check = st.checkbox("", key="premium_check", label_visibility="collapsed")
     with col_txt:
-        st.markdown("<span style='color:white;'>🔓 Activer le mode comparatif</span>", unsafe_allow_html=True)
+        # Texte blanc à côté
+        st.markdown("<span style='color:white; font-weight:bold;'>🔓 Activer le mode comparatif</span>", unsafe_allow_html=True)
 
-    if st.session_state.get("premium_check", False):
+    if premium_check:
         st.success("💳 Option Premium activée (Mode démo)")
 
     st.divider()
@@ -111,16 +107,16 @@ def analyser_couleurs_site(url):
 col_in1, col_in2 = st.columns(2)
 with col_in1:
     url1 = st.text_input("Domaine cible :", placeholder="exemple URL ou .com")
-    if st.session_state.get("premium_check", False):
+    if premium_check:
         st.info("💡 Ce mode permet d'analyser votre site et de voir comment l'améliorer pour dépasser un concurrent.")
 with col_in2:
     url2 = ""
-    if st.session_state.get("premium_check", False):
+    if premium_check:
         url2 = st.text_input("Domaine concurrent :", placeholder="exemple URL ou .com")
 
 # ANALYSE
 if st.button("Lancer l'analyse technique"):
-    urls = [url1] if not (st.session_state.get("premium_check", False) and url2) else [url1, url2]
+    urls = [url1] if not (premium_check and url2) else [url1, url2]
     for idx, url in enumerate(urls):
         if not url:
             continue
@@ -195,9 +191,8 @@ if st.button("Lancer l'analyse technique"):
 
         # COMPARATIF
         with tabs[4]:
-            if st.session_state.get("premium_check", False):
+            if premium_check:
                 st.markdown('<h3 class="internal-title">Comparatif Marché :</h3>', unsafe_allow_html=True)
-                
                 st.info("""
 **💡 Légende des scores (0-100) :**  
 - 0-39 : Très mauvais  
@@ -207,7 +202,6 @@ if st.button("Lancer l'analyse technique"):
 
 Chaque barre représente un indice pour votre site : **Performance**, **UX**, **Vitesse**, **SEO**, **Design**
                 """)
-                
                 metrics = {
                     "Performance": score,
                     "UX": random.randint(70,100),
