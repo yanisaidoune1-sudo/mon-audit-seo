@@ -13,7 +13,7 @@ def load_lottieurl(url: str):
     return r.json()
 
 # --- Animation d'intro ---
-lottie_robot = load_lottieurl("URL_DE_TON_LOTTIE_ROBOT.json")  # Remplacer par ton URL Lottie
+lottie_robot = load_lottieurl("https://assets4.lottiefiles.com/packages/lf20_jcikwtux.json")
 intro_placeholder = st.empty()
 
 if lottie_robot:
