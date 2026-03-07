@@ -79,14 +79,17 @@ st.divider()
 with st.sidebar:
     st.header("Centre de contrôle")
     st.subheader("Options Premium")
-    
-    # Phrase "Activer le mode comparatif" en blanc
-    st.markdown("<span style='color:white;'>🔓 Activer le mode comparatif</span>", unsafe_allow_html=True)
-    mode_comparaison = st.checkbox("", key="premium_check")  # case à cocher juste à côté
-    
+
+    # Colonnes pour checkbox + texte blanc à côté
+    col_cb, col_txt = st.columns([1,9])
+    with col_cb:
+        mode_comparaison = st.checkbox("", key="premium_check")
+    with col_txt:
+        st.markdown("<span style='color:white;'>🔓 Activer le mode comparatif</span>", unsafe_allow_html=True)
+
     if mode_comparaison:
         st.success("💳 Option Premium activée (Mode démo)")
-    
+
     st.divider()
     st.write("Moteur d'analyse : Sitra Engine v2.6.0")
 
