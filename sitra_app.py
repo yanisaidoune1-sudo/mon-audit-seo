@@ -25,11 +25,10 @@ h2, h3, h4, h5, h6, .internal-title {
     text-decoration: none;
 }
 
-/* Checkbox sidebar : texte blanc et alignement vertical */
-.checkbox-container {
-    display: flex;
-    align-items: center;
-    gap: 5px;
+/* Checkbox sidebar : texte blanc et aligné verticalement */
+[data-testid="stSidebar"] .stCheckbox label {
+    color: #ffffff !important;
+    font-weight: bold;
 }
 
 /* Text input vert au focus */
@@ -79,21 +78,9 @@ with st.sidebar:
     st.header("Centre de contrôle")
     st.subheader("Options Premium")
     
-    # Checkbox alignée avec le texte
-    checkbox_html = """
-    <div class="checkbox-container">
-        <input type="checkbox" id="premium_check" style="margin:0; transform: scale(1.2);" />
-        <label for="premium_check" style="color:white; font-weight:bold;">🔓 Activer le mode comparatif</label>
-    </div>
-    """
-    st.markdown(checkbox_html, unsafe_allow_html=True)
-
-    # Récupérer la valeur avec st.checkbox mais cacher le texte
-    if "premium_check" not in st.session_state:
-        st.session_state["premium_check"] = False
-    premium_check = st.checkbox("", key="premium_check_hidden", value=st.session_state["premium_check"], label_visibility="collapsed")
-
-    if premium_check:
+    # Checkbox unique pour le mode comparatif
+    mode_comparaison = st.checkbox("🔓 Activer le mode comparatif", key="premium_check")
+    if mode_comparaison:
         st.success("💳 Option Premium activée (Mode démo)")
 
     st.divider()
@@ -114,16 +101,16 @@ def analyser_couleurs_site(url):
 col_in1, col_in2 = st.columns(2)
 with col_in1:
     url1 = st.text_input("Domaine cible :", placeholder="exemple URL ou .com")
-    if premium_check:
+    if mode_comparaison:
         st.info("💡 Ce mode permet d'analyser votre site et de voir comment l'améliorer pour dépasser un concurrent.")
 with col_in2:
     url2 = ""
-    if premium_check:
+    if mode_comparaison:
         url2 = st.text_input("Domaine concurrent :", placeholder="exemple URL ou .com")
 
 # ANALYSE
 if st.button("Lancer l'analyse technique"):
-    urls = [url1] if not (premium_check and url2) else [url1, url2]
+    urls = [url1] if not (mode_comparaison and url2) else [url1, url2]
     for idx, url in enumerate(urls):
         if not url:
             continue
@@ -198,7 +185,7 @@ if st.button("Lancer l'analyse technique"):
 
         # COMPARATIF
         with tabs[4]:
-            if premium_check:
+            if mode_comparaison:
                 st.markdown('<h3 class="internal-title">Comparatif Marché :</h3>', unsafe_allow_html=True)
                 st.info("""
 **💡 Légende des scores (0-100) :**  
