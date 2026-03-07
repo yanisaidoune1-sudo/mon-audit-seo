@@ -220,7 +220,8 @@ if st.button("Lancer l'analyse technique"):
                 st.write("**Comparatif Marché :**")
                 st.write(f"Analyse comparative entre {url1} et {url2}.")
                 st.line_chart([random.randint(50,100) for _ in range(10)])
-                st.info("💡 Pour être plus performant que ce concurrent, nous recommandons d'améliorer l'organisation visuelle, la vitesse de chargement et la stratégie SEO.")
+                # Phrase explicative pour améliorer votre site
+                st.info("💡 Pour être plus performant que ce concurrent, améliorez la vitesse de chargement, l'organisation visuelle et la stratégie SEO.")
             else:
                 st.warning("⚠️ Cette section est réservée aux membres Premium.")
                 if st.button("Découvrir l'offre Premium",key=f"pay_{idx}"):
