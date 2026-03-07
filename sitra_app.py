@@ -49,7 +49,7 @@ input[type="text"]:focus {
     border-radius: 10px;
 }
 
-/* Blocs couleur pour Design & Branding */
+/* Blocs couleur pour Design & Branding et Estimation */
 .color-block {
     width: 60px;
     height: 60px;
@@ -86,16 +86,37 @@ with st.sidebar:
     st.divider()
     st.write("Moteur d'analyse : Sitra Engine v2.6.0")
 
-# Fonction palette
+# Fonction palette « intelligente » basée sur l'URL
 def analyser_couleurs_site(url):
+    # Choix pseudo-aléatoire basé sur URL
+    hash_val = sum(ord(c) for c in url) % 4
     palettes = [
-        {"nom": "Premium Dark", "couleurs": ["#1D1D1F", "#F5F5F7", "#0071E3"], "noms": ["Noir Sidéral", "Gris Argent", "Bleu Royal"]},
-        {"nom": "Innovation & Tech", "couleurs": ["#000000", "#8E8E93", "#2997FF"], "noms": ["Noir", "Gris Acier", "Bleu Électrique"]},
-        {"nom": "Énergie Créative", "couleurs": ["#F4A261", "#264653", "#E76F51"], "noms": ["Sable", "Bleu Pétrole", "Terracotta"]},
-        {"nom": "Corporate Trust", "couleurs": ["#003566", "#FFC300", "#001D3D"], "noms": ["Bleu Marine", "Or", "Bleu Nuit"]}
+        {
+            "nom": "Premium Dark",
+            "couleurs": ["#1D1D1F", "#F5F5F7", "#0071E3"],
+            "noms": ["Noir Sidéral", "Gris Argent", "Bleu Royal"],
+            "usage": ["Fond principal", "Sections / contenus secondaires", "Boutons d'action"]
+        },
+        {
+            "nom": "Innovation & Tech",
+            "couleurs": ["#000000", "#8E8E93", "#2997FF"],
+            "noms": ["Noir", "Gris Acier", "Bleu Électrique"],
+            "usage": ["Menu / Header", "Contenus texte", "Boutons et liens"]
+        },
+        {
+            "nom": "Énergie Créative",
+            "couleurs": ["#F4A261", "#264653", "#E76F51"],
+            "noms": ["Sable", "Bleu Pétrole", "Terracotta"],
+            "usage": ["Fond / arrière-plan", "Titres / headers", "Boutons principaux"]
+        },
+        {
+            "nom": "Corporate Trust",
+            "couleurs": ["#003566", "#FFC300", "#001D3D"],
+            "noms": ["Bleu Marine", "Or", "Bleu Nuit"],
+            "usage": ["Header et menus", "Accent / highlights", "Call-to-action / boutons"]
+        }
     ]
-    index = sum(ord(char) for char in url) % len(palettes) if url else 0
-    return palettes[index]
+    return palettes[hash_val]
 
 # INPUT
 col_in1, col_in2 = st.columns(2)
@@ -144,20 +165,19 @@ if st.button("Lancer l'analyse technique"):
             st.markdown('<h3 class="internal-title">Prévisions de trafic :</h3>', unsafe_allow_html=True)
             st.info(f"Pour **{url}**, améliorer l'organisation visuelle pourrait augmenter les clics d'environ **{boost_reel}%**.")
             st.markdown('<h3 class="internal-title">Recommandation de couleurs :</h3>', unsafe_allow_html=True)
-            st.write(f"• **Couleur principale :** {palette['noms'][0]}")
-            st.write(f"• **Couleur secondaire :** {palette['noms'][1]}")
-            st.write(f"• **Couleur d'action :** {palette['noms'][2]}")
+            # Couleurs intelligentes avec usage
+            emplacements_estimation = ["Fond principal", "Sections secondaires / textes", "Boutons principaux"]
+            for i, (nom, couleur) in enumerate(zip(palette['noms'], palette['couleurs'])):
+                st.markdown(f"<span class='color-label'>{nom}</span><div class='color-block' style='background:{couleur}'></div><span> → {emplacements_estimation[i]}</span>", unsafe_allow_html=True)
 
         # SEO
         with tabs[1]:
             st.markdown('<h3 class="internal-title">Positionnement sur les moteurs de recherche :</h3>', unsafe_allow_html=True)
             score_seo = score-3
             st.write(f"Score d'optimisation : {score_seo}%")
-
             col_seo1,col_seo2 = st.columns(2)
             with col_seo1:
                 st.markdown('<h4 class="internal-title">Mots-clés recommandés et leur usage :</h4>', unsafe_allow_html=True)
-                
                 mots_cles = {
                     "innovation digitale": "Ajouter dans le texte de présentation de la page d’accueil pour montrer votre expertise",
                     "optimisation web": "Insérer dans un H2 sur vos services ou solutions",
@@ -165,10 +185,8 @@ if st.button("Lancer l'analyse technique"):
                     "stratégie marketing": "Placer dans le contenu de la page services ou blog pour guider vos clients",
                     "analyse de performance": "Inclure dans les titres ou sections de résultats pour valoriser vos réussites"
                 }
-
                 for mot, conseil in mots_cles.items():
                     st.write(f"• **{mot}** → {conseil}")
-
             with col_seo2:
                 densite = 0.82
                 st.markdown('<h4 class="internal-title">Conseils d’intégration :</h4>', unsafe_allow_html=True)
@@ -188,10 +206,9 @@ if st.button("Lancer l'analyse technique"):
         with tabs[3]:
             st.markdown('<h3 class="internal-title">Design & Branding :</h3>', unsafe_allow_html=True)
             c_p1, c_p2, c_p3 = st.columns(3)
-            emplacements = ["Fond principal / sections principales", "Organisation des blocs / menus", "Boutons d'action importants"]
-            for i, (nom, couleur) in enumerate(zip(palette['noms'], palette['couleurs'])):
+            for i, (nom, couleur, usage) in enumerate(zip(palette['noms'], palette['couleurs'], palette['usage'])):
                 col = [c_p1, c_p2, c_p3][i]
-                col.markdown(f"<span class='color-label'>{nom}</span><div class='color-block' style='background:{couleur}'></div><span> → {emplacements[i]}</span>", unsafe_allow_html=True)
+                col.markdown(f"<span class='color-label'>{nom}</span><div class='color-block' style='background:{couleur}'></div><span> → {usage}</span>", unsafe_allow_html=True)
 
         # COMPARATIF
         with tabs[4]:
