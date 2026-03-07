@@ -25,9 +25,9 @@ h2, h3, h4, h5, h6, .internal-title {
     text-decoration: none;
 }
 
-/* Checkbox sidebar : texte blanc sur fond noir */
+/* Checkbox sidebar : texte blanc */
 [data-testid="stSidebar"] .stCheckbox label {
-    color: #ffffff !important;
+    color: #ffffff !important;  /* texte blanc */
     background-color: #000000 !important;
     padding: 4px 6px;
     border-radius: 4px;
