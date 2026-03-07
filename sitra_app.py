@@ -25,9 +25,11 @@ h2, h3, h4, h5, h6, .internal-title {
     text-decoration: none;
 }
 
-/* Checkbox sidebar : texte blanc */
-[data-testid="stSidebar"] .stCheckbox label {
-    color: #ffffff !important;
+/* Checkbox sidebar : texte blanc et alignement vertical */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
 /* Text input vert au focus */
@@ -77,15 +79,17 @@ with st.sidebar:
     st.header("Centre de contrôle")
     st.subheader("Options Premium")
     
-    # Colonne pour aligner checkbox et texte
-    col_cb, col_txt = st.columns([1,9])
-    with col_cb:
-        # Checkbox sans texte
-        premium_check = st.checkbox("", key="premium_check", label_visibility="collapsed")
-    with col_txt:
-        # Texte blanc à côté
-        st.markdown("<span style='color:white; font-weight:bold;'>🔓 Activer le mode comparatif</span>", unsafe_allow_html=True)
-
+    # Aligner checkbox et texte sur la même ligne avec flexbox
+    st.markdown("""
+    <div class="checkbox-container">
+        <input type="checkbox" id="premium_check" style="margin:0; transform: scale(1.2);" />
+        <label for="premium_check" style="color:white; font-weight:bold;">🔓 Activer le mode comparatif</label>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Pour récupérer la valeur de la checkbox via Streamlit, on duplique avec st.checkbox invisible
+    premium_check = st.checkbox("", key="premium_check_hidden", value=False, label_visibility="collapsed")
+    
     if premium_check:
         st.success("💳 Option Premium activée (Mode démo)")
 
