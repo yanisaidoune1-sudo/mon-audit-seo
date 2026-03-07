@@ -99,13 +99,13 @@ def analyser_couleurs_site(url):
 # INPUT
 col_in1, col_in2 = st.columns(2)
 with col_in1:
-    url1 = st.text_input("Domaine cible :", placeholder="exemple.com")
+    url1 = st.text_input("Domaine cible :", placeholder="exemple URL ou .com")
     if mode_comparaison:
         st.info("💡 Ce mode permet d'analyser votre site et de voir comment l'améliorer pour dépasser un concurrent.")
 with col_in2:
     url2 = ""
     if mode_comparaison:
-        url2 = st.text_input("Domaine concurrent :", placeholder="concurrent.com")
+        url2 = st.text_input("Domaine concurrent :", placeholder="exemple URL ou .com")
 
 # ANALYSE
 if st.button("Lancer l'analyse technique"):
