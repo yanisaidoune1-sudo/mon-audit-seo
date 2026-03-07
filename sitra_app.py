@@ -1,14 +1,15 @@
 import streamlit as st
 import time
 import random
+import pandas as pd
 
 # Configuration
 st.set_page_config(page_title="Sitra | Digital Intelligence", layout="wide")
 
-# CSS
+# Style CSS
 st.markdown("""
 <style>
-/* Surligner uniquement les titres internes et sections */
+/* Surligner uniquement les titres internes et sections, pas la sidebar ni titre principal */
 h2, h3, h4, h5, h6, .internal-title {
     text-decoration: underline;
 }
@@ -24,14 +25,10 @@ h2, h3, h4, h5, h6, .internal-title {
     text-decoration: none;
 }
 
-/* Checkbox sidebar : texte blanc et alignée */
+/* Checkbox sidebar : texte blanc et aligné verticalement */
 [data-testid="stSidebar"] .stCheckbox label {
-    color: #ffffff !important;  /* texte blanc */
+    color: #ffffff !important;
     font-weight: bold;
-    background-color: #000000 !important;
-    padding: 4px 6px;
-    border-radius: 4px;
-    vertical-align: middle;
 }
 
 /* Text input vert au focus */
@@ -47,12 +44,12 @@ input[type="text"]:focus {
 
 /* Fond principal pour combler espace vide */
 .main .block-container {
-    background-color: #f7f7f7;
+    background-color: #f7f7f7; /* gris très clair */
     padding: 20px;
     border-radius: 10px;
 }
 
-/* Blocs couleur */
+/* Blocs couleur pour Design & Branding */
 .color-block {
     width: 60px;
     height: 60px;
@@ -86,11 +83,25 @@ st.divider()
 with st.sidebar:
     st.header("Centre de contrôle")
     st.subheader("Options Premium")
+    
+    # Checkbox unique pour le mode comparatif
     mode_comparaison = st.checkbox("🔓 Activer le mode comparatif", key="premium_check")
     if mode_comparaison:
         st.success("💳 Option Premium activée (Mode démo)")
+
     st.divider()
     st.write("Moteur d'analyse : Sitra Engine v2.6.0")
+
+# Fonction palette
+def analyser_couleurs_site(url):
+    palettes = [
+        {"nom": "Premium Dark", "couleurs": ["#1D1D1F", "#F5F5F7", "#0071E3"], "noms": ["Noir Sidéral", "Gris Argent", "Bleu Royal"], "usage":["Fond principal / sections","Sections secondaires","Boutons et actions"]},
+        {"nom": "Innovation & Tech", "couleurs": ["#000000", "#8E8E93", "#2997FF"], "noms": ["Noir", "Gris Acier", "Bleu Électrique"], "usage":["Fond principal / sections","Sections secondaires","Boutons et actions"]},
+        {"nom": "Énergie Créative", "couleurs": ["#F4A261", "#264653", "#E76F51"], "noms": ["Sable", "Bleu Pétrole", "Terracotta"], "usage":["Fond principal / sections","Sections secondaires","Boutons et actions"]},
+        {"nom": "Corporate Trust", "couleurs": ["#003566", "#FFC300", "#001D3D"], "noms": ["Bleu Marine", "Or", "Bleu Nuit"], "usage":["Fond principal / sections","Sections secondaires","Boutons et actions"]}
+    ]
+    index = sum(ord(char) for char in url) % len(palettes) if url else 0
+    return palettes[index]
 
 # INPUT
 col_in1, col_in2 = st.columns(2)
@@ -104,21 +115,21 @@ with col_in2:
         url2 = st.text_input("Domaine concurrent :", placeholder="exemple URL ou .com")
 
 # ANALYSE
-if st.button("Lancer l'analyse technique") and url1:
+if st.button("Lancer l'analyse technique"):
     urls = [url1] if not (mode_comparaison and url2) else [url1, url2]
     for idx, url in enumerate(urls):
         if not url:
             continue
+
         st.subheader(f"Rapport d'analyse Sitra : {url}")
         with st.status(f"Analyse de {url}...", expanded=False):
             time.sleep(1)
 
-        # Simulations
+        palette = analyser_couleurs_site(url)
         score = random.randint(85,95)
         vitesse = round(random.uniform(0.6,0.9),2)
         boost_reel = round(random.uniform(12.4,28.9),1)
 
-        # Metrics
         c1,c2,c3,c4 = st.columns(4)
         c1.metric("Indice de performance",f"{score}/100")
         c2.metric("Temps de réponse",f"{vitesse}s")
@@ -134,62 +145,84 @@ if st.button("Lancer l'analyse technique") and url1:
             "Mode Challenge"
         ])
 
-        # Estimation
+        # ESTIMATION
         with tabs[0]:
             st.markdown('<h3 class="internal-title">Prévisions de trafic :</h3>', unsafe_allow_html=True)
-            st.info(f"Pour **{url}**, améliorer l'organisation visuelle pourrait augmenter les clics d\'environ **{boost_reel}%**.")
+            st.info(f"Pour **{url}**, améliorer l'organisation visuelle pourrait augmenter les clics d'environ **{boost_reel}%**.")
+            st.markdown('<h3 class="internal-title">Recommandation de couleurs :</h3>', unsafe_allow_html=True)
+            st.write(f"• **Couleur principale :** {palette['noms'][0]}")
+            st.write(f"• **Couleur secondaire :** {palette['noms'][1]}")
+            st.write(f"• **Couleur d'action :** {palette['noms'][2]}")
 
         # SEO
         with tabs[1]:
             st.markdown('<h3 class="internal-title">Stratégie SEO :</h3>', unsafe_allow_html=True)
-            mots = ["innovation", "performance", "UX", "marketing", "digital"]
-            st.markdown('<h4 class="internal-title">Mots-clés détectés :</h4>', unsafe_allow_html=True)
-            for m in mots:
-                st.write(f"• {m}")
+            score_seo = score-3
+            st.write(f"Score d'optimisation : {score_seo}%")
+            col_seo1,col_seo2 = st.columns(2)
+            with col_seo1:
+                st.markdown('<h4 class="internal-title">Mots-clés détectés :</h4>', unsafe_allow_html=True)
+                st.code(f"1. Expertise {url}\n2. Solution Digitale\n3. Performance")
+            with col_seo2:
+                densite = 0.82
+                st.markdown('<h4 class="internal-title">Couverture du champ lexical :</h4>', unsafe_allow_html=True)
+                st.progress(densite)
+                st.caption("82% du champ lexical est couvert.")
+                suggestions = ["innovation digitale","optimisation web","expérience utilisateur","stratégie marketing","analyse de performance"]
+                for mot in suggestions:
+                    st.write(f"• {mot}")
 
-        # Confort d'utilisation
+        # UX
         with tabs[2]:
             st.markdown('<h3 class="internal-title">Expérience Utilisateur :</h3>', unsafe_allow_html=True)
             st.write("Points détectés :")
-            st.write("• Boutons importants à rendre plus visibles")
-            st.write("• Titres à augmenter pour lisibilité")
-            st.write(f"• Temps de chargement : {vitesse}s")
+            st.write("• Certains boutons importants ne sont pas assez visibles.")
+            st.write("• Les titres pourraient être plus grands pour améliorer la lecture.")
+            st.write("• Le menu mobile pourrait être simplifié.")
+            st.info(f"💡 Temps de chargement : {vitesse}s")
 
-        # Design & Branding
+        # DESIGN
         with tabs[3]:
             st.markdown('<h3 class="internal-title">Design & Branding :</h3>', unsafe_allow_html=True)
-            palette = ["#0071E3","#F5F5F7","#1D1D1F"]
-            usages = ["Fond principal / sections","Sections secondaires","Boutons / Actions"]
             c_p1, c_p2, c_p3 = st.columns(3)
-            for col, couleur, usage in zip([c_p1,c_p2,c_p3], palette, usages):
-                col.markdown(f"<div class='color-block' style='background:{couleur}'></div><span class='color-usage'>→ {usage}</span>", unsafe_allow_html=True)
+            for i, (nom, couleur, usage) in enumerate(zip(palette['noms'], palette['couleurs'], palette['usage'])):
+                col = [c_p1, c_p2, c_p3][i]
+                col.markdown(f"<span class='color-label'>{nom}</span><div class='color-block' style='background:{couleur}'></div><span class='color-usage'>→ {usage}</span>", unsafe_allow_html=True)
 
-        # Comparatif Marché
+        # COMPARATIF
         with tabs[4]:
-            if mode_comparaison and url2:
+            if mode_comparaison:
                 st.markdown('<h3 class="internal-title">Comparatif Marché :</h3>', unsafe_allow_html=True)
+                st.info("""
+**💡 Légende des scores (0-100) :**  
+- 0-39 : Très mauvais  
+- 40-69 : Moyen  
+- 70-89 : Bon  
+- 90-100 : Excellent  
+
+Chaque barre représente un indice pour votre site : **Performance**, **UX**, **Vitesse**, **SEO**, **Design**
+                """)
                 metrics = {
                     "Performance": score,
                     "UX": random.randint(70,100),
                     "Vitesse": round((1-vitesse)*100,0),
-                    "SEO": score-3,
+                    "SEO": score_seo,
                     "Design": random.randint(75,95)
                 }
                 st.bar_chart(metrics)
-                st.info("💡 Légende des scores : 0-39 Très mauvais, 40-69 Moyen, 70-89 Bon, 90-100 Excellent")
                 st.info("💡 Pour améliorer votre site et dépasser le concurrent, travaillez sur ces indicateurs.")
             else:
                 st.warning("⚠️ Cette section est réservée aux membres Premium.")
 
-        # Mode Challenge
+        # MODE CHALLENGE
         with tabs[5]:
             st.markdown('<h3 class="internal-title">Mode Challenge</h3>', unsafe_allow_html=True)
             objectifs = [
-                "Changer couleur du bouton principal",
-                "Augmenter H2 à 28px",
-                "Réduire temps de chargement <0.8s",
-                "Ajouter 3 mots-clés SEO pertinents",
-                "Simplifier menu mobile"
+                "Changer la couleur du bouton principal pour attirer l'attention",
+                "Augmenter les titres H2 à 28px pour une meilleure lisibilité",
+                "Réduire le temps de chargement à <0.8s",
+                "Ajouter 3 mots-clés SEO pertinents sur la page d'accueil",
+                "Simplifier le menu mobile et rendre les boutons cliquables facilement"
             ]
             total = len(objectifs)
             score_challenge = 0
