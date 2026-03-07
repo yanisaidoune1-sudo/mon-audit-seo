@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 import random
+import pandas as pd
 
 # Configuration
 st.set_page_config(page_title="Sitra | Digital Intelligence", layout="wide")
@@ -185,21 +186,27 @@ if st.button("Lancer l'analyse technique"):
         with tabs[4]:
             if mode_comparaison and url2:
                 st.write(f"Comparatif entre {url1} et {url2} :")
-                st.line_chart([random.randint(50,100) for _ in range(10)])
+                # Générer les données pour les deux lignes
+                data = pd.DataFrame({
+                    f"{url1}": [random.randint(50,100) for _ in range(10)],
+                    f"{url2}": [random.randint(50,100) for _ in range(10)]
+                })
+                st.line_chart(data)
+                # Phrase explicative pour ton site
                 st.info("💡 Pour que votre site dépasse ce concurrent, améliorez votre vitesse, organisation visuelle, UX et SEO.")
+                st.caption(f"Ligne bleue : {url1} (votre site) | Ligne orange : {url2} (site concurrent)")
             else:
                 st.warning("⚠️ Cette section est réservée aux membres Premium.")
 
         # MODE CHALLENGE
         with tabs[5]:
             st.markdown('<h3 class="internal-title">Mode Challenge</h3>', unsafe_allow_html=True)
-            # Objectifs précis
             objectifs = [
-                "Changer la couleur du bouton principal",
-                "Améliorer les titres H2 à 28px",
-                "Optimiser la vitesse de chargement <0.8s",
-                "Ajouter 3 mots-clés SEO sur la page d'accueil",
-                "Simplifier le menu mobile"
+                "Changer la couleur du bouton principal pour attirer l'attention",
+                "Augmenter les titres H2 à 28px pour une meilleure lisibilité",
+                "Réduire le temps de chargement à <0.8s",
+                "Ajouter 3 mots-clés SEO pertinents sur la page d'accueil",
+                "Simplifier le menu mobile et rendre les boutons cliquables facilement"
             ]
             total = len(objectifs)
             score_challenge = 0
