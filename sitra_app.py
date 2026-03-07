@@ -18,14 +18,18 @@ h2, h3, h4, h5, h6, .internal-title {
     background-color: #000000;
     color: #ffffff;
 }
+
 /* Titres sidebar non soulignés */
 [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
     text-decoration: none;
 }
-/* Tous les labels et checkbox dans la sidebar en blanc */
-[data-testid="stSidebar"] label, 
-[data-testid="stSidebar"] .stMarkdown {
-    color: #ffffff;
+
+/* Checkbox sidebar : texte blanc sur fond noir */
+[data-testid="stSidebar"] .stCheckbox label {
+    color: #ffffff !important;
+    background-color: #000000 !important;
+    padding: 4px 6px;
+    border-radius: 4px;
 }
 
 /* Text input vert au focus */
@@ -72,10 +76,10 @@ st.divider()
 
 # SIDEBAR
 with st.sidebar:
-    st.header("Centre de contrôle")  # Non souligné grâce au CSS
-    st.subheader("Options Premium")  # Non souligné grâce au CSS
+    st.header("Centre de contrôle")
+    st.subheader("Options Premium")
 
-    mode_comparaison = st.checkbox("🔓 Activer le Comparatif Marché", key="premium_check")
+    mode_comparaison = st.checkbox("🔓 Activer le mode comparatif", key="premium_check")
 
     if mode_comparaison:
         st.success("💳 Option Premium activée (Mode démo)")
@@ -98,6 +102,8 @@ def analyser_couleurs_site(url):
 col_in1, col_in2 = st.columns(2)
 with col_in1:
     url1 = st.text_input("Domaine cible :", placeholder="exemple.com")
+    if mode_comparaison and url1:
+        st.info("Comparez votre site avec un concurrent pour voir comment améliorer vos performances.")
 with col_in2:
     url2 = ""
     if mode_comparaison:
@@ -213,7 +219,6 @@ if st.button("Lancer l'analyse technique"):
                 st.write("**Comparatif Marché :**")
                 st.write(f"Analyse comparative entre {url1} et {url2}.")
                 st.line_chart([random.randint(50,100) for _ in range(10)])
-                # Nouveau : suggestion amélioration
                 st.info("💡 Pour être plus performant que ce concurrent, nous recommandons d'améliorer l'organisation visuelle, la vitesse de chargement et la stratégie SEO.")
             else:
                 st.warning("⚠️ Cette section est réservée aux membres Premium.")
