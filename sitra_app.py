@@ -65,13 +65,6 @@ input[type="text"]:focus {
     margin-right: 15px;
     font-weight: bold;
 }
-.color-use {
-    display: inline-block;
-    vertical-align: middle;
-    font-size: 13px;
-    color: #555;
-    margin-left: 5px;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -96,10 +89,10 @@ with st.sidebar:
 # Fonction palette
 def analyser_couleurs_site(url):
     palettes = [
-        {"nom": "Premium Dark", "couleurs": ["#1D1D1F", "#F5F5F7", "#0071E3"], "noms": ["Noir Sidéral", "Gris Argent", "Bleu Royal"], "usage":["Fond principal","Sections","Boutons"]},
-        {"nom": "Innovation & Tech", "couleurs": ["#000000", "#8E8E93", "#2997FF"], "noms": ["Noir", "Gris Acier", "Bleu Électrique"], "usage":["Fond principal","Sections","Boutons"]},
-        {"nom": "Énergie Créative", "couleurs": ["#F4A261", "#264653", "#E76F51"], "noms": ["Sable", "Bleu Pétrole", "Terracotta"], "usage":["Fond principal","Sections","Boutons"]},
-        {"nom": "Corporate Trust", "couleurs": ["#003566", "#FFC300", "#001D3D"], "noms": ["Bleu Marine", "Or", "Bleu Nuit"], "usage":["Fond principal","Sections","Boutons"]}
+        {"nom": "Premium Dark", "couleurs": ["#1D1D1F", "#F5F5F7", "#0071E3"], "noms": ["Noir Sidéral", "Gris Argent", "Bleu Royal"]},
+        {"nom": "Innovation & Tech", "couleurs": ["#000000", "#8E8E93", "#2997FF"], "noms": ["Noir", "Gris Acier", "Bleu Électrique"]},
+        {"nom": "Énergie Créative", "couleurs": ["#F4A261", "#264653", "#E76F51"], "noms": ["Sable", "Bleu Pétrole", "Terracotta"]},
+        {"nom": "Corporate Trust", "couleurs": ["#003566", "#FFC300", "#001D3D"], "noms": ["Bleu Marine", "Or", "Bleu Nuit"]}
     ]
     index = sum(ord(char) for char in url) % len(palettes) if url else 0
     return palettes[index]
@@ -166,9 +159,10 @@ if st.button("Lancer l'analyse technique"):
                 st.code(f"1. Expertise {url}\n2. Solution Digitale\n3. Performance")
             with col_seo2:
                 densite = 0.82
-                st.markdown('<h4 class="internal-title">Couverture du champ lexical :</h4>', unsafe_allow_html=True)
+                # Changement ici : titre clair + phrase explicative
+                st.markdown('<h4 class="internal-title">Suggestions de mots-clés pour améliorer le SEO :</h4>', unsafe_allow_html=True)
+                st.write("Ces mots-clés vous aident à mieux positionner votre site sur les moteurs de recherche.")
                 st.progress(densite)
-                st.caption("82% du champ lexical est couvert.")
                 suggestions = ["innovation digitale","optimisation web","expérience utilisateur","stratégie marketing","analyse de performance"]
                 for mot in suggestions:
                     st.write(f"• {mot}")
@@ -186,9 +180,14 @@ if st.button("Lancer l'analyse technique"):
         with tabs[3]:
             st.markdown('<h3 class="internal-title">Design & Branding :</h3>', unsafe_allow_html=True)
             c_p1, c_p2, c_p3 = st.columns(3)
-            for i, (nom, couleur, usage) in enumerate(zip(palette['noms'], palette['couleurs'], palette['usage'])):
+            placements = [
+                "Fond ou sections principales",
+                "Organisation des blocs",
+                "Boutons d'action importants"
+            ]
+            for i, (nom, couleur) in enumerate(zip(palette['noms'], palette['couleurs'])):
                 col = [c_p1, c_p2, c_p3][i]
-                col.markdown(f"<span class='color-label'>{nom}</span><div class='color-block' style='background:{couleur}'></div><span class='color-use'>({usage})</span>", unsafe_allow_html=True)
+                col.markdown(f"<span class='color-label'>{nom} ({placements[i]})</span><div class='color-block' style='background:{couleur}'></div>", unsafe_allow_html=True)
 
         # COMPARATIF
         with tabs[4]:
