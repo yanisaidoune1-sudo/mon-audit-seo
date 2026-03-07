@@ -27,7 +27,7 @@ h2, h3, h4, h5, h6, .internal-title {
 
 /* Checkbox sidebar : texte blanc et aligné verticalement */
 [data-testid="stSidebar"] .stCheckbox label {
-    color: #ffffff !important;
+    color: #ffffff !important;  /* texte blanc */
     font-weight: bold;
 }
 
