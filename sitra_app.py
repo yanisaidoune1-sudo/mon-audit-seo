@@ -79,17 +79,20 @@ with st.sidebar:
     st.header("Centre de contrôle")
     st.subheader("Options Premium")
     
-    # Aligner checkbox et texte sur la même ligne avec flexbox
-    st.markdown("""
+    # Checkbox alignée avec le texte
+    checkbox_html = """
     <div class="checkbox-container">
         <input type="checkbox" id="premium_check" style="margin:0; transform: scale(1.2);" />
         <label for="premium_check" style="color:white; font-weight:bold;">🔓 Activer le mode comparatif</label>
     </div>
-    """, unsafe_allow_html=True)
-    
-    # Pour récupérer la valeur de la checkbox via Streamlit, on duplique avec st.checkbox invisible
-    premium_check = st.checkbox("", key="premium_check_hidden", value=False, label_visibility="collapsed")
-    
+    """
+    st.markdown(checkbox_html, unsafe_allow_html=True)
+
+    # Récupérer la valeur avec st.checkbox mais cacher le texte
+    if "premium_check" not in st.session_state:
+        st.session_state["premium_check"] = False
+    premium_check = st.checkbox("", key="premium_check_hidden", value=st.session_state["premium_check"], label_visibility="collapsed")
+
     if premium_check:
         st.success("💳 Option Premium activée (Mode démo)")
 
