@@ -25,16 +25,13 @@ h2, h3, h4, h5, h6, .internal-title {
     text-decoration: none;
 }
 
-/* Checkbox sidebar : texte blanc et aligné verticalement */
-.sidebar-checkbox-container {
+/* Checkbox sidebar : texte blanc */
+[data-testid="stSidebar"] .stCheckbox label {
+    color: #ffffff !important;  /* texte blanc */
+    font-weight: bold;
+    margin-left: 5px;
     display: flex;
     align-items: center;
-    margin-bottom: 10px;
-}
-.sidebar-checkbox-label {
-    color: #ffffff !important;
-    font-weight: bold;
-    margin-left: 8px;
 }
 
 /* Text input vert au focus */
@@ -84,16 +81,8 @@ with st.sidebar:
     st.header("Centre de contrôle")
     st.subheader("Options Premium")
     
-    # Phrase en blanc + checkbox alignée
-    st.markdown("""
-    <div class="sidebar-checkbox-container">
-        <input type="checkbox" id="mode_comparatif" name="mode_comparatif" />
-        <label class="sidebar-checkbox-label" for="mode_comparatif">🔓 Activer le mode comparatif</label>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # On synchronise avec Streamlit pour récupérer si l'utilisateur veut activer le mode
-    mode_comparaison = st.checkbox("", key="premium_check", value=False, label_visibility="collapsed")
+    # Checkbox unique pour le mode comparatif (texte blanc)
+    mode_comparaison = st.checkbox("🔓 Activer le mode comparatif", key="premium_check")
     
     if mode_comparaison:
         st.success("💳 Option Premium activée (Mode démo)")
