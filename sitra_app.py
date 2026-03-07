@@ -101,7 +101,7 @@ col_in1, col_in2 = st.columns(2)
 with col_in1:
     url1 = st.text_input("Domaine cible :", placeholder="exemple.com")
     if mode_comparaison:
-        st.info("💡 Ce mode permet de comparer votre site avec un concurrent pour identifier comment améliorer vos performances.")
+        st.info("💡 Ce mode permet d'analyser votre site et de voir comment l'améliorer pour dépasser un concurrent.")
 with col_in2:
     url2 = ""
     if mode_comparaison:
@@ -141,7 +141,7 @@ if st.button("Lancer l'analyse technique"):
         # ESTIMATION
         with tabs[0]:
             st.markdown('<h3 class="internal-title">Prévisions de trafic :</h3>', unsafe_allow_html=True)
-            st.info(f"Analyse Sitra : Pour **{url}**, améliorer l'organisation visuelle pourrait augmenter les clics d'environ **{boost_reel}%**.")
+            st.info(f"Pour **{url}**, améliorer l'organisation visuelle pourrait augmenter les clics d'environ **{boost_reel}%**.")
             st.markdown('<h3 class="internal-title">Recommandation de couleurs :</h3>', unsafe_allow_html=True)
             st.write(f"• **Couleur principale :** {palette['noms'][0]}")
             st.write(f"• **Couleur secondaire :** {palette['noms'][1]}")
@@ -184,17 +184,19 @@ if st.button("Lancer l'analyse technique"):
 
         # COMPARATIF
         with tabs[4]:
-            if mode_comparaison and url2:
-                st.write(f"Comparatif entre {url1} et {url2} :")
-                # Générer les données pour les deux lignes
-                data = pd.DataFrame({
-                    f"{url1}": [random.randint(50,100) for _ in range(10)],
-                    f"{url2}": [random.randint(50,100) for _ in range(10)]
-                })
-                st.line_chart(data)
-                # Phrase explicative pour ton site
-                st.info("💡 Pour que votre site dépasse ce concurrent, améliorez votre vitesse, organisation visuelle, UX et SEO.")
-                st.caption(f"Ligne bleue : {url1} (votre site) | Ligne orange : {url2} (site concurrent)")
+            if mode_comparaison:
+                st.markdown('<h3 class="internal-title">Comparatif Marché :</h3>', unsafe_allow_html=True)
+                # Graphique uniquement pour ton site
+                metrics = {
+                    "Performance": score,
+                    "UX": random.randint(70,100),
+                    "Vitesse": round((1-vitesse)*100,0),  # plus le temps est bas, mieux c'est
+                    "SEO": score_seo,
+                    "Design": random.randint(75,95)
+                }
+                st.bar_chart(metrics)
+                st.caption("Barres : indice 0-100 pour chaque critère de votre site : Performance, UX, Vitesse, SEO, Design")
+                st.info("💡 Pour améliorer votre site et dépasser le concurrent, travaillez sur ces indicateurs.")
             else:
                 st.warning("⚠️ Cette section est réservée aux membres Premium.")
 
