@@ -150,22 +150,30 @@ if st.button("Lancer l'analyse technique"):
 
         # SEO
         with tabs[1]:
-            st.markdown('<h3 class="internal-title">Stratégie SEO :</h3>', unsafe_allow_html=True)
+            st.markdown('<h3 class="internal-title">Positionnement sur les moteurs de recherche :</h3>', unsafe_allow_html=True)
             score_seo = score-3
             st.write(f"Score d'optimisation : {score_seo}%")
+
             col_seo1,col_seo2 = st.columns(2)
             with col_seo1:
-                st.markdown('<h4 class="internal-title">Mots-clés détectés :</h4>', unsafe_allow_html=True)
-                st.code(f"1. Expertise {url}\n2. Solution Digitale\n3. Performance")
+                st.markdown('<h4 class="internal-title">Mots-clés recommandés et leur usage :</h4>', unsafe_allow_html=True)
+                
+                mots_cles = {
+                    "innovation digitale": "Ajouter dans le texte de présentation de la page d’accueil pour montrer votre expertise",
+                    "optimisation web": "Insérer dans un H2 sur vos services ou solutions",
+                    "expérience utilisateur": "Mentionner dans une section dédiée à la UX pour rassurer vos visiteurs",
+                    "stratégie marketing": "Placer dans le contenu de la page services ou blog pour guider vos clients",
+                    "analyse de performance": "Inclure dans les titres ou sections de résultats pour valoriser vos réussites"
+                }
+
+                for mot, conseil in mots_cles.items():
+                    st.write(f"• **{mot}** → {conseil}")
+
             with col_seo2:
                 densite = 0.82
-                # Changement ici : titre clair + phrase explicative
-                st.markdown('<h4 class="internal-title">Suggestions de mots-clés pour améliorer le SEO :</h4>', unsafe_allow_html=True)
-                st.write("Ces mots-clés vous aident à mieux positionner votre site sur les moteurs de recherche.")
+                st.markdown('<h4 class="internal-title">Conseils d’intégration :</h4>', unsafe_allow_html=True)
                 st.progress(densite)
-                suggestions = ["innovation digitale","optimisation web","expérience utilisateur","stratégie marketing","analyse de performance"]
-                for mot in suggestions:
-                    st.write(f"• {mot}")
+                st.caption("Indique le pourcentage d'intégration optimal des mots-clés sur le site pour un bon référencement.")
 
         # UX
         with tabs[2]:
@@ -180,14 +188,10 @@ if st.button("Lancer l'analyse technique"):
         with tabs[3]:
             st.markdown('<h3 class="internal-title">Design & Branding :</h3>', unsafe_allow_html=True)
             c_p1, c_p2, c_p3 = st.columns(3)
-            placements = [
-                "Fond ou sections principales",
-                "Organisation des blocs",
-                "Boutons d'action importants"
-            ]
+            emplacements = ["Fond principal / sections principales", "Organisation des blocs / menus", "Boutons d'action importants"]
             for i, (nom, couleur) in enumerate(zip(palette['noms'], palette['couleurs'])):
                 col = [c_p1, c_p2, c_p3][i]
-                col.markdown(f"<span class='color-label'>{nom} ({placements[i]})</span><div class='color-block' style='background:{couleur}'></div>", unsafe_allow_html=True)
+                col.markdown(f"<span class='color-label'>{nom}</span><div class='color-block' style='background:{couleur}'></div><span> → {emplacements[i]}</span>", unsafe_allow_html=True)
 
         # COMPARATIF
         with tabs[4]:
