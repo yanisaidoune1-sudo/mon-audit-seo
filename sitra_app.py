@@ -102,8 +102,9 @@ def analyser_couleurs_site(url):
 col_in1, col_in2 = st.columns(2)
 with col_in1:
     url1 = st.text_input("Domaine cible :", placeholder="exemple.com")
-    if mode_comparaison and url1:
-        st.info("Comparez votre site avec un concurrent pour voir comment améliorer vos performances.")
+    # Phrase explicative du mode comparatif sous l'URL cible
+    if mode_comparaison:
+        st.info("💡 Ce mode permet de comparer votre site avec un concurrent pour identifier comment améliorer vos performances.")
 with col_in2:
     url2 = ""
     if mode_comparaison:
