@@ -1,34 +1,51 @@
 import streamlit as st
-import time
-import random
-import pandas as pd
-from streamlit_lottie import st_lottie
 import requests
+from streamlit_lottie import st_lottie
+import time
 
-# --- Fonctions Lottie ---
-def load_lottieurl(url: str):
+# ---------- INTRO SITRA ----------
+
+def load_lottieurl(url):
     r = requests.get(url)
     if r.status_code != 200:
         return None
     return r.json()
 
-# --- Animation d'intro ---
-lottie_robot = load_lottieurl("https://assets4.lottiefiles.com/packages/lf20_jcikwtux.json")
-intro_placeholder = st.empty()
+if "intro_done" not in st.session_state:
+    st.session_state.intro_done = False
 
-if lottie_robot:
-    st_lottie(lottie_robot, height=300)
-    phrases_intro = [
-        "Bienvenue sur Sitra ! Je vais analyser votre site et vous donner des recommandations.",
-        "Je vais vous montrer comment améliorer votre positionnement sur les moteurs de recherche.",
-        "Je vais aussi vous aider à optimiser l'expérience utilisateur et le design.",
-        "Vous pourrez comparer votre site et suivre un challenge pour progresser."
+lottie_robot = load_lottieurl(
+    "https://assets4.lottiefiles.com/packages/lf20_jcikwtux.json"
+)
+
+if not st.session_state.intro_done:
+
+    st.markdown("<h1 style='text-align:center;'>Bienvenue sur Sitra</h1>", unsafe_allow_html=True)
+
+    st_lottie(lottie_robot, height=500)
+
+    message = st.empty()
+
+    phrases = [
+        "Cette application analyse votre site web et vous donne des recommandations.",
+        "Elle vous aide à améliorer votre SEO et votre positionnement.",
+        "Elle optimise aussi l'expérience utilisateur et le design.",
+        "Et vous pourrez comparer votre site avec d'autres."
     ]
-    for phrase in phrases_intro:
-        intro_placeholder.markdown(f"**🤖 {phrase}**")
-        time.sleep(2.5)
+
+    for p in phrases:
+        message.markdown(f"<h3 style='text-align:center'>{p}</h3>", unsafe_allow_html=True)
+        time.sleep(4)
+
+    st.markdown("")
+
     if st.button("🚀 Commencer"):
-        intro_placeholder.empty()
+        st.session_state.intro_done = True
+        st.rerun()
+
+    st.stop()
+
+# ---------- FIN INTRO ----------
 
 # --- Configuration ---
 st.set_page_config(page_title="Sitra | Digital Intelligence", layout="wide")
