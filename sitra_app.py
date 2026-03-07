@@ -79,9 +79,14 @@ st.divider()
 with st.sidebar:
     st.header("Centre de contrôle")
     st.subheader("Options Premium")
-    mode_comparaison = st.checkbox("🔓 Activer le mode comparatif", key="premium_check")
+    
+    # Phrase "Activer le mode comparatif" en blanc
+    st.markdown("<span style='color:white;'>🔓 Activer le mode comparatif</span>", unsafe_allow_html=True)
+    mode_comparaison = st.checkbox("", key="premium_check")  # case à cocher juste à côté
+    
     if mode_comparaison:
         st.success("💳 Option Premium activée (Mode démo)")
+    
     st.divider()
     st.write("Moteur d'analyse : Sitra Engine v2.6.0")
 
@@ -187,7 +192,6 @@ if st.button("Lancer l'analyse technique"):
             if mode_comparaison:
                 st.markdown('<h3 class="internal-title">Comparatif Marché :</h3>', unsafe_allow_html=True)
                 
-                # Explication des scores
                 st.info("""
 **💡 Légende des scores (0-100) :**  
 - 0-39 : Très mauvais  
@@ -198,7 +202,6 @@ if st.button("Lancer l'analyse technique"):
 Chaque barre représente un indice pour votre site : **Performance**, **UX**, **Vitesse**, **SEO**, **Design**
                 """)
                 
-                # Graphique uniquement pour ton site
                 metrics = {
                     "Performance": score,
                     "UX": random.randint(70,100),
