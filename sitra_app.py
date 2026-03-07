@@ -27,7 +27,7 @@ h2, h3, h4, h5, h6, .internal-title {
 
 /* Checkbox sidebar : texte blanc et aligné verticalement */
 [data-testid="stSidebar"] .stCheckbox label {
-    color: #ffffff !important;  /* texte blanc */
+    color: #ffffff !important;
     font-weight: bold;
 }
 
@@ -62,14 +62,15 @@ input[type="text"]:focus {
 .color-label {
     display: inline-block;
     vertical-align: middle;
-    margin-right: 5px;
+    margin-right: 15px;
     font-weight: bold;
 }
-.color-usage {
+.color-use {
     display: inline-block;
     vertical-align: middle;
-    font-style: italic;
-    color: #333;
+    font-size: 13px;
+    color: #555;
+    margin-left: 5px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -95,10 +96,10 @@ with st.sidebar:
 # Fonction palette
 def analyser_couleurs_site(url):
     palettes = [
-        {"nom": "Premium Dark", "couleurs": ["#1D1D1F", "#F5F5F7", "#0071E3"], "noms": ["Noir Sidéral", "Gris Argent", "Bleu Royal"], "usage":["Texte principal","Fond de page","Boutons principaux"]},
-        {"nom": "Innovation & Tech", "couleurs": ["#000000", "#8E8E93", "#2997FF"], "noms": ["Noir", "Gris Acier", "Bleu Électrique"], "usage":["Texte","Background","Liens / boutons"]},
-        {"nom": "Énergie Créative", "couleurs": ["#F4A261", "#264653", "#E76F51"], "noms": ["Sable", "Bleu Pétrole", "Terracotta"], "usage":["Bandeaux / Headers","Sections importantes","Boutons d’action"]},
-        {"nom": "Corporate Trust", "couleurs": ["#003566", "#FFC300", "#001D3D"], "noms": ["Bleu Marine", "Or", "Bleu Nuit"], "usage":["Background","Éléments clés","Texte / Titres"]}
+        {"nom": "Premium Dark", "couleurs": ["#1D1D1F", "#F5F5F7", "#0071E3"], "noms": ["Noir Sidéral", "Gris Argent", "Bleu Royal"], "usage":["Fond principal","Sections","Boutons"]},
+        {"nom": "Innovation & Tech", "couleurs": ["#000000", "#8E8E93", "#2997FF"], "noms": ["Noir", "Gris Acier", "Bleu Électrique"], "usage":["Fond principal","Sections","Boutons"]},
+        {"nom": "Énergie Créative", "couleurs": ["#F4A261", "#264653", "#E76F51"], "noms": ["Sable", "Bleu Pétrole", "Terracotta"], "usage":["Fond principal","Sections","Boutons"]},
+        {"nom": "Corporate Trust", "couleurs": ["#003566", "#FFC300", "#001D3D"], "noms": ["Bleu Marine", "Or", "Bleu Nuit"], "usage":["Fond principal","Sections","Boutons"]}
     ]
     index = sum(ord(char) for char in url) % len(palettes) if url else 0
     return palettes[index]
@@ -150,8 +151,9 @@ if st.button("Lancer l'analyse technique"):
             st.markdown('<h3 class="internal-title">Prévisions de trafic :</h3>', unsafe_allow_html=True)
             st.info(f"Pour **{url}**, améliorer l'organisation visuelle pourrait augmenter les clics d'environ **{boost_reel}%**.")
             st.markdown('<h3 class="internal-title">Recommandation de couleurs :</h3>', unsafe_allow_html=True)
-            for nom, couleur, usage in zip(palette['noms'], palette['couleurs'], palette['usage']):
-                st.markdown(f"<span class='color-label'>{nom}</span><div class='color-block' style='background:{couleur}'></div><span class='color-usage'>({usage})</span>", unsafe_allow_html=True)
+            st.write(f"• **Couleur principale :** {palette['noms'][0]}")
+            st.write(f"• **Couleur secondaire :** {palette['noms'][1]}")
+            st.write(f"• **Couleur d'action :** {palette['noms'][2]}")
 
         # SEO
         with tabs[1]:
@@ -186,7 +188,7 @@ if st.button("Lancer l'analyse technique"):
             c_p1, c_p2, c_p3 = st.columns(3)
             for i, (nom, couleur, usage) in enumerate(zip(palette['noms'], palette['couleurs'], palette['usage'])):
                 col = [c_p1, c_p2, c_p3][i]
-                col.markdown(f"<span class='color-label'>{nom}</span><div class='color-block' style='background:{couleur}'></div><span class='color-usage'>({usage})</span>", unsafe_allow_html=True)
+                col.markdown(f"<span class='color-label'>{nom}</span><div class='color-block' style='background:{couleur}'></div><span class='color-use'>({usage})</span>", unsafe_allow_html=True)
 
         # COMPARATIF
         with tabs[4]:
