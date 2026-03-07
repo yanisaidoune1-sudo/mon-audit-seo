@@ -80,14 +80,17 @@ with st.sidebar:
     st.header("Centre de contrôle")
     st.subheader("Options Premium")
 
-    # Colonnes pour checkbox + texte blanc à côté
+    # Colonnes pour checkbox + texte blanc à côté, case relevée
     col_cb, col_txt = st.columns([1,9])
     with col_cb:
-        mode_comparaison = st.checkbox("", key="premium_check")
+        # Remonter la checkbox avec padding
+        st.markdown("<div style='padding-top:6px;'>" 
+                    + st.checkbox("", key="premium_check", label_visibility="collapsed")._repr_html_() 
+                    + "</div>", unsafe_allow_html=True)
     with col_txt:
         st.markdown("<span style='color:white;'>🔓 Activer le mode comparatif</span>", unsafe_allow_html=True)
 
-    if mode_comparaison:
+    if st.session_state.get("premium_check", False):
         st.success("💳 Option Premium activée (Mode démo)")
 
     st.divider()
@@ -108,16 +111,16 @@ def analyser_couleurs_site(url):
 col_in1, col_in2 = st.columns(2)
 with col_in1:
     url1 = st.text_input("Domaine cible :", placeholder="exemple URL ou .com")
-    if mode_comparaison:
+    if st.session_state.get("premium_check", False):
         st.info("💡 Ce mode permet d'analyser votre site et de voir comment l'améliorer pour dépasser un concurrent.")
 with col_in2:
     url2 = ""
-    if mode_comparaison:
+    if st.session_state.get("premium_check", False):
         url2 = st.text_input("Domaine concurrent :", placeholder="exemple URL ou .com")
 
 # ANALYSE
 if st.button("Lancer l'analyse technique"):
-    urls = [url1] if not (mode_comparaison and url2) else [url1, url2]
+    urls = [url1] if not (st.session_state.get("premium_check", False) and url2) else [url1, url2]
     for idx, url in enumerate(urls):
         if not url:
             continue
@@ -192,7 +195,7 @@ if st.button("Lancer l'analyse technique"):
 
         # COMPARATIF
         with tabs[4]:
-            if mode_comparaison:
+            if st.session_state.get("premium_check", False):
                 st.markdown('<h3 class="internal-title">Comparatif Marché :</h3>', unsafe_allow_html=True)
                 
                 st.info("""
