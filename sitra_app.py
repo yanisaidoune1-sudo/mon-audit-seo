@@ -16,16 +16,72 @@ st.set_page_config(page_title="Sitra | Digital Intelligence", layout="wide")
 # CSS
 st.markdown("""
 <style>
-h2, h3, h4, h5, h6, .internal-title {text-decoration: underline;}
-[data-testid="stSidebar"] {background-color: #000000; color: #ffffff;}
-[data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {text-decoration: none;}
-[data-testid="stSidebar"] .stCheckbox label {color: #ffffff !important; font-weight: bold;}
-input[type="text"] {border: 2px solid #ccc; border-radius: 5px; padding: 6px;}
-input[type="text"]:focus {border: 2px solid #28a745; outline: none;}
-.main .block-container {background-color: #f7f7f7; padding: 20px; border-radius: 10px;}
-.color-block {width: 60px; height: 60px; border-radius: 8px; border: 1px solid #000; display: inline-block; margin-right: 10px; vertical-align: middle;}
-.color-label {display: inline-block; vertical-align: middle; margin-right: 10px; font-weight: bold;}
-.color-usage {display: inline-block; vertical-align: middle; font-style: italic; color: #555;}
+/* Surligner uniquement les titres internes et sections, pas la sidebar ni titre principal */
+h2, h3, h4, h5, h6, .internal-title {
+    text-decoration: underline;
+}
+
+/* Sidebar noire avec texte blanc */
+[data-testid="stSidebar"] {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+/* Titres sidebar non soulignés */
+[data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+    text-decoration: none;
+}
+
+/* Checkbox sidebar : texte blanc et alignée */
+[data-testid="stSidebar"] .stCheckbox label {
+    color: #ffffff !important;  /* texte blanc */
+    font-weight: bold;
+    background-color: #000000 !important;
+    padding: 4px 6px;
+    border-radius: 4px;
+    vertical-align: middle;
+}
+
+/* Text input vert au focus */
+input[type="text"] {
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    padding: 6px;
+}
+input[type="text"]:focus {
+    border: 2px solid #28a745; /* vert */
+    outline: none;
+}
+
+/* Fond principal pour combler espace vide */
+.main .block-container {
+    background-color: #f7f7f7; /* gris très clair */
+    padding: 20px;
+    border-radius: 10px;
+}
+
+/* Blocs couleur pour Design & Branding */
+.color-block {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    border: 1px solid #000;
+    display: inline-block;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+.color-label {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
+    font-weight: bold;
+}
+.color-usage {
+    display: inline-block;
+    vertical-align: middle;
+    font-style: italic;
+    color: #555;
+}
 </style>
 """, unsafe_allow_html=True)
 
