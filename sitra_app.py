@@ -6,7 +6,6 @@ from streamlit_lottie import st_lottie
 from streamlit.components.v1 import html
 
 # ---------- INTRO SITRA ----------
-
 def load_lottieurl(url):
     r = requests.get(url)
     if r.status_code != 200:
@@ -21,30 +20,22 @@ lottie_robot = load_lottieurl(
 )
 
 if not st.session_state.intro_done:
-
     st.markdown("<h1 style='text-align:center;'>Bienvenue sur Sitra</h1>", unsafe_allow_html=True)
-
     st_lottie(lottie_robot, height=500)
-
     message = st.empty()
-
     phrases = [
         "Cette application analyse votre site web et vous donne des recommandations.",
         "Elle vous aide à améliorer votre SEO et votre positionnement.",
         "Elle optimise aussi l'expérience utilisateur et le design.",
         "Et vous pourrez comparer votre site avec d'autres."
     ]
-
     for p in phrases:
         message.markdown(f"<h3 style='text-align:center'>{p}</h3>", unsafe_allow_html=True)
         time.sleep(4)
-
     st.markdown("")
-
     if st.button("🚀 Commencer"):
         st.session_state.intro_done = True
         st.rerun()
-
     st.stop()
 
 # ---------- FIN INTRO ----------
@@ -55,62 +46,15 @@ st.set_page_config(page_title="Sitra | Digital Intelligence", layout="wide")
 # --- Style CSS ---
 st.markdown("""
 <style>
-/* Surligner uniquement les titres internes et sections, pas la sidebar ni titre principal */
-h2, h3, h4, h5, h6, .internal-title {
-    text-decoration: underline;
-}
-
-/* Sidebar noire avec texte blanc */
-[data-testid="stSidebar"] {
-    background-color: #000000;
-    color: #ffffff;
-}
-
-/* Titres sidebar non soulignés */
-[data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
-    text-decoration: none;
-}
-
-/* Checkbox sidebar : texte blanc et aligné verticalement */
-[data-testid="stSidebar"] .stCheckbox label {
-    color: #ffffff !important;
-    font-weight: bold;
-}
-
-/* Text input vert au focus */
-input[type="text"] {
-    border: 2px solid #ccc;
-    border-radius: 5px;
-    padding: 6px;
-}
-input[type="text"]:focus {
-    border: 2px solid #28a745; /* vert */
-    outline: none;
-}
-
-/* Fond principal pour combler espace vide */
-.main .block-container {
-    background-color: #f7f7f7; /* gris très clair */
-    padding: 20px;
-    border-radius: 10px;
-}
-
-/* Blocs couleur pour Design & Branding */
-.color-block {
-    width: 60px;
-    height: 60px;
-    border-radius: 8px;
-    border: 1px solid #000;
-    display: inline-block;
-    margin-right: 10px;
-    vertical-align: middle;
-}
-.color-label {
-    display: inline-block;
-    vertical-align: middle;
-    margin-right: 15px;
-    font-weight: bold;
-}
+h2, h3, h4, h5, h6, .internal-title { text-decoration: underline; }
+[data-testid="stSidebar"] { background-color: #000000; color: #ffffff; }
+[data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { text-decoration: none; }
+[data-testid="stSidebar"] .stCheckbox label { color: #ffffff !important; font-weight: bold; }
+input[type="text"] { border: 2px solid #ccc; border-radius: 5px; padding: 6px; }
+input[type="text"]:focus { border: 2px solid #28a745; outline: none; }
+.main .block-container { background-color: #f7f7f7; padding: 20px; border-radius: 10px; }
+.color-block { width: 60px; height: 60px; border-radius: 8px; border: 1px solid #000; display: inline-block; margin-right: 10px; vertical-align: middle; }
+.color-label { display: inline-block; vertical-align: middle; margin-right: 15px; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -212,9 +156,6 @@ if st.button("Lancer l'analyse technique"):
         palette = analyser_couleurs_site(url)
         boost_reel = random.randint(10, 40)
 
-        # --- Positionnement SEO ---
-        barre_positionnement(score)
-
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Indice de performance", f"{score}/100")
         c2.metric("Temps de réponse", f"{vitesse}s")
@@ -239,7 +180,7 @@ if st.button("Lancer l'analyse technique"):
             st.write(f"• **Couleur secondaire :** {palette['noms'][1]}")
             st.write(f"• **Couleur d'action :** {palette['noms'][2]}")
 
-        # --- SEO ---
+        # --- SEO & Marketing ---
         with tabs[1]:
             st.markdown('<h3 class="internal-title">Stratégie SEO :</h3>', unsafe_allow_html=True)
             score_seo = score - 3
@@ -252,9 +193,8 @@ if st.button("Lancer l'analyse technique"):
                     st.write(f"{i}. {phrase}")
                 st.caption("💡 Ces actions sont recommandées pour améliorer la structure et le contenu de votre site.")
             with col_seo2:
-                densite = 0.82
                 st.markdown('<h4 class="internal-title">Positionnement sur les moteurs de recherche :</h4>', unsafe_allow_html=True)
-                st.progress(densite)
+                barre_positionnement(score)
                 st.caption("💡 Cette métrique montre comment votre site est référencé sur Google et autres moteurs.")
 
         # --- UX ---
