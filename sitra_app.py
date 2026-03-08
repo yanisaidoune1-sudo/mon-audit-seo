@@ -178,11 +178,12 @@ if st.button("Lancer l'analyse technique"):
         st.subheader(f"Rapport d'analyse Sitra : {url}")
         with st.status(f"Analyse de {url}...", expanded=False):
             time.sleep(1)
+            
+st.subheader("Positionnement sur les moteurs de recherche")
 
-        palette = analyser_couleurs_site(url)
-        score = random.randint(85,95)
-        vitesse = round(random.uniform(0.6,0.9),2)
-        boost_reel = round(random.uniform(12.4,28.9),1)
+st.write(f"Score SEO : **{score}/100**")
+
+st.progress(score / 100)
 
         c1,c2,c3,c4 = st.columns(4)
         c1.metric("Indice de performance",f"{score}/100")
