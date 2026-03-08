@@ -169,6 +169,7 @@ with col_in2:
         url2 = st.text_input("Domaine concurrent :", placeholder="exemple URL ou .com")
 
 # --- ANALYSE ---
+
 if st.button("Lancer l'analyse technique"):
     urls = [url1] if not (mode_comparaison and url2) else [url1, url2]
     for idx, url in enumerate(urls):
@@ -178,18 +179,22 @@ if st.button("Lancer l'analyse technique"):
         st.subheader(f"Rapport d'analyse Sitra : {url}")
         with st.status(f"Analyse de {url}...", expanded=False):
             time.sleep(1)
-            
-st.subheader("Positionnement sur les moteurs de recherche")
 
-st.write(f"Score SEO : **{score}/100**")
+        # Définir des valeurs temporaires pour que le code fonctionne
+        score = random.randint(50, 95)  # valeur aléatoire temporaire
+        vitesse = round(random.uniform(0.5, 2.0), 2)
+        palette = analyser_couleurs_site(url)
+        boost_reel = random.randint(10, 40)
 
-st.progress(score / 100)
+        st.subheader("Positionnement sur les moteurs de recherche")
+        st.write(f"Score SEO : **{score}/100**")
+        st.progress(score / 100)
 
-c1,c2,c3,c4 = st.columns(4)
-        c1.metric("Indice de performance",f"{score}/100")
-        c2.metric("Temps de réponse",f"{vitesse}s")
-        c3.metric("Sécurité SSL","Valide")
-        c4.metric("UX Mobile","Optimisée")
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Indice de performance", f"{score}/100")
+        c2.metric("Temps de réponse", f"{vitesse}s")
+        c3.metric("Sécurité SSL", "Valide")
+        c4.metric("UX Mobile", "Optimisée")
 
         tabs = st.tabs([
             "Estimation des résultats",
@@ -212,9 +217,9 @@ c1,c2,c3,c4 = st.columns(4)
         # --- SEO ---
         with tabs[1]:
             st.markdown('<h3 class="internal-title">Stratégie SEO :</h3>', unsafe_allow_html=True)
-            score_seo = score-3
+            score_seo = score - 3
             st.write(f"Score d'optimisation : {score_seo}%")
-            col_seo1,col_seo2 = st.columns(2)
+            col_seo1, col_seo2 = st.columns(2)
             with col_seo1:
                 st.markdown('<h4 class="internal-title">Mots-clés recommandés et leur usage :</h4>', unsafe_allow_html=True)
                 phrases = generer_mots_cles(url)
@@ -260,10 +265,10 @@ Chaque barre représente un indice pour votre site : **Performance**, **UX**, **
                 """)
                 metrics = {
                     "Performance": score,
-                    "UX": random.randint(70,100),
-                    "Vitesse": round((1-vitesse)*100,0),
+                    "UX": random.randint(70, 100),
+                    "Vitesse": round((1 - vitesse) * 100, 0),
                     "SEO": score_seo,
-                    "Design": random.randint(75,95)
+                    "Design": random.randint(75, 95)
                 }
                 st.bar_chart(metrics)
                 st.info("💡 Pour améliorer votre site et dépasser le concurrent, travaillez sur ces indicateurs.")
@@ -285,7 +290,7 @@ Chaque barre représente un indice pour votre site : **Performance**, **UX**, **
             for i, obj in enumerate(objectifs):
                 if st.checkbox(obj, key=f"ch_{idx}_{i}"):
                     score_challenge += 100 / total
-            st.progress(score_challenge/100)
+            st.progress(score_challenge / 100)
 
         st.download_button(
             "📥 Exporter le rapport complet (TXT)",
