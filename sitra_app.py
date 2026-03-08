@@ -3,6 +3,7 @@ import requests
 import time
 import random
 from streamlit_lottie import st_lottie
+from streamlit.components.v1 import html
 
 # ---------- INTRO SITRA ----------
 
@@ -157,6 +158,32 @@ def generer_mots_cles(url):
     random.shuffle(base_mots)
     return base_mots[:5]
 
+# --- Barre de positionnement SEO colorée ---
+def barre_positionnement(score):
+    if score < 50:
+        couleur = "#f44336"  # rouge
+        texte = "Positionnement faible"
+        emoji = "🔴"
+    elif score < 80:
+        couleur = "#ff9800"  # orange
+        texte = "Positionnement moyen"
+        emoji = "🟠"
+    else:
+        couleur = "#28a745"  # vert
+        texte = "Bon positionnement"
+        emoji = "🟢"
+    
+    html(f"""
+    <div style="margin-bottom:10px;">
+        <strong>{emoji} {score}</strong><br>
+        Positionnement sur les moteurs de recherche : <strong>{score}/100</strong><br>
+        <span style="color:{couleur}; font-weight:bold;">{emoji} {texte}</span>
+        <div style="background:#e0e0e0; border-radius:5px; width:100%; height:25px; margin-top:5px;">
+            <div style="width:{score}%; background:{couleur}; height:25px; border-radius:5px;"></div>
+        </div>
+    </div>
+    """, height=80)
+
 # --- INPUT ---
 col_in1, col_in2 = st.columns(2)
 with col_in1:
@@ -169,7 +196,6 @@ with col_in2:
         url2 = st.text_input("Domaine concurrent :", placeholder="exemple URL ou .com")
 
 # --- ANALYSE ---
-
 if st.button("Lancer l'analyse technique"):
     urls = [url1] if not (mode_comparaison and url2) else [url1, url2]
     for idx, url in enumerate(urls):
@@ -180,15 +206,14 @@ if st.button("Lancer l'analyse technique"):
         with st.status(f"Analyse de {url}...", expanded=False):
             time.sleep(1)
 
-        # Définir des valeurs temporaires pour que le code fonctionne
-        score = random.randint(50, 95)  # valeur aléatoire temporaire
+        # Valeurs temporaires pour fonctionnement
+        score = random.randint(50, 95)
         vitesse = round(random.uniform(0.5, 2.0), 2)
         palette = analyser_couleurs_site(url)
         boost_reel = random.randint(10, 40)
 
-        st.subheader("Positionnement sur les moteurs de recherche")
-        st.write(f"Score SEO : **{score}/100**")
-        st.progress(score / 100)
+        # --- Positionnement SEO ---
+        barre_positionnement(score)
 
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Indice de performance", f"{score}/100")
