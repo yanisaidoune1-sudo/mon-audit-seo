@@ -16,7 +16,7 @@ if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
 lottie_robot = load_lottieurl(
-    "https://assets4.lottiefiles.com/packages/lf20_jcikwtux.json"
+    "https://assets8.lottiefiles.com/packages/lf20_4khlpyr3.json"
 )
 
 if not st.session_state.intro_done:
