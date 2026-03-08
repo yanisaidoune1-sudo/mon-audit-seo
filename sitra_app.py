@@ -7,21 +7,27 @@ from streamlit.components.v1 import html
 
 # ---------- INTRO SITRA ----------
 def load_lottieurl(url):
-    r = requests.get(url)
-    if r.status_code != 200:
+    try:
+        r = requests.get(url)
+        if r.status_code != 200:
+            return None
+        return r.json()
+    except:
         return None
-    return r.json()
 
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
-lottie_robot = load_lottieurl(
-    "https://assets8.lottiefiles.com/packages/lf20_4khlpyr3.json"
-)
+# --- Animation futuriste / tech / IA ---
+lottie_robot = load_lottieurl("https://assets8.lottiefiles.com/packages/lf20_4khlpyr3.json")
 
 if not st.session_state.intro_done:
     st.markdown("<h1 style='text-align:center;'>Bienvenue sur Sitra</h1>", unsafe_allow_html=True)
-    st_lottie(lottie_robot, height=500)
+    if lottie_robot:
+        st_lottie(lottie_robot, height=500)
+    else:
+        st.warning("⚠️ L'animation Lottie n'a pas pu être chargée. Vérifie l'URL.")
+    
     message = st.empty()
     phrases = [
         "Cette application analyse votre site web et vous donne des recommandations.",
