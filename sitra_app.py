@@ -185,7 +185,7 @@ st.write(f"Score SEO : **{score}/100**")
 
 st.progress(score / 100)
 
-        c1,c2,c3,c4 = st.columns(4)
+c1,c2,c3,c4 = st.columns(4)
         c1.metric("Indice de performance",f"{score}/100")
         c2.metric("Temps de réponse",f"{vitesse}s")
         c3.metric("Sécurité SSL","Valide")
