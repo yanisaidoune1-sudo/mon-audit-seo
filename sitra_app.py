@@ -106,7 +106,7 @@ def build_export_report(result):
 
 def render_result(result, idx=0):
     if result.get("error") and not result.get("global_score"):
-        st.error(f"Erreur — {result['url']} : {result['error']}")
+        st.warning("Impossible d'analyser ce site. Certains grands sites comme Amazon ou Decathlon bloquent volontairement les outils d'analyse. Sitra est concu pour les sites de PME, artisans, restaurants et portfolios.")
         return
 
     label_txt, _, label_color = get_score_label(result["global_score"])
@@ -303,13 +303,12 @@ if mode_comparaison:
 else:
     url1 = st.text_input("Votre site :", placeholder="ex : monsite.fr ou https://monsite.fr", key="url1")
     url2 = ""
-    
-col_btn1, col_btn2, col_btn3
+
+col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
 with col_btn2:
     launch = st.button("Lancer l'analyse", use_container_width=True)
 
 
-# Analyse
 # Analyse
 if launch:
     urls_to_analyze = [u for u in [url1, url2] if u and u.strip()]
