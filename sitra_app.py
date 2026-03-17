@@ -303,8 +303,8 @@ if mode_comparaison:
 else:
     url1 = st.text_input("Votre site :", placeholder="ex : monsite.fr ou https://monsite.fr", key="url1")
     url2 = ""
-
-col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
+    
+st.info("Sitra est concu pour analyser les sites de petites et moyennes entreprises, artisans, restaurants, portfolios et associations. Les grands sites comme Amazon ou Decathlon bloquent volontairement les outils d'analyse automatiques.")
 with col_btn2:
     launch = st.button("Lancer l'analyse", use_container_width=True)
 
