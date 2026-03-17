@@ -1,6 +1,5 @@
 """
 Sitra - Moteur d'analyse réel de sites web
-Remplace tous les random() par de vraies vérifications
 """
 
 import requests
@@ -11,7 +10,13 @@ import re
 
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; SitraBot/1.0; site analysis)"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Cache-Control": "max-age=0",
 }
 
 TIMEOUT = 10
@@ -37,7 +42,9 @@ def fetch_site(url: str) -> dict:
     }
     try:
         start = time.time()
-        r = requests.get(url, headers=HEADERS, timeout=TIMEOUT, allow_redirects=True)
+        session = requests.Session()
+        session.headers.update(HEADERS)
+        r = session.get(url, timeout=TIMEOUT, allow_redirects=True)
         result["response_time"] = round(time.time() - start, 2)
         result["status_code"] = r.status_code
         result["final_url"] = r.url
@@ -45,14 +52,14 @@ def fetch_site(url: str) -> dict:
         if r.status_code == 200:
             result["html"] = r.text
         else:
-            result["error"] = f"Le site a répondu avec le code HTTP {r.status_code}"
+            result["error"] = f"Le site a repondu avec le code HTTP {r.status_code}"
     except requests.exceptions.SSLError:
-        result["error"] = "Erreur SSL : certificat invalide ou expiré"
+        result["error"] = "Erreur SSL : certificat invalide ou expire"
         result["is_https"] = False
     except requests.exceptions.ConnectionError:
-        result["error"] = "Impossible de contacter le site (DNS ou connexion refusée)"
+        result["error"] = "Impossible de contacter le site (DNS ou connexion refusee)"
     except requests.exceptions.Timeout:
-        result["error"] = f"Le site n'a pas répondu en moins de {TIMEOUT}s"
+        result["error"] = f"Le site n'a pas repondu en moins de {TIMEOUT}s"
     except Exception as e:
         result["error"] = str(e)
     return result
@@ -65,61 +72,61 @@ def analyze_seo(soup: BeautifulSoup, url: str) -> dict:
     title_tag = soup.find("title")
     title_text = title_tag.get_text(strip=True) if title_tag else ""
     if not title_text:
-        issues.append("❌ Pas de balise <title> — essentiel pour le référencement Google")
+        issues.append("Pas de balise title — essentiel pour le referencement Google")
         score -= 20
     elif len(title_text) < 10:
-        issues.append(f"⚠️ Titre trop court ({len(title_text)} caractères) — vise 50-60 caractères")
+        issues.append(f"Titre trop court ({len(title_text)} caracteres) — vise 50-60 caracteres")
         score -= 10
     elif len(title_text) > 70:
-        issues.append(f"⚠️ Titre trop long ({len(title_text)} caractères) — Google le tronque après 60")
+        issues.append(f"Titre trop long ({len(title_text)} caracteres) — Google le tronque apres 60")
         score -= 5
 
     meta_desc = soup.find("meta", attrs={"name": "description"})
     meta_content = meta_desc.get("content", "").strip() if meta_desc else ""
     if not meta_content:
-        issues.append("❌ Pas de meta description — impacte fortement le taux de clic Google")
+        issues.append("Pas de meta description — impacte fortement le taux de clic Google")
         score -= 15
     elif len(meta_content) < 50:
-        issues.append(f"⚠️ Meta description trop courte ({len(meta_content)} chars) — vise 120-160 caractères")
+        issues.append(f"Meta description trop courte ({len(meta_content)} chars) — vise 120-160 caracteres")
         score -= 8
     elif len(meta_content) > 170:
-        issues.append(f"⚠️ Meta description trop longue ({len(meta_content)} chars) — Google la tronque")
+        issues.append(f"Meta description trop longue ({len(meta_content)} chars) — Google la tronque")
         score -= 3
 
     h1_tags = soup.find_all("h1")
     if not h1_tags:
-        issues.append("❌ Pas de balise H1 — Google utilise le H1 pour comprendre le sujet principal")
+        issues.append("Pas de balise H1 — Google utilise le H1 pour comprendre le sujet principal")
         score -= 15
     elif len(h1_tags) > 1:
-        issues.append(f"⚠️ {len(h1_tags)} balises H1 détectées — il ne doit y en avoir qu'une seule")
+        issues.append(f"{len(h1_tags)} balises H1 detectees — il ne doit y en avoir qu'une seule")
         score -= 5
 
     h2_tags = soup.find_all("h2")
     if not h2_tags:
-        issues.append("⚠️ Aucun H2 — structure le contenu avec des sous-titres pour le SEO")
+        issues.append("Aucun H2 — structure le contenu avec des sous-titres pour le SEO")
         score -= 5
 
     images = soup.find_all("img")
     images_no_alt = [img for img in images if not img.get("alt", "").strip()]
     if images_no_alt:
         pct = int(len(images_no_alt) / max(len(images), 1) * 100)
-        issues.append(f"⚠️ {len(images_no_alt)}/{len(images)} images sans attribut alt ({pct}%) — Google ne peut pas les indexer")
+        issues.append(f"{len(images_no_alt)}/{len(images)} images sans attribut alt ({pct}%) — Google ne peut pas les indexer")
         score -= min(10, len(images_no_alt) * 2)
 
     canonical = soup.find("link", rel="canonical")
     if not canonical:
-        issues.append("⚠️ Pas de balise canonical — peut causer du contenu dupliqué")
+        issues.append("Pas de balise canonical — peut causer du contenu duplique")
         score -= 3
 
     viewport = soup.find("meta", attrs={"name": "viewport"})
     if not viewport:
-        issues.append("❌ Pas de meta viewport — le site ne sera pas responsive sur mobile")
+        issues.append("Pas de meta viewport — le site ne sera pas responsive sur mobile")
         score -= 10
 
     html_tag = soup.find("html")
     lang = html_tag.get("lang", "") if html_tag else ""
     if not lang:
-        issues.append("⚠️ Pas d'attribut lang sur <html> — Google ne sait pas quelle langue cibler")
+        issues.append("Pas d'attribut lang sur la balise html — Google ne sait pas quelle langue cibler")
         score -= 3
 
     score = max(0, min(100, score))
@@ -145,28 +152,28 @@ def analyze_ux(soup: BeautifulSoup, url: str) -> dict:
     nav_tags = soup.find_all(["nav", "header"])
     has_nav = len(nav_tags) > 0
     if not has_nav:
-        issues.append("⚠️ Pas de balise <nav> ou <header> détectée — structure de navigation manquante")
+        issues.append("Pas de balise nav ou header — structure de navigation manquante")
         score -= 8
 
     nav_links = []
     for nav in nav_tags:
         nav_links.extend(nav.find_all("a"))
     if len(nav_links) == 0:
-        issues.append("⚠️ Aucun lien dans la navigation principale")
+        issues.append("Aucun lien dans la navigation principale")
         score -= 5
     elif len(nav_links) > 10:
-        issues.append(f"⚠️ Navigation surchargée ({len(nav_links)} liens) — simplifie à 5-7 éléments max")
+        issues.append(f"Navigation surchargee ({len(nav_links)} liens) — simplifie a 5-7 elements max")
         score -= 5
 
     buttons = soup.find_all("button") + soup.find_all("a", class_=re.compile(r"btn|button|cta", re.I))
     if not buttons:
-        issues.append("❌ Aucun bouton d'action (CTA) détecté — comment les visiteurs passent à l'action ?")
+        issues.append("Aucun bouton d'action CTA detecte — comment les visiteurs passent a l'action ?")
         score -= 15
 
     page_text = soup.get_text().lower()
-    has_contact = any(word in page_text for word in ["contact", "email", "e-mail", "@", "téléphone", "telephone", "whatsapp"])
+    has_contact = any(word in page_text for word in ["contact", "email", "e-mail", "@", "telephone", "whatsapp"])
     if not has_contact:
-        issues.append("❌ Aucune information de contact visible — les visiteurs ne peuvent pas vous joindre")
+        issues.append("Aucune information de contact visible — les visiteurs ne peuvent pas vous joindre")
         score -= 12
 
     forms = soup.find_all("form")
@@ -177,24 +184,24 @@ def analyze_ux(soup: BeautifulSoup, url: str) -> dict:
         if len(inputs) > len(labels):
             forms_no_label += 1
     if forms_no_label > 0:
-        issues.append(f"⚠️ {forms_no_label} formulaire(s) avec des champs sans label — problème d'accessibilité")
+        issues.append(f"{forms_no_label} formulaire(s) avec des champs sans label — probleme d'accessibilite")
         score -= 5
 
     footer = soup.find("footer")
     has_footer = footer is not None
     if not has_footer:
-        issues.append("⚠️ Pas de pied de page — les mentions légales et contacts doivent y figurer")
+        issues.append("Pas de pied de page — les mentions legales et contacts doivent y figurer")
         score -= 8
     else:
         footer_text = footer.get_text().lower()
-        if not any(word in footer_text for word in ["mentions légales", "mention", "cgv", "politique", "privacy", "legal"]):
-            issues.append("⚠️ Mentions légales non détectées — obligatoires en France (RGPD)")
+        if not any(word in footer_text for word in ["mentions legales", "mention", "cgv", "politique", "privacy", "legal"]):
+            issues.append("Mentions legales non detectees — obligatoires en France (RGPD)")
             score -= 8
 
     paragraphs = soup.find_all("p")
     long_paragraphs = [p for p in paragraphs if len(p.get_text()) > 600]
     if long_paragraphs:
-        issues.append(f"⚠️ {len(long_paragraphs)} paragraphe(s) très long(s) — divise-les pour faciliter la lecture")
+        issues.append(f"{len(long_paragraphs)} paragraphe(s) tres long(s) — divise-les pour faciliter la lecture")
         score -= 5
 
     score = max(0, min(100, score))
@@ -220,27 +227,10 @@ def analyze_content(soup: BeautifulSoup) -> dict:
     word_count = len(words)
 
     if word_count < 100:
-        issues.append(f"⚠️ Contenu très court ({word_count} mots) — Google préfère les pages avec 300+ mots")
+        issues.append(f"Contenu tres court ({word_count} mots) — Google prefere les pages avec 300+ mots")
         score -= 15
     elif word_count < 300:
-        issues.append(f"⚠️ Contenu assez court ({word_count} mots) — vise au moins 400-600 mots sur la page d'accueil")
-        score -= 8
-
-    common_mistakes_fr = [
-        (r'\bsa\b(?=\s+(?:va|fait|marche|passe))', "confusion sa/ça"),
-        (r'\bdon[ck]\b', "donk → donc"),
-        (r'\bpourquoi\s+que\b', "pourquoi que → pourquoi"),
-        (r'\bà\s+cause\s+que\b', "à cause que → parce que"),
-    ]
-
-    mistakes_found = []
-    text_lower = text.lower()
-    for pattern, desc in common_mistakes_fr:
-        if re.search(pattern, text_lower):
-            mistakes_found.append(desc)
-
-    if mistakes_found:
-        issues.append(f"⚠️ Erreurs de langue potentielles : {', '.join(mistakes_found)}")
+        issues.append(f"Contenu assez court ({word_count} mots) — vise au moins 400-600 mots sur la page d'accueil")
         score -= 8
 
     if word_count > 0:
@@ -249,12 +239,12 @@ def analyze_content(soup: BeautifulSoup) -> dict:
         most_common = word_freq.most_common(3)
         overused = [(w, c) for w, c in most_common if c / word_count > 0.05]
         if overused:
-            issues.append(f"⚠️ Mots très répétés : {', '.join([f'{w} ({c}x)' for w,c in overused])}")
+            issues.append(f"Mots tres repetes : {', '.join([f'{w} ({c}x)' for w,c in overused])} — varie le vocabulaire")
             score -= 5
 
     caps_words = [w for w in words if w.isupper() and len(w) > 3]
     if len(caps_words) > 5:
-        issues.append(f"⚠️ {len(caps_words)} mots en majuscules — évite de crier sur tes visiteurs")
+        issues.append(f"{len(caps_words)} mots en majuscules — evite de crier sur tes visiteurs")
         score -= 5
 
     score = max(0, min(100, score))
@@ -271,18 +261,18 @@ def analyze_design(soup: BeautifulSoup, url: str) -> dict:
 
     favicon = soup.find("link", rel=lambda r: r and "icon" in r)
     if not favicon:
-        issues.append("⚠️ Pas de favicon — renforce l'identité de la marque")
+        issues.append("Pas de favicon — renforce l'identite de la marque")
         score -= 5
 
     inline_styles = soup.find_all(style=True)
     if len(inline_styles) > 30:
-        issues.append(f"⚠️ {len(inline_styles)} styles inline — utilise un fichier CSS dédié")
+        issues.append(f"{len(inline_styles)} styles inline — utilise un fichier CSS dedie")
         score -= 5
 
     images = soup.find_all("img")
     images_no_size = [img for img in images if not (img.get("width") or img.get("height"))]
     if images_no_size and len(images_no_size) > len(images) * 0.5:
-        issues.append(f"⚠️ {len(images_no_size)} images sans dimensions — peut causer des sauts de mise en page")
+        issues.append(f"{len(images_no_size)} images sans dimensions — peut causer des sauts de mise en page")
         score -= 5
 
     google_fonts = soup.find_all("link", href=re.compile(r"fonts\.google|fonts\.gstatic"))
@@ -291,10 +281,10 @@ def analyze_design(soup: BeautifulSoup, url: str) -> dict:
     og_title = soup.find("meta", property="og:title")
     og_image = soup.find("meta", property="og:image")
     if not og_title:
-        issues.append("⚠️ Pas de og:title — partage sur réseaux sociaux peu attrayant")
+        issues.append("Pas de balise og:title — le partage sur reseaux sociaux sera peu attrayant")
         score -= 8
     if not og_image:
-        issues.append("⚠️ Pas de og:image — aucune image lors du partage Facebook/LinkedIn")
+        issues.append("Pas de og:image — aucune image affichee lors du partage sur Facebook/LinkedIn")
         score -= 8
 
     color_candidates = []
@@ -318,24 +308,24 @@ def analyze_performance(response_time: float, html: str, is_https: bool) -> dict
     score = 100
 
     if not is_https:
-        issues.append("❌ Le site n'utilise pas HTTPS — Google pénalise les sites non sécurisés")
+        issues.append("Le site n'utilise pas HTTPS — Google penalise les sites non securises")
         score -= 25
 
     if response_time is None:
         score -= 10
     elif response_time > 3:
-        issues.append(f"❌ Temps de réponse très lent : {response_time}s — les visiteurs partent après 3s")
+        issues.append(f"Temps de reponse tres lent : {response_time}s — les visiteurs partent apres 3s")
         score -= 20
     elif response_time > 1.5:
-        issues.append(f"⚠️ Temps de réponse moyen : {response_time}s — vise moins de 1s")
+        issues.append(f"Temps de reponse moyen : {response_time}s — vise moins de 1s")
         score -= 10
 
     html_size_kb = len(html.encode("utf-8")) / 1024 if html else 0
     if html_size_kb > 500:
-        issues.append(f"⚠️ Page HTML lourde : {html_size_kb:.0f}KB")
+        issues.append(f"Page HTML lourde : {html_size_kb:.0f}KB — optimise le code")
         score -= 8
     elif html_size_kb > 200:
-        issues.append(f"⚠️ Page HTML assez lourde : {html_size_kb:.0f}KB")
+        issues.append(f"Page HTML assez lourde : {html_size_kb:.0f}KB")
         score -= 4
 
     if html:
@@ -345,7 +335,7 @@ def analyze_performance(response_time: float, html: str, is_https: bool) -> dict
         if head:
             scripts_in_head = head.find_all("script", src=True)
             if len(scripts_in_head) > 5:
-                issues.append(f"⚠️ {len(scripts_in_head)} scripts dans le <head> — ralentissent le chargement")
+                issues.append(f"{len(scripts_in_head)} scripts dans le head — peuvent ralentir le chargement")
                 score -= 5
 
     score = max(0, min(100, score))
@@ -416,10 +406,10 @@ def full_analysis(url: str) -> dict:
 
 def get_score_label(score: int) -> tuple:
     if score >= 90:
-        return "Excellent", "🟢", "#28a745"
+        return "Excellent", "vert", "#28a745"
     elif score >= 75:
-        return "Bon", "🟡", "#ffc107"
+        return "Bon", "jaune", "#ffc107"
     elif score >= 55:
-        return "À améliorer", "🟠", "#fd7e14"
+        return "A ameliorer", "orange", "#fd7e14"
     else:
-        return "Critique", "🔴", "#dc3545"
+        return "Critique", "rouge", "#dc3545"
