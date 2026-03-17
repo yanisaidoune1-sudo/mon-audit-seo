@@ -343,7 +343,11 @@ st.markdown("""
 
 
 # ── INPUT ─────────────────────────────────────────────────────────────────────
-col_in1, col_in2 = st.columns(2 if mode_comparaison else [1])
+if mode_comparaison:
+    col_in1, col_in2 = st.columns(2)
+else:
+    col_in1 = st.container()
+    col_in2 = st.container()
 
 with col_in1:
     url1 = st.text_input(
