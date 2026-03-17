@@ -310,9 +310,9 @@ with col_btn2:
 
 
 # Analyse
+# Analyse
 if launch:
     urls_to_analyze = [u for u in [url1, url2] if u and u.strip()]
-
     if not urls_to_analyze:
         st.warning("Merci d'entrer une URL valide.")
     else:
@@ -321,17 +321,22 @@ if launch:
             with st.spinner(f"Analyse de {url} en cours..."):
                 result = full_analysis(url)
             results_list.append(result)
+        st.session_state["results"] = results_list
+        st.session_state["mode_comp"] = mode_comparaison
 
-        if mode_comparaison and len(results_list) == 2:
-            st.divider()
-            st.markdown("## Comparatif")
-            col_r1, col_r2 = st.columns(2)
-            with col_r1:
-                render_result(results_list[0], idx=0)
-            with col_r2:
-                render_result(results_list[1], idx=1)
-        else:
+if "results" in st.session_state:
+    results_list = st.session_state["results"]
+    mode_comp = st.session_state["mode_comp"]
+    if mode_comp and len(results_list) == 2:
+        st.divider()
+        st.markdown("## Comparatif")
+        col_r1, col_r2 = st.columns(2)
+        with col_r1:
             render_result(results_list[0], idx=0)
+        with col_r2:
+            render_result(results_list[1], idx=1)
+    else:
+        render_result(results_list[0], idx=0)
 
 if not launch:
     st.markdown("""
