@@ -103,9 +103,10 @@ def build_export_report(result):
     lines.append("Rapport genere par Sitra")
     return "\n".join(lines)
 
+
 def render_result(result, idx=0):
     if result.get("error") and not result.get("global_score"):
-        st.warning(f"Impossible d'analyser ce site. Certains grands sites comme Amazon ou Decathlon bloquent volontairement les outils d'analyse. Sitra est concu pour les sites de PME, artisans, restaurants et portfolios.")
+        st.error(f"Erreur — {result['url']} : {result['error']}")
         return
 
     label_txt, _, label_color = get_score_label(result["global_score"])
