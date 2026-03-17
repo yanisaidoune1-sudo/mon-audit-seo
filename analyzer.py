@@ -1,654 +1,425 @@
-import streamlit as st
+"""
+Sitra - Moteur d'analyse réel de sites web
+Remplace tous les random() par de vraies vérifications
+"""
+
+import requests
 import time
-import json
-from analyzer import full_analysis, get_score_label, normalize_url
-
-# ── CONFIGURATION ────────────────────────────────────────────────────────────
-st.set_page_config(
-    page_title="Sitra | Analyseur de Sites Web",
-    page_icon="🔍",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# ── CSS ───────────────────────────────────────────────────────────────────────
-st.markdown("""
-<style>
-/* ── Fonts & Base ── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-html, body, [class*="css"] {
-    font-family: 'Inter', sans-serif;
-}
-
-/* ── Fond principal ── */
-.main .block-container {
-    padding-top: 2rem;
-    padding-bottom: 4rem;
-    max-width: 1200px;
-}
-
-/* ── Sidebar ── */
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%);
-    border-right: 1px solid #2a2a3e;
-}
-[data-testid="stSidebar"] * {
-    color: #e0e0e0 !important;
-}
-[data-testid="stSidebar"] .stCheckbox label {
-    color: #ffffff !important;
-    font-weight: 500;
-}
-[data-testid="stSidebar"] .stDivider { border-color: #2a2a3e !important; }
-
-/* ── Hero Header ── */
-.hero-header {
-    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a3e 50%, #0f0f1a 100%);
-    border: 1px solid #2a2a5e;
-    border-radius: 16px;
-    padding: 2.5rem 3rem;
-    margin-bottom: 2rem;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-.hero-header::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(ellipse at center, rgba(100,100,255,0.08) 0%, transparent 60%);
-    pointer-events: none;
-}
-.hero-title {
-    font-size: 3.5rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0;
-    letter-spacing: -1px;
-}
-.hero-subtitle {
-    color: #888;
-    font-size: 1rem;
-    margin-top: 0.5rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-}
-
-/* ── Score Card ── */
-.score-ring-container {
-    text-align: center;
-    padding: 1.5rem;
-}
-.score-big {
-    font-size: 4rem;
-    font-weight: 800;
-    line-height: 1;
-}
-.score-label-txt {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-top: 0.3rem;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
-
-/* ── Cards métriques ── */
-.metric-card {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border: 1px solid #2a2a4e;
-    border-radius: 12px;
-    padding: 1.2rem 1.5rem;
-    text-align: center;
-    transition: transform 0.2s, border-color 0.2s;
-}
-.metric-card:hover {
-    transform: translateY(-2px);
-    border-color: #667eea;
-}
-.metric-value {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #667eea;
-}
-.metric-label {
-    font-size: 0.75rem;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-top: 0.2rem;
-}
-
-/* ── Issue items ── */
-.issue-item {
-    padding: 0.6rem 1rem;
-    border-radius: 8px;
-    margin: 0.4rem 0;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    border-left: 3px solid;
-}
-.issue-critical {
-    background: rgba(220,53,69,0.1);
-    border-left-color: #dc3545;
-}
-.issue-warning {
-    background: rgba(255,193,7,0.08);
-    border-left-color: #ffc107;
-}
-.issue-ok {
-    background: rgba(40,167,69,0.1);
-    border-left-color: #28a745;
-}
-
-/* ── Section headers ── */
-.section-header {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    margin: 1.5rem 0 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #2a2a4e;
-}
-.section-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #e0e0e0;
-    margin: 0;
-}
-
-/* ── Score bar ── */
-.score-bar-container {
-    margin: 0.5rem 0;
-}
-.score-bar-label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.85rem;
-    color: #ccc;
-    margin-bottom: 0.3rem;
-}
-.score-bar-bg {
-    background: #2a2a3e;
-    border-radius: 999px;
-    height: 8px;
-    overflow: hidden;
-}
-.score-bar-fill {
-    height: 100%;
-    border-radius: 999px;
-    transition: width 0.8s ease;
-}
-
-/* ── Challenge checkboxes ── */
-.challenge-item {
-    background: #1a1a2e;
-    border: 1px solid #2a2a4e;
-    border-radius: 10px;
-    padding: 0.8rem 1.2rem;
-    margin: 0.5rem 0;
-}
-
-/* ── Input field ── */
-.stTextInput > div > div > input {
-    background: #1a1a2e;
-    border: 2px solid #2a2a5e;
-    border-radius: 10px;
-    color: #fff;
-    font-size: 1rem;
-    padding: 0.8rem 1rem;
-    transition: border-color 0.2s;
-}
-.stTextInput > div > div > input:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
-}
-
-/* ── Buttons ── */
-.stButton > button {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 1rem;
-    padding: 0.7rem 2rem;
-    transition: all 0.2s;
-    width: 100%;
-}
-.stButton > button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 20px rgba(102,126,234,0.4);
-}
-
-/* ── Tabs ── */
-.stTabs [data-baseweb="tab-list"] {
-    background: #0f0f1a;
-    border-radius: 10px;
-    padding: 4px;
-    gap: 4px;
-}
-.stTabs [data-baseweb="tab"] {
-    background: transparent;
-    color: #888;
-    border-radius: 8px;
-    font-weight: 500;
-    font-size: 0.9rem;
-}
-.stTabs [aria-selected="true"] {
-    background: linear-gradient(135deg, #667eea, #764ba2) !important;
-    color: white !important;
-}
-
-/* ── Responsive ── */
-@media (max-width: 768px) {
-    .hero-title { font-size: 2rem; }
-    .metric-value { font-size: 1.4rem; }
-}
-</style>
-""", unsafe_allow_html=True)
+from urllib.parse import urlparse
+from bs4 import BeautifulSoup
+import re
 
 
-# ── HELPERS ──────────────────────────────────────────────────────────────────
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (compatible; SitraBot/1.0; site analysis)"
+}
 
-def render_score_bar(label: str, score: int, emoji: str = ""):
-    label_txt, _, color = get_score_label(score)
-    st.markdown(f"""
-    <div class="score-bar-container">
-        <div class="score-bar-label">
-            <span>{emoji} {label}</span>
-            <span style="color:{color};font-weight:700">{score}/100 — {label_txt}</span>
-        </div>
-        <div class="score-bar-bg">
-            <div class="score-bar-fill" style="width:{score}%;background:{color}"></div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+TIMEOUT = 10
 
 
-def render_issues(issues: list):
-    if not issues:
-        st.markdown('<div class="issue-item issue-ok">✅ Aucun problème détecté dans cette catégorie !</div>', unsafe_allow_html=True)
-        return
-    for issue in issues:
-        css_class = "issue-critical" if "❌" in issue else "issue-warning"
-        st.markdown(f'<div class="issue-item {css_class}">{issue}</div>', unsafe_allow_html=True)
+def normalize_url(url: str) -> str:
+    url = url.strip()
+    if not url:
+        return ""
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url = "https://" + url
+    return url
 
 
-def build_export_report(result: dict) -> str:
-    lines = []
-    lines.append("=" * 60)
-    lines.append(f"RAPPORT D'ANALYSE SITRA")
-    lines.append(f"Site analysé : {result['url']}")
-    lines.append(f"Date : {time.strftime('%d/%m/%Y à %H:%M')}")
-    lines.append("=" * 60)
-    lines.append(f"\n📊 SCORE GLOBAL : {result['global_score']}/100")
-    lines.append(f"🔒 HTTPS : {'✅ Oui' if result['is_https'] else '❌ Non'}")
-    lines.append(f"⚡ Temps de réponse : {result['response_time']}s")
-    lines.append(f"\n📈 SCORES PAR CATÉGORIE :")
-    lines.append(f"  • SEO & Référencement : {result['seo']['score']}/100")
-    lines.append(f"  • Expérience Utilisateur : {result['ux']['score']}/100")
-    lines.append(f"  • Qualité du Contenu : {result['content']['score']}/100")
-    lines.append(f"  • Design & Branding : {result['design']['score']}/100")
-    lines.append(f"  • Performance : {result['performance']['score']}/100")
-    lines.append(f"\n⚠️ PROBLÈMES DÉTECTÉS ({result['total_issues']}) :")
-    for item in result['all_issues']:
-        lines.append(f"  [{item['category']}] {item['message']}")
-    lines.append("\n" + "=" * 60)
-    lines.append("Rapport généré par Sitra — sitra.app")
-    return "\n".join(lines)
+def fetch_site(url: str) -> dict:
+    result = {
+        "html": None,
+        "status_code": None,
+        "response_time": None,
+        "error": None,
+        "final_url": url,
+        "is_https": url.startswith("https://"),
+    }
+    try:
+        start = time.time()
+        r = requests.get(url, headers=HEADERS, timeout=TIMEOUT, allow_redirects=True)
+        result["response_time"] = round(time.time() - start, 2)
+        result["status_code"] = r.status_code
+        result["final_url"] = r.url
+        result["is_https"] = r.url.startswith("https://")
+        if r.status_code == 200:
+            result["html"] = r.text
+        else:
+            result["error"] = f"Le site a répondu avec le code HTTP {r.status_code}"
+    except requests.exceptions.SSLError:
+        result["error"] = "Erreur SSL : certificat invalide ou expiré"
+        result["is_https"] = False
+    except requests.exceptions.ConnectionError:
+        result["error"] = "Impossible de contacter le site (DNS ou connexion refusée)"
+    except requests.exceptions.Timeout:
+        result["error"] = f"Le site n'a pas répondu en moins de {TIMEOUT}s"
+    except Exception as e:
+        result["error"] = str(e)
+    return result
 
 
-# ── SIDEBAR ───────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("### 🎛️ Centre de contrôle")
-    st.divider()
+def analyze_seo(soup: BeautifulSoup, url: str) -> dict:
+    issues = []
+    score = 100
 
-    st.markdown("**Options d'analyse**")
-    mode_comparaison = st.checkbox("⚡ Mode comparatif", key="compare_mode",
-                                   help="Analyse deux sites en parallèle")
-    if mode_comparaison:
-        st.info("💳 Comparez votre site avec un concurrent")
+    title_tag = soup.find("title")
+    title_text = title_tag.get_text(strip=True) if title_tag else ""
+    if not title_text:
+        issues.append("❌ Pas de balise <title> — essentiel pour le référencement Google")
+        score -= 20
+    elif len(title_text) < 10:
+        issues.append(f"⚠️ Titre trop court ({len(title_text)} caractères) — vise 50-60 caractères")
+        score -= 10
+    elif len(title_text) > 70:
+        issues.append(f"⚠️ Titre trop long ({len(title_text)} caractères) — Google le tronque après 60")
+        score -= 5
 
-    st.divider()
-    st.markdown("**Catégories à analyser**")
-    check_seo = st.checkbox("🔍 SEO & Référencement", value=True)
-    check_ux = st.checkbox("🖱️ Expérience Utilisateur", value=True)
-    check_content = st.checkbox("📝 Qualité du Contenu", value=True)
-    check_design = st.checkbox("🎨 Design & Branding", value=True)
-    check_perf = st.checkbox("⚡ Performance", value=True)
+    meta_desc = soup.find("meta", attrs={"name": "description"})
+    meta_content = meta_desc.get("content", "").strip() if meta_desc else ""
+    if not meta_content:
+        issues.append("❌ Pas de meta description — impacte fortement le taux de clic Google")
+        score -= 15
+    elif len(meta_content) < 50:
+        issues.append(f"⚠️ Meta description trop courte ({len(meta_content)} chars) — vise 120-160 caractères")
+        score -= 8
+    elif len(meta_content) > 170:
+        issues.append(f"⚠️ Meta description trop longue ({len(meta_content)} chars) — Google la tronque")
+        score -= 3
 
-    st.divider()
-    st.markdown("""
-    <div style="color:#666;font-size:0.75rem;text-align:center">
-    Sitra Engine v1.0<br>
-    Analyse en temps réel • Données réelles
-    </div>
-    """, unsafe_allow_html=True)
+    h1_tags = soup.find_all("h1")
+    if not h1_tags:
+        issues.append("❌ Pas de balise H1 — Google utilise le H1 pour comprendre le sujet principal")
+        score -= 15
+    elif len(h1_tags) > 1:
+        issues.append(f"⚠️ {len(h1_tags)} balises H1 détectées — il ne doit y en avoir qu'une seule")
+        score -= 5
+
+    h2_tags = soup.find_all("h2")
+    if not h2_tags:
+        issues.append("⚠️ Aucun H2 — structure le contenu avec des sous-titres pour le SEO")
+        score -= 5
+
+    images = soup.find_all("img")
+    images_no_alt = [img for img in images if not img.get("alt", "").strip()]
+    if images_no_alt:
+        pct = int(len(images_no_alt) / max(len(images), 1) * 100)
+        issues.append(f"⚠️ {len(images_no_alt)}/{len(images)} images sans attribut alt ({pct}%) — Google ne peut pas les indexer")
+        score -= min(10, len(images_no_alt) * 2)
+
+    canonical = soup.find("link", rel="canonical")
+    if not canonical:
+        issues.append("⚠️ Pas de balise canonical — peut causer du contenu dupliqué")
+        score -= 3
+
+    viewport = soup.find("meta", attrs={"name": "viewport"})
+    if not viewport:
+        issues.append("❌ Pas de meta viewport — le site ne sera pas responsive sur mobile")
+        score -= 10
+
+    html_tag = soup.find("html")
+    lang = html_tag.get("lang", "") if html_tag else ""
+    if not lang:
+        issues.append("⚠️ Pas d'attribut lang sur <html> — Google ne sait pas quelle langue cibler")
+        score -= 3
+
+    score = max(0, min(100, score))
+    return {
+        "score": score,
+        "title": title_text,
+        "meta_description": meta_content,
+        "h1_count": len(h1_tags),
+        "h2_count": len(h2_tags),
+        "images_total": len(images),
+        "images_no_alt": len(images_no_alt),
+        "has_canonical": canonical is not None,
+        "has_viewport": viewport is not None,
+        "has_lang": bool(lang),
+        "issues": issues,
+    }
 
 
-# ── HERO ─────────────────────────────────────────────────────────────────────
-st.markdown("""
-<div class="hero-header">
-    <div class="hero-title">SITRA</div>
-    <div class="hero-subtitle">Analyseur Intelligent de Sites Web • Données Réelles • Recommandations Précises</div>
-</div>
-""", unsafe_allow_html=True)
+def analyze_ux(soup: BeautifulSoup, url: str) -> dict:
+    issues = []
+    score = 100
+
+    nav_tags = soup.find_all(["nav", "header"])
+    has_nav = len(nav_tags) > 0
+    if not has_nav:
+        issues.append("⚠️ Pas de balise <nav> ou <header> détectée — structure de navigation manquante")
+        score -= 8
+
+    nav_links = []
+    for nav in nav_tags:
+        nav_links.extend(nav.find_all("a"))
+    if len(nav_links) == 0:
+        issues.append("⚠️ Aucun lien dans la navigation principale")
+        score -= 5
+    elif len(nav_links) > 10:
+        issues.append(f"⚠️ Navigation surchargée ({len(nav_links)} liens) — simplifie à 5-7 éléments max")
+        score -= 5
+
+    buttons = soup.find_all("button") + soup.find_all("a", class_=re.compile(r"btn|button|cta", re.I))
+    if not buttons:
+        issues.append("❌ Aucun bouton d'action (CTA) détecté — comment les visiteurs passent à l'action ?")
+        score -= 15
+
+    page_text = soup.get_text().lower()
+    has_contact = any(word in page_text for word in ["contact", "email", "e-mail", "@", "téléphone", "telephone", "whatsapp"])
+    if not has_contact:
+        issues.append("❌ Aucune information de contact visible — les visiteurs ne peuvent pas vous joindre")
+        score -= 12
+
+    forms = soup.find_all("form")
+    forms_no_label = 0
+    for form in forms:
+        inputs = form.find_all("input", type=lambda t: t not in ["hidden", "submit", "button"])
+        labels = form.find_all("label")
+        if len(inputs) > len(labels):
+            forms_no_label += 1
+    if forms_no_label > 0:
+        issues.append(f"⚠️ {forms_no_label} formulaire(s) avec des champs sans label — problème d'accessibilité")
+        score -= 5
+
+    footer = soup.find("footer")
+    has_footer = footer is not None
+    if not has_footer:
+        issues.append("⚠️ Pas de pied de page — les mentions légales et contacts doivent y figurer")
+        score -= 8
+    else:
+        footer_text = footer.get_text().lower()
+        if not any(word in footer_text for word in ["mentions légales", "mention", "cgv", "politique", "privacy", "legal"]):
+            issues.append("⚠️ Mentions légales non détectées — obligatoires en France (RGPD)")
+            score -= 8
+
+    paragraphs = soup.find_all("p")
+    long_paragraphs = [p for p in paragraphs if len(p.get_text()) > 600]
+    if long_paragraphs:
+        issues.append(f"⚠️ {len(long_paragraphs)} paragraphe(s) très long(s) — divise-les pour faciliter la lecture")
+        score -= 5
+
+    score = max(0, min(100, score))
+    return {
+        "score": score,
+        "has_nav": has_nav,
+        "nav_links_count": len(nav_links),
+        "buttons_count": len(buttons),
+        "has_contact": has_contact,
+        "forms_count": len(forms),
+        "has_footer": has_footer,
+        "long_paragraphs": len(long_paragraphs),
+        "issues": issues,
+    }
 
 
-# ── INPUT ─────────────────────────────────────────────────────────────────────
-col_in1, col_in2 = st.columns(2 if mode_comparaison else [1])
+def analyze_content(soup: BeautifulSoup) -> dict:
+    issues = []
+    score = 100
 
-with col_in1:
-    url1 = st.text_input(
-        "🌐 Votre site :",
-        placeholder="ex : monsite.fr ou https://monsite.fr",
-        key="url1"
+    text = soup.get_text(" ", strip=True)
+    words = text.split()
+    word_count = len(words)
+
+    if word_count < 100:
+        issues.append(f"⚠️ Contenu très court ({word_count} mots) — Google préfère les pages avec 300+ mots")
+        score -= 15
+    elif word_count < 300:
+        issues.append(f"⚠️ Contenu assez court ({word_count} mots) — vise au moins 400-600 mots sur la page d'accueil")
+        score -= 8
+
+    common_mistakes_fr = [
+        (r'\bsa\b(?=\s+(?:va|fait|marche|passe))', "confusion sa/ça"),
+        (r'\bdon[ck]\b', "donk → donc"),
+        (r'\bpourquoi\s+que\b', "pourquoi que → pourquoi"),
+        (r'\bà\s+cause\s+que\b', "à cause que → parce que"),
+    ]
+
+    mistakes_found = []
+    text_lower = text.lower()
+    for pattern, desc in common_mistakes_fr:
+        if re.search(pattern, text_lower):
+            mistakes_found.append(desc)
+
+    if mistakes_found:
+        issues.append(f"⚠️ Erreurs de langue potentielles : {', '.join(mistakes_found)}")
+        score -= 8
+
+    if word_count > 0:
+        from collections import Counter
+        word_freq = Counter(w.lower().strip('.,;:!?') for w in words if len(w) > 5)
+        most_common = word_freq.most_common(3)
+        overused = [(w, c) for w, c in most_common if c / word_count > 0.05]
+        if overused:
+            issues.append(f"⚠️ Mots très répétés : {', '.join([f'{w} ({c}x)' for w,c in overused])}")
+            score -= 5
+
+    caps_words = [w for w in words if w.isupper() and len(w) > 3]
+    if len(caps_words) > 5:
+        issues.append(f"⚠️ {len(caps_words)} mots en majuscules — évite de crier sur tes visiteurs")
+        score -= 5
+
+    score = max(0, min(100, score))
+    return {
+        "score": score,
+        "word_count": word_count,
+        "issues": issues,
+    }
+
+
+def analyze_design(soup: BeautifulSoup, url: str) -> dict:
+    issues = []
+    score = 100
+
+    favicon = soup.find("link", rel=lambda r: r and "icon" in r)
+    if not favicon:
+        issues.append("⚠️ Pas de favicon — renforce l'identité de la marque")
+        score -= 5
+
+    inline_styles = soup.find_all(style=True)
+    if len(inline_styles) > 30:
+        issues.append(f"⚠️ {len(inline_styles)} styles inline — utilise un fichier CSS dédié")
+        score -= 5
+
+    images = soup.find_all("img")
+    images_no_size = [img for img in images if not (img.get("width") or img.get("height"))]
+    if images_no_size and len(images_no_size) > len(images) * 0.5:
+        issues.append(f"⚠️ {len(images_no_size)} images sans dimensions — peut causer des sauts de mise en page")
+        score -= 5
+
+    google_fonts = soup.find_all("link", href=re.compile(r"fonts\.google|fonts\.gstatic"))
+    custom_fonts = bool(google_fonts)
+
+    og_title = soup.find("meta", property="og:title")
+    og_image = soup.find("meta", property="og:image")
+    if not og_title:
+        issues.append("⚠️ Pas de og:title — partage sur réseaux sociaux peu attrayant")
+        score -= 8
+    if not og_image:
+        issues.append("⚠️ Pas de og:image — aucune image lors du partage Facebook/LinkedIn")
+        score -= 8
+
+    color_candidates = []
+    for tag in soup.find_all(style=True):
+        colors = re.findall(r'#([0-9a-fA-F]{3,6})\b|rgba?\([\d,\s.]+\)', tag.get("style", ""))
+        color_candidates.extend(colors[:3])
+
+    score = max(0, min(100, score))
+    return {
+        "score": score,
+        "has_favicon": favicon is not None,
+        "has_google_fonts": custom_fonts,
+        "has_og_tags": og_title is not None,
+        "issues": issues,
+        "detected_colors": color_candidates[:5],
+    }
+
+
+def analyze_performance(response_time: float, html: str, is_https: bool) -> dict:
+    issues = []
+    score = 100
+
+    if not is_https:
+        issues.append("❌ Le site n'utilise pas HTTPS — Google pénalise les sites non sécurisés")
+        score -= 25
+
+    if response_time is None:
+        score -= 10
+    elif response_time > 3:
+        issues.append(f"❌ Temps de réponse très lent : {response_time}s — les visiteurs partent après 3s")
+        score -= 20
+    elif response_time > 1.5:
+        issues.append(f"⚠️ Temps de réponse moyen : {response_time}s — vise moins de 1s")
+        score -= 10
+
+    html_size_kb = len(html.encode("utf-8")) / 1024 if html else 0
+    if html_size_kb > 500:
+        issues.append(f"⚠️ Page HTML lourde : {html_size_kb:.0f}KB")
+        score -= 8
+    elif html_size_kb > 200:
+        issues.append(f"⚠️ Page HTML assez lourde : {html_size_kb:.0f}KB")
+        score -= 4
+
+    if html:
+        from bs4 import BeautifulSoup as BS
+        soup_check = BS(html, "lxml")
+        head = soup_check.find("head")
+        if head:
+            scripts_in_head = head.find_all("script", src=True)
+            if len(scripts_in_head) > 5:
+                issues.append(f"⚠️ {len(scripts_in_head)} scripts dans le <head> — ralentissent le chargement")
+                score -= 5
+
+    score = max(0, min(100, score))
+    return {
+        "score": score,
+        "is_https": is_https,
+        "response_time": response_time,
+        "html_size_kb": round(html_size_kb, 1),
+        "issues": issues,
+    }
+
+
+def full_analysis(url: str) -> dict:
+    url = normalize_url(url)
+    if not url:
+        return {"error": "URL invalide"}
+
+    fetch = fetch_site(url)
+
+    if fetch["error"] and not fetch["html"]:
+        return {
+            "url": url,
+            "error": fetch["error"],
+            "is_https": fetch["is_https"],
+            "response_time": fetch["response_time"],
+            "status_code": fetch["status_code"],
+        }
+
+    html = fetch["html"] or ""
+    soup = BeautifulSoup(html, "lxml")
+
+    seo = analyze_seo(soup, url)
+    ux = analyze_ux(soup, url)
+    content = analyze_content(soup)
+    design = analyze_design(soup, url)
+    performance = analyze_performance(fetch["response_time"], html, fetch["is_https"])
+
+    global_score = round(
+        seo["score"] * 0.30 +
+        ux["score"] * 0.25 +
+        content["score"] * 0.15 +
+        design["score"] * 0.15 +
+        performance["score"] * 0.15
     )
 
-url2 = ""
-if mode_comparaison:
-    with col_in2:
-        url2 = st.text_input(
-            "🆚 Site concurrent :",
-            placeholder="ex : concurrent.fr",
-            key="url2"
-        )
+    all_issues = []
+    for cat, data in [("SEO", seo), ("UX", ux), ("Contenu", content), ("Design", design), ("Performance", performance)]:
+        for issue in data.get("issues", []):
+            all_issues.append({"category": cat, "message": issue})
 
-col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
-with col_btn2:
-    launch = st.button("🚀 Lancer l'analyse", use_container_width=True)
-
-
-# ── ANALYSE ───────────────────────────────────────────────────────────────────
-if launch:
-    urls_to_analyze = [url1]
-    if mode_comparaison and url2:
-        urls_to_analyze.append(url2)
-
-    results_list = []
-
-    for url in urls_to_analyze:
-        if not url.strip():
-            st.warning("⚠️ Merci d'entrer une URL valide.")
-            continue
-
-        with st.spinner(f"🔍 Analyse de **{url}** en cours — vérification de {20 if not mode_comparaison else 15} critères réels..."):
-            result = full_analysis(url)
-
-        results_list.append(result)
-
-    # ── AFFICHAGE RÉSULTATS ────────────────────────────────────────────────────
-    if mode_comparaison and len(results_list) == 2:
-        st.divider()
-        st.markdown("## 📊 Comparatif")
-        comp_cols = st.columns(2)
-
-    for idx, result in enumerate(results_list):
-        # Colonne ou plein écran
-        if mode_comparaison and len(results_list) == 2:
-            ctx = comp_cols[idx]
-        else:
-            ctx = st
-
-        with ctx:
-            if result.get("error") and not result.get("global_score"):
-                st.error(f"❌ **{result['url']}** — {result['error']}")
-                continue
-
-            label_txt, label_emoji, label_color = get_score_label(result["global_score"])
-
-            st.divider()
-
-            # ── Score global ──
-            st.markdown(f"### 🌐 {result['final_url']}")
-
-            c1, c2, c3, c4, c5 = st.columns(5)
-            metrics = [
-                (c1, result["global_score"], "Score Global", "🏆"),
-                (c2, result["seo"]["score"], "SEO", "🔍"),
-                (c3, result["ux"]["score"], "UX", "🖱️"),
-                (c4, result["design"]["score"], "Design", "🎨"),
-                (c5, result["performance"]["score"], "Perf.", "⚡"),
-            ]
-            for col, score, lbl, em in metrics:
-                lbl_t, _, clr = get_score_label(score)
-                with col:
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value" style="color:{clr}">{score}</div>
-                        <div class="metric-label">{em} {lbl}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-            st.markdown("")
-
-            # ── Tabs ──
-            tab_names = []
-            if check_seo: tab_names.append("🔍 SEO")
-            if check_ux: tab_names.append("🖱️ UX")
-            if check_content: tab_names.append("📝 Contenu")
-            if check_design: tab_names.append("🎨 Design")
-            if check_perf: tab_names.append("⚡ Performance")
-            tab_names.append("📋 Récapitulatif")
-            tab_names.append("🏆 Challenge")
-
-            tabs = st.tabs(tab_names)
-            tab_idx = 0
-
-            # ── SEO ──
-            if check_seo:
-                with tabs[tab_idx]:
-                    seo = result["seo"]
-                    render_score_bar("SEO & Référencement", seo["score"], "🔍")
-                    st.markdown("")
-
-                    col_s1, col_s2 = st.columns(2)
-                    with col_s1:
-                        st.markdown("**📌 Données détectées**")
-                        st.markdown(f"- **Titre** : `{seo['title'][:60] + '...' if len(seo['title']) > 60 else seo['title'] or '(manquant)'}` ({len(seo['title'])} chars)")
-                        st.markdown(f"- **Meta description** : {len(seo['meta_description'])} chars {('✅' if 50 <= len(seo['meta_description']) <= 170 else '⚠️')}")
-                        st.markdown(f"- **H1** : {seo['h1_count']} {'✅' if seo['h1_count'] == 1 else '⚠️'}")
-                        st.markdown(f"- **H2** : {seo['h2_count']} {'✅' if seo['h2_count'] > 0 else '⚠️'}")
-                        st.markdown(f"- **Images sans alt** : {seo['images_no_alt']}/{seo['images_total']} {'✅' if seo['images_no_alt'] == 0 else '❌'}")
-                    with col_s2:
-                        st.markdown("**🔧 Points à corriger**")
-                        render_issues(seo["issues"])
-
-                tab_idx += 1
-
-            # ── UX ──
-            if check_ux:
-                with tabs[tab_idx]:
-                    ux = result["ux"]
-                    render_score_bar("Expérience Utilisateur", ux["score"], "🖱️")
-                    st.markdown("")
-
-                    col_u1, col_u2 = st.columns(2)
-                    with col_u1:
-                        st.markdown("**📌 Données détectées**")
-                        st.markdown(f"- **Navigation** : {'✅ Présente' if ux['has_nav'] else '❌ Absente'} ({ux['nav_links_count']} liens)")
-                        st.markdown(f"- **Boutons CTA** : {ux['buttons_count']} {'✅' if ux['buttons_count'] > 0 else '❌'}")
-                        st.markdown(f"- **Infos contact** : {'✅ Trouvées' if ux['has_contact'] else '❌ Absentes'}")
-                        st.markdown(f"- **Formulaires** : {ux['forms_count']}")
-                        st.markdown(f"- **Footer** : {'✅ Présent' if ux['has_footer'] else '⚠️ Absent'}")
-                        st.markdown(f"- **Paragraphes longs** : {ux['long_paragraphs']}")
-                    with col_u2:
-                        st.markdown("**🔧 Points à corriger**")
-                        render_issues(ux["issues"])
-
-                tab_idx += 1
-
-            # ── CONTENU ──
-            if check_content:
-                with tabs[tab_idx]:
-                    content = result["content"]
-                    render_score_bar("Qualité du Contenu", content["score"], "📝")
-                    st.markdown("")
-
-                    st.markdown(f"**Nombre de mots détectés** : {content['word_count']} {'✅' if content['word_count'] >= 300 else '⚠️ (vise 300+)'}")
-                    st.markdown("**🔧 Points à corriger**")
-                    render_issues(content["issues"])
-
-                tab_idx += 1
-
-            # ── DESIGN ──
-            if check_design:
-                with tabs[tab_idx]:
-                    design = result["design"]
-                    render_score_bar("Design & Branding", design["score"], "🎨")
-                    st.markdown("")
-
-                    col_d1, col_d2 = st.columns(2)
-                    with col_d1:
-                        st.markdown("**📌 Données détectées**")
-                        st.markdown(f"- **Favicon** : {'✅ Présent' if design['has_favicon'] else '⚠️ Absent'}")
-                        st.markdown(f"- **Google Fonts** : {'✅ Oui' if design['has_google_fonts'] else 'Non détecté'}")
-                        st.markdown(f"- **Balises Open Graph** : {'✅ Oui' if design['has_og_tags'] else '⚠️ Manquantes'}")
-                        if design['detected_colors']:
-                            st.markdown("- **Couleurs détectées** :")
-                            cols_color = st.columns(len(design['detected_colors'][:5]))
-                            for ci, color in enumerate(design['detected_colors'][:5]):
-                                clr_val = f"#{color}" if not color.startswith('#') and not color.startswith('rgb') else color
-                                cols_color[ci].markdown(f'<div style="width:40px;height:40px;background:{clr_val};border-radius:6px;border:1px solid #444"></div>', unsafe_allow_html=True)
-                    with col_d2:
-                        st.markdown("**🔧 Points à corriger**")
-                        render_issues(design["issues"])
-
-                tab_idx += 1
-
-            # ── PERFORMANCE ──
-            if check_perf:
-                with tabs[tab_idx]:
-                    perf = result["performance"]
-                    render_score_bar("Performance", perf["score"], "⚡")
-                    st.markdown("")
-
-                    col_p1, col_p2 = st.columns(2)
-                    with col_p1:
-                        st.markdown("**📌 Données mesurées**")
-                        rt = perf['response_time']
-                        rt_emoji = "✅" if rt and rt < 1 else ("⚠️" if rt and rt < 2 else "❌")
-                        st.markdown(f"- **HTTPS** : {'✅ Activé' if perf['is_https'] else '❌ Non sécurisé'}")
-                        st.markdown(f"- **Temps de réponse** : {rt}s {rt_emoji}")
-                        st.markdown(f"- **Taille HTML** : {perf['html_size_kb']} KB")
-                    with col_p2:
-                        st.markdown("**🔧 Points à corriger**")
-                        render_issues(perf["issues"])
-
-                tab_idx += 1
-
-            # ── RÉCAPITULATIF ──
-            with tabs[tab_idx]:
-                st.markdown(f"### Score global : **{result['global_score']}/100** {label_emoji}")
-
-                if check_seo: render_score_bar("SEO", result["seo"]["score"], "🔍")
-                if check_ux: render_score_bar("UX", result["ux"]["score"], "🖱️")
-                if check_content: render_score_bar("Contenu", result["content"]["score"], "📝")
-                if check_design: render_score_bar("Design", result["design"]["score"], "🎨")
-                if check_perf: render_score_bar("Performance", result["performance"]["score"], "⚡")
-
-                st.divider()
-                st.markdown(f"**{result['total_issues']} problèmes détectés** sur l'ensemble du site :")
-
-                cats = {}
-                for item in result["all_issues"]:
-                    cats.setdefault(item["category"], []).append(item["message"])
-
-                for cat, msgs in cats.items():
-                    with st.expander(f"{cat} — {len(msgs)} problème(s)"):
-                        render_issues(msgs)
-
-                st.divider()
-                report_txt = build_export_report(result)
-                st.download_button(
-                    label="📥 Télécharger le rapport complet (.txt)",
-                    data=report_txt,
-                    file_name=f"sitra_rapport_{normalize_url(url1).replace('https://','').replace('/','_')}.txt",
-                    mime="text/plain",
-                    key=f"download_{idx}"
-                )
-
-            tab_idx += 1
-
-            # ── CHALLENGE ──
-            with tabs[tab_idx]:
-                st.markdown("### 🏆 Mode Challenge — Améliore ton site")
-                st.caption("Coche les objectifs au fur et à mesure que tu les complètes")
-
-                # Challenges basés sur les VRAIS problèmes détectés
-                challenge_items = []
-
-                seo = result["seo"]
-                ux = result["ux"]
-
-                if not seo["title"]:
-                    challenge_items.append("Ajouter une balise <title> descriptive sur toutes les pages")
-                elif len(seo["title"]) < 10 or len(seo["title"]) > 70:
-                    challenge_items.append(f"Optimiser le titre (actuellement {len(seo['title'])} chars) → viser 50-60 caractères")
-                if not seo["meta_description"]:
-                    challenge_items.append("Écrire une meta description de 120-160 caractères pour chaque page")
-                if seo["h1_count"] != 1:
-                    challenge_items.append(f"Corriger les balises H1 (tu en as {seo['h1_count']}, il en faut exactement 1)")
-                if seo["images_no_alt"] > 0:
-                    challenge_items.append(f"Ajouter un attribut alt à {seo['images_no_alt']} image(s)")
-                if not ux["has_contact"]:
-                    challenge_items.append("Ajouter des informations de contact visibles (email, téléphone, formulaire)")
-                if not result["performance"]["is_https"]:
-                    challenge_items.append("Activer le HTTPS sur ton hébergeur (certificat SSL gratuit avec Let's Encrypt)")
-                if not ux["has_footer"]:
-                    challenge_items.append("Créer un footer avec mentions légales, contact et liens utiles")
-                if not result["design"]["has_og_tags"]:
-                    challenge_items.append("Ajouter les balises Open Graph pour améliorer le partage sur réseaux sociaux")
-                if result["content"]["word_count"] < 300:
-                    challenge_items.append(f"Enrichir le contenu ({result['content']['word_count']} mots actuellement → vise 300+)")
-
-                # Complète avec des objectifs généraux si pas assez
-                general_challenges = [
-                    "Tester le site sur mobile et tablette (responsive design)",
-                    "Vérifier la vitesse avec Google PageSpeed Insights",
-                    "Créer une page FAQ pour répondre aux questions fréquentes",
-                    "Ajouter des avis clients ou témoignages pour la confiance",
-                    "Vérifier l'orthographe et la grammaire sur toutes les pages",
-                ]
-                while len(challenge_items) < 5:
-                    if general_challenges:
-                        challenge_items.append(general_challenges.pop(0))
-                    else:
-                        break
-
-                total = len(challenge_items)
-                completed = 0
-
-                for i, obj in enumerate(challenge_items):
-                    checked = st.checkbox(obj, key=f"ch_{idx}_{i}")
-                    if checked:
-                        completed += 1
-
-                st.markdown("")
-                if total > 0:
-                    progress_pct = completed / total
-                    st.progress(progress_pct)
-                    st.caption(f"**{completed}/{total}** objectifs complétés — {'🎉 Bravo, site optimisé !' if completed == total else 'Continue, tu y es presque !'}")
+    return {
+        "url": url,
+        "final_url": fetch["final_url"],
+        "status_code": fetch["status_code"],
+        "response_time": fetch["response_time"],
+        "is_https": fetch["is_https"],
+        "global_score": global_score,
+        "seo": seo,
+        "ux": ux,
+        "content": content,
+        "design": design,
+        "performance": performance,
+        "all_issues": all_issues,
+        "total_issues": len(all_issues),
+        "error": None,
+    }
 
 
-# ── FOOTER ────────────────────────────────────────────────────────────────────
-if not launch:
-    st.markdown("""
-    <div style="text-align:center;color:#444;margin-top:3rem;font-size:0.85rem">
-        <p>🔍 <strong>Sitra</strong> analyse réellement votre site — pas de données aléatoires</p>
-        <p style="margin-top:0.3rem">SEO • UX • Contenu • Design • Performance • 20+ critères vérifiés</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-st.markdown("""
-<div style="text-align:center;color:#333;padding:2rem 0 1rem;font-size:0.8rem;border-top:1px solid #1a1a2e;margin-top:3rem">
-    Sitra — Anticiper pour dominer le marché
-</div>
-""", unsafe_allow_html=True)
+def get_score_label(score: int) -> tuple:
+    if score >= 90:
+        return "Excellent", "🟢", "#28a745"
+    elif score >= 75:
+        return "Bon", "🟡", "#ffc107"
+    elif score >= 55:
+        return "À améliorer", "🟠", "#fd7e14"
+    else:
+        return "Critique", "🔴", "#dc3545"
