@@ -240,37 +240,15 @@ def render_result(result, idx=0):
     with tabs[5]:
         st.markdown("### Analyse Google PageSpeed")
         st.caption("Metriques officielles Google — meme outil que les professionnels du web")
-        ps_key = f"pagespeed_{idx}"
-        if st.button("Lancer l'analyse PageSpeed", key=f"ps_btn_{idx}"):
-            with st.spinner("Recuperation des donnees Google PageSpeed..."):
-                ps = get_pagespeed(result["final_url"])
-            st.session_state[ps_key] = ps
-        if ps_key in st.session_state:
-            ps = st.session_state[ps_key]
-            if ps["error"]:
-                st.warning(f"PageSpeed indisponible pour ce site : {ps['error']}")
-            else:
-                col_ps1, col_ps2, col_ps3, col_ps4 = st.columns(4)
-                for col, score, lbl in [
-                    (col_ps1, ps["performance"], "Performance"),
-                    (col_ps2, ps["accessibility"], "Accessibilite"),
-                    (col_ps3, ps["seo"], "SEO Google"),
-                    (col_ps4, ps["best_practices"], "Bonnes pratiques"),
-                ]:
-                    if score is not None:
-                        lbl_t, _, clr = get_score_label(score)
-                        col.markdown(f"""
-                        <div class="metric-card">
-                            <div class="metric-value" style="color:{clr}">{score}</div>
-                            <div class="metric-label">{lbl}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                st.markdown("")
-                st.markdown("**Metriques Core Web Vitals :**")
-                col_v1, col_v2, col_v3 = st.columns(3)
-                col_v1.metric("FCP (Premier affichage)", ps["fcp"] or "N/A")
-                col_v2.metric("LCP (Contenu principal)", ps["lcp"] or "N/A")
-                col_v3.metric("CLS (Stabilite visuelle)", ps["cls"] or "N/A")
+        url_pagespeed = f"https://pagespeed.web.dev/report?url={result['final_url']}"
+        st.markdown(f"""
+        <div style="background:#1a1a2e;border:1px solid #2a2a4e;border-radius:12px;padding:2rem;text-align:center;margin-top:1rem">
+            <p style="color:#ccc;font-size:1rem;margin-bottom:1.5rem">Clique sur le bouton ci-dessous pour voir l'analyse Google PageSpeed complete de ce site. Les resultats s'ouvriront dans un nouvel onglet.</p>
+            <a href="{url_pagespeed}" target="_blank" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:0.8rem 2rem;border-radius:10px;text-decoration:none;font-weight:600;font-size:1rem">
+                Voir l'analyse PageSpeed
+            </a>
+        </div>
+        """, unsafe_allow_html=True)
 
     with tabs[6]:
         st.markdown(f"### Score global : **{result['global_score']}/100** — {label_txt}")
