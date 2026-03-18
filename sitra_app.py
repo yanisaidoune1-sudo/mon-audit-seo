@@ -1,30 +1,32 @@
 import streamlit as st
 import time
 from analyzer import full_analysis, get_score_label, normalize_url
-from mistralai import Mistral
-
 def generer_recommandations_ia(result):
     try:
-        client = Mistral(api_key=st.secrets["MISTRAL_API_KEY"])
-        prompt = f"""Tu es un expert en optimisation de sites web. Analyse ces donnees et genere un rapport de recommandations personnalise en 5-7 phrases naturelles et professionnelles. Sois direct et concret. Detecte automatiquement la langue du site et reponds dans cette meme langue.
+        import requests as req
+        headers = {
+            "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
+            "Content-Type": "application/json"
+        }
+        prompt = f"""Tu es un expert en optimisation de sites web. Analyse ces donnees et genere un rapport de recommandations personnalise en 5-7 phrases naturelles. Detecte la langue du site et reponds dans cette langue.
 
-Site analyse : {result['final_url']}
+Site : {result['final_url']}
 Score global : {result['global_score']}/100
-Score SEO : {result['seo']['score']}/100
-Score UX : {result['ux']['score']}/100
-Score Contenu : {result['content']['score']}/100
-Score Design : {result['design']['score']}/100
-Score Performance : {result['performance']['score']}/100
-Nombre de mots : {result['content']['word_count']}
+SEO : {result['seo']['score']}/100
+UX : {result['ux']['score']}/100
+Contenu : {result['content']['score']}/100
+Design : {result['design']['score']}/100
+Performance : {result['performance']['score']}/100
 HTTPS : {'Oui' if result['is_https'] else 'Non'}
 Temps de reponse : {result['response_time']}s
-Problemes detectes : {', '.join([i['message'] for i in result['all_issues'][:5]])}"""
+Problemes : {', '.join([i['message'] for i in result['all_issues'][:5]])}"""
 
-        response = client.chat.complete(
-            model="mistral-large-latest",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.choices[0].message.content
+        data = {
+            "model": "mistral-large-latest",
+            "messages": [{"role": "user", "content": prompt}]
+        }
+        r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=30)
+        return r.json()["choices"][0]["message"]["content"]
     except Exception as e:
         return None
 
