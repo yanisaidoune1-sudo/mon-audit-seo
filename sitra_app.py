@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-from analyzer import full_analysis, get_score_label, normalize_url
+from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed
 def generer_recommandations_ia(result):
     try:
         import requests as req
@@ -166,7 +166,7 @@ def render_result(result, idx=0):
         else:
             st.warning("Impossible de generer les recommandations IA pour le moment.")
 
-    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "Recapitulatif", "Challenge"])
+    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Recapitulatif", "Challenge"])
 
     with tabs[0]:
         seo = result["seo"]
@@ -238,6 +238,37 @@ def render_result(result, idx=0):
             render_issues(perf["issues"])
 
     with tabs[5]:
+        st.markdown("### Analyse Google PageSpeed")
+        st.caption("Metriques officielles Google — meme outil que les professionnels du web")
+        with st.spinner("Recuperation des donnees Google PageSpeed..."):
+            ps = get_pagespeed(result["final_url"])
+        if ps["error"]:
+            st.warning(f"PageSpeed indisponible pour ce site : {ps['error']}")
+        else:
+            col_ps1, col_ps2, col_ps3, col_ps4 = st.columns(4)
+            for col, score, lbl in [
+                (col_ps1, ps["performance"], "Performance"),
+                (col_ps2, ps["accessibility"], "Accessibilite"),
+                (col_ps3, ps["seo"], "SEO Google"),
+                (col_ps4, ps["best_practices"], "Bonnes pratiques"),
+            ]:
+                if score is not None:
+                    lbl_t, _, clr = get_score_label(score)
+                    col.markdown(f"""
+                    <div class="metric-card">
+                        <div class="metric-value" style="color:{clr}">{score}</div>
+                        <div class="metric-label">{lbl}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            st.markdown("")
+            st.markdown("**Metriques Core Web Vitals :**")
+            col_v1, col_v2, col_v3 = st.columns(3)
+            col_v1.metric("FCP (Premier affichage)", ps["fcp"] or "N/A")
+            col_v2.metric("LCP (Contenu principal)", ps["lcp"] or "N/A")
+            col_v3.metric("CLS (Stabilite visuelle)", ps["cls"] or "N/A")
+
+    with tabs[6]:
         st.markdown(f"### Score global : **{result['global_score']}/100** — {label_txt}")
         render_score_bar("SEO", result["seo"]["score"])
         render_score_bar("UX", result["ux"]["score"])
@@ -262,8 +293,7 @@ def render_result(result, idx=0):
             key=f"download_{idx}"
         )
 
-    with tabs[6]:
-        st.markdown("### Mode Challenge")
+    with tabs[7]:
         st.caption("Coche les objectifs au fur et a mesure que tu les completes")
 
         seo = result["seo"]
