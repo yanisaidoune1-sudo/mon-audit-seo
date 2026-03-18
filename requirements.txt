@@ -3,4 +3,3 @@ pandas
 requests
 beautifulsoup4
 lxml
-mistralai>=1.0.0
