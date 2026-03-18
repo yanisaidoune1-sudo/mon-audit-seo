@@ -133,13 +133,19 @@ def build_export_report(result):
 
 
 def render_result(result, idx=0):
-    if result.get("error") and not result.get("global_score"):
-        st.error(f"Erreur — {result['url']} : {result['error']}")
+    if result.get("error"):
+        st.warning("Impossible d'analyser ce site. Certains grands sites bloquent volontairement les outils d'analyse automatiques. Sitra est concu pour les sites de PME, artisans, restaurants et portfolios.")
         return
 
     label_txt, _, label_color = get_score_label(result["global_score"])
     st.divider()
-    st.markdown(f"### {result['final_url']}")
+
+    col_title, col_screen = st.columns([2, 1])
+    with col_title:
+        st.markdown(f"### {result['final_url']}")
+    with col_screen:
+        screenshot_url = f"https://api.screenshotone.com/animate?url={result['final_url']}&format=jpg&viewport_width=1280&viewport_height=720&no_cookie_banners=true"
+        st.markdown(f'<a href="{result["final_url"]}" target="_blank"><img src="https://s.wordpress.com/mshots/v1/{result["final_url"]}?w=400" style="width:100%;border-radius:8px;border:1px solid #2a2a4e" /></a>', unsafe_allow_html=True)
 
     c1, c2, c3, c4, c5 = st.columns(5)
     for col, score, lbl in [
