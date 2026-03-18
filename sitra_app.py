@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed
+
 def generer_recommandations_ia(result):
     try:
         import requests as req
@@ -8,7 +9,7 @@ def generer_recommandations_ia(result):
             "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
             "Content-Type": "application/json"
         }
-        prompt = f"""Tu es un expert en optimisation de sites web. Analyse ces donnees et genere un rapport de recommandations personnalise en 5-7 phrases naturelles. Detecte la langue du site et reponds dans cette langue.
+        prompt = f"""Tu es un expert en optimisation de sites web. Analyse ces données et génère un rapport de recommandations personnalisé en 5-7 phrases naturelles. Détecte la langue du site et réponds dans cette langue.
 
 Site : {result['final_url']}
 Score global : {result['global_score']}/100
@@ -18,8 +19,8 @@ Contenu : {result['content']['score']}/100
 Design : {result['design']['score']}/100
 Performance : {result['performance']['score']}/100
 HTTPS : {'Oui' if result['is_https'] else 'Non'}
-Temps de reponse : {result['response_time']}s
-Problemes : {', '.join([i['message'] for i in result['all_issues'][:5]])}"""
+Temps de réponse : {result['response_time']}s
+Problèmes : {', '.join([i['message'] for i in result['all_issues'][:5]])}"""
 
         data = {
             "model": "mistral-large-latest",
@@ -100,7 +101,7 @@ def render_score_bar(label, score):
 
 def render_issues(issues):
     if not issues:
-        st.markdown('<div class="issue-item issue-ok">Aucun probleme detecte dans cette categorie.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="issue-item issue-ok">Aucun problème détecté dans cette catégorie.</div>', unsafe_allow_html=True)
     else:
         for issue in issues:
             css_class = "issue-critical" if issue.startswith("[X]") or "pas de" in issue.lower() else "issue-warning"
@@ -111,41 +112,35 @@ def build_export_report(result):
     lines = [
         "=" * 60,
         "RAPPORT D'ANALYSE SITRA",
-        f"Site analyse : {result['url']}",
-        f"Date : {time.strftime('%d/%m/%Y a %H:%M')}",
+        f"Site analysé : {result['url']}",
+        f"Date : {time.strftime('%d/%m/%Y à %H:%M')}",
         "=" * 60,
         f"\nSCORE GLOBAL : {result['global_score']}/100",
         f"HTTPS : {'Oui' if result['is_https'] else 'Non'}",
-        f"Temps de reponse : {result['response_time']}s",
-        "\nSCORES PAR CATEGORIE :",
+        f"Temps de réponse : {result['response_time']}s",
+        "\nSCORES PAR CATÉGORIE :",
         f"  SEO : {result['seo']['score']}/100",
         f"  UX : {result['ux']['score']}/100",
         f"  Contenu : {result['content']['score']}/100",
         f"  Design : {result['design']['score']}/100",
         f"  Performance : {result['performance']['score']}/100",
-        f"\nPROBLEMES DETECTES ({result['total_issues']}) :",
+        f"\nPROBLÈMES DÉTECTÉS ({result['total_issues']}) :",
     ]
     for item in result['all_issues']:
         lines.append(f"  [{item['category']}] {item['message']}")
     lines.append("\n" + "=" * 60)
-    lines.append("Rapport genere par Sitra")
+    lines.append("Rapport généré par Sitra")
     return "\n".join(lines)
 
 
 def render_result(result, idx=0):
     if result.get("error"):
-        st.warning("Impossible d'analyser ce site. Certains grands sites bloquent volontairement les outils d'analyse automatiques. Sitra est concu pour les sites de PME, artisans, restaurants et portfolios.")
+        st.warning("Impossible d'analyser ce site. Certains grands sites bloquent volontairement les outils d'analyse automatiques. Sitra est conçu pour les sites de PME, artisans, restaurants et portfolios.")
         return
 
     label_txt, _, label_color = get_score_label(result["global_score"])
     st.divider()
-
-    col_title, col_screen = st.columns([2, 1])
-    with col_title:
-        st.markdown(f"### {result['final_url']}")
-    with col_screen:
-        screenshot_url = f"https://api.screenshotone.com/animate?url={result['final_url']}&format=jpg&viewport_width=1280&viewport_height=720&no_cookie_banners=true"
-        st.markdown(f'<a href="{result["final_url"]}" target="_blank"><img src="https://s.wordpress.com/mshots/v1/{result["final_url"]}?w=400" style="width:100%;border-radius:8px;border:1px solid #2a2a4e" /></a>', unsafe_allow_html=True)
+    st.markdown(f"### {result['final_url']}")
 
     c1, c2, c3, c4, c5 = st.columns(5)
     for col, score, lbl in [
@@ -164,53 +159,53 @@ def render_result(result, idx=0):
         """, unsafe_allow_html=True)
 
     st.markdown("")
-    with st.expander("Analyse IA — Recommandations personnalisees"):
+    with st.expander("Analyse IA — Recommandations personnalisées"):
         with st.spinner("L'IA analyse votre site..."):
             recommandations = generer_recommandations_ia(result)
         if recommandations:
             st.markdown(recommandations)
         else:
-            st.warning("Impossible de generer les recommandations IA pour le moment.")
+            st.warning("Impossible de générer les recommandations IA pour le moment.")
 
-    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Recapitulatif", "Challenge"])
+    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Récapitulatif", "Challenge"])
 
     with tabs[0]:
         seo = result["seo"]
-        render_score_bar("SEO et Referencement", seo["score"])
+        render_score_bar("SEO et Référencement", seo["score"])
         st.markdown("")
         col_s1, col_s2 = st.columns(2)
         with col_s1:
-            st.markdown("**Donnees detectees**")
+            st.markdown("**Données détectées**")
             title_display = seo['title'][:60] + '...' if len(seo['title']) > 60 else seo['title'] or '(manquant)'
             st.markdown(f"- **Titre** : `{title_display}` ({len(seo['title'])} chars)")
             st.markdown(f"- **Meta description** : {len(seo['meta_description'])} chars")
-            st.markdown(f"- **H1** : {seo['h1_count']} {'(correct)' if seo['h1_count'] == 1 else '(a corriger)'}")
+            st.markdown(f"- **H1** : {seo['h1_count']} {'(correct)' if seo['h1_count'] == 1 else '(à corriger)'}")
             st.markdown(f"- **H2** : {seo['h2_count']} {'(correct)' if seo['h2_count'] > 0 else '(manquant)'}")
             st.markdown(f"- **Images sans alt** : {seo['images_no_alt']}/{seo['images_total']}")
         with col_s2:
-            st.markdown("**Points a corriger**")
+            st.markdown("**Points à corriger**")
             render_issues(seo["issues"])
 
     with tabs[1]:
         ux = result["ux"]
-        render_score_bar("Experience Utilisateur", ux["score"])
+        render_score_bar("Expérience Utilisateur", ux["score"])
         st.markdown("")
         col_u1, col_u2 = st.columns(2)
         with col_u1:
-            st.markdown("**Donnees detectees**")
-            st.markdown(f"- **Navigation** : {'Presente' if ux['has_nav'] else 'Absente'} ({ux['nav_links_count']} liens)")
+            st.markdown("**Données détectées**")
+            st.markdown(f"- **Navigation** : {'Présente' if ux['has_nav'] else 'Absente'} ({ux['nav_links_count']} liens)")
             st.markdown(f"- **Boutons CTA** : {ux['buttons_count']} {'(correct)' if ux['buttons_count'] > 0 else '(manquant)'}")
-            st.markdown(f"- **Contact** : {'Trouve' if ux['has_contact'] else 'Absent'}")
-            st.markdown(f"- **Footer** : {'Present' if ux['has_footer'] else 'Absent'}")
+            st.markdown(f"- **Contact** : {'Trouvé' if ux['has_contact'] else 'Absent'}")
+            st.markdown(f"- **Footer** : {'Présent' if ux['has_footer'] else 'Absent'}")
         with col_u2:
-            st.markdown("**Points a corriger**")
+            st.markdown("**Points à corriger**")
             render_issues(ux["issues"])
 
     with tabs[2]:
         content = result["content"]
-        render_score_bar("Qualite du Contenu", content["score"])
+        render_score_bar("Qualité du Contenu", content["score"])
         st.markdown("")
-        st.markdown(f"**Mots detectes** : {content['word_count']} {'(correct)' if content['word_count'] >= 300 else '(vise 300+)'}")
+        st.markdown(f"**Mots détectés** : {content['word_count']} {'(correct)' if content['word_count'] >= 300 else '(visez 300+)'}")
         render_issues(content["issues"])
 
     with tabs[3]:
@@ -219,12 +214,12 @@ def render_result(result, idx=0):
         st.markdown("")
         col_d1, col_d2 = st.columns(2)
         with col_d1:
-            st.markdown("**Donnees detectees**")
-            st.markdown(f"- **Favicon** : {'Present' if design['has_favicon'] else 'Absent'}")
-            st.markdown(f"- **Google Fonts** : {'Oui' if design['has_google_fonts'] else 'Non detecte'}")
-            st.markdown(f"- **Open Graph** : {'Present' if design['has_og_tags'] else 'Absent'}")
+            st.markdown("**Données détectées**")
+            st.markdown(f"- **Favicon** : {'Présent' if design['has_favicon'] else 'Absent'}")
+            st.markdown(f"- **Google Fonts** : {'Oui' if design['has_google_fonts'] else 'Non détecté'}")
+            st.markdown(f"- **Open Graph** : {'Présent' if design['has_og_tags'] else 'Absent'}")
         with col_d2:
-            st.markdown("**Points a corriger**")
+            st.markdown("**Points à corriger**")
             render_issues(design["issues"])
 
     with tabs[4]:
@@ -233,23 +228,23 @@ def render_result(result, idx=0):
         st.markdown("")
         col_p1, col_p2 = st.columns(2)
         with col_p1:
-            st.markdown("**Donnees mesurees**")
+            st.markdown("**Données mesurées**")
             rt = perf['response_time']
             rt_label = "Excellent" if rt and rt < 1 else ("Moyen" if rt and rt < 2 else "Lent")
             st.markdown(f"- **HTTPS** : {'Actif' if perf['is_https'] else 'Inactif'}")
-            st.markdown(f"- **Temps de reponse** : {rt}s ({rt_label})")
+            st.markdown(f"- **Temps de réponse** : {rt}s ({rt_label})")
             st.markdown(f"- **Taille HTML** : {perf['html_size_kb']} KB")
         with col_p2:
-            st.markdown("**Points a corriger**")
+            st.markdown("**Points à corriger**")
             render_issues(perf["issues"])
 
     with tabs[5]:
         st.markdown("### Analyse Google PageSpeed")
-        st.caption("Metriques officielles Google — meme outil que les professionnels du web")
+        st.caption("Métriques officielles Google — même outil que les professionnels du web")
         url_pagespeed = f"https://pagespeed.web.dev/report?url={result['final_url']}"
         st.markdown(f"""
         <div style="background:#1a1a2e;border:1px solid #2a2a4e;border-radius:12px;padding:2rem;text-align:center;margin-top:1rem">
-            <p style="color:#ccc;font-size:1rem;margin-bottom:1.5rem">Clique sur le bouton ci-dessous pour voir l'analyse Google PageSpeed complete de ce site. Les resultats s'ouvriront dans un nouvel onglet.</p>
+            <p style="color:#ccc;font-size:1rem;margin-bottom:1.5rem">Cliquez sur le bouton ci-dessous pour voir l'analyse Google PageSpeed complète de ce site. Les résultats s'ouvriront dans un nouvel onglet.</p>
             <a href="{url_pagespeed}" target="_blank" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:0.8rem 2rem;border-radius:10px;text-decoration:none;font-weight:600;font-size:1rem">
                 Voir l'analyse PageSpeed
             </a>
@@ -264,17 +259,17 @@ def render_result(result, idx=0):
         render_score_bar("Design", result["design"]["score"])
         render_score_bar("Performance", result["performance"]["score"])
         st.divider()
-        st.markdown(f"**{result['total_issues']} problemes detectes :**")
+        st.markdown(f"**{result['total_issues']} problèmes détectés :**")
         cats = {}
         for item in result["all_issues"]:
             cats.setdefault(item["category"], []).append(item["message"])
         for cat, msgs in cats.items():
-            with st.expander(f"{cat} — {len(msgs)} probleme(s)"):
+            with st.expander(f"{cat} — {len(msgs)} problème(s)"):
                 render_issues(msgs)
         st.divider()
         report_txt = build_export_report(result)
         st.download_button(
-            label="Telecharger le rapport (.txt)",
+            label="Télécharger le rapport (.txt)",
             data=report_txt,
             file_name=f"sitra_rapport_{idx}.txt",
             mime="text/plain",
@@ -282,7 +277,8 @@ def render_result(result, idx=0):
         )
 
     with tabs[7]:
-        st.caption("Coche les objectifs au fur et a mesure que tu les completes")
+        st.markdown("### Mode Challenge")
+        st.caption("Cochez les objectifs au fur et à mesure que vous les complétez")
 
         seo = result["seo"]
         ux = result["ux"]
@@ -291,30 +287,30 @@ def render_result(result, idx=0):
         if not seo["title"]:
             challenge_items.append("Ajouter une balise title sur toutes les pages")
         elif len(seo["title"]) < 10 or len(seo["title"]) > 70:
-            challenge_items.append(f"Optimiser le titre ({len(seo['title'])} chars) — viser 50-60 caracteres")
+            challenge_items.append(f"Optimiser le titre ({len(seo['title'])} chars) — viser 50-60 caractères")
         if not seo["meta_description"]:
-            challenge_items.append("Ecrire une meta description de 120-160 caracteres")
+            challenge_items.append("Écrire une meta description de 120-160 caractères")
         if seo["h1_count"] != 1:
-            challenge_items.append(f"Corriger les balises H1 (tu en as {seo['h1_count']}, il en faut 1)")
+            challenge_items.append(f"Corriger les balises H1 (vous en avez {seo['h1_count']}, il en faut 1)")
         if seo["images_no_alt"] > 0:
-            challenge_items.append(f"Ajouter un attribut alt a {seo['images_no_alt']} image(s)")
+            challenge_items.append(f"Ajouter un attribut alt à {seo['images_no_alt']} image(s)")
         if not ux["has_contact"]:
             challenge_items.append("Ajouter des informations de contact visibles")
         if not result["performance"]["is_https"]:
-            challenge_items.append("Activer le HTTPS sur ton hebergeur")
+            challenge_items.append("Activer le HTTPS sur votre hébergeur")
         if not ux["has_footer"]:
-            challenge_items.append("Creer un footer avec mentions legales et contact")
+            challenge_items.append("Créer un footer avec mentions légales et contact")
         if not result["design"]["has_og_tags"]:
-            challenge_items.append("Ajouter les balises Open Graph pour les reseaux sociaux")
+            challenge_items.append("Ajouter les balises Open Graph pour les réseaux sociaux")
         if result["content"]["word_count"] < 300:
-            challenge_items.append(f"Enrichir le contenu ({result['content']['word_count']} mots — vise 300+)")
+            challenge_items.append(f"Enrichir le contenu ({result['content']['word_count']} mots — visez 300+)")
 
         generals = [
             "Tester le site sur mobile et tablette",
-            "Verifier la vitesse avec Google PageSpeed Insights",
-            "Creer une page FAQ",
-            "Ajouter des avis clients ou temoignages",
-            "Verifier l'orthographe sur toutes les pages",
+            "Vérifier la vitesse avec Google PageSpeed Insights",
+            "Créer une page FAQ",
+            "Ajouter des avis clients ou témoignages",
+            "Vérifier l'orthographe sur toutes les pages",
         ]
         while len(challenge_items) < 5 and generals:
             challenge_items.append(generals.pop(0))
@@ -332,24 +328,24 @@ def render_result(result, idx=0):
         st.markdown("")
         if total > 0:
             st.progress(completed / total)
-            st.caption(f"**{completed}/{total}** objectifs completes {'— Bravo, site optimise !' if completed == total else ''}")
+            st.caption(f"**{completed}/{total}** objectifs complétés {'— Bravo, site optimisé !' if completed == total else ''}")
 
 
 # Sidebar
 with st.sidebar:
-    st.markdown("### Centre de controle")
+    st.markdown("### Centre de contrôle")
     st.divider()
     mode_comparaison = st.checkbox("Mode comparatif", key="compare_mode",
-                                   help="Analyse deux sites en parallele")
+                                   help="Analysez deux sites en parallèle")
     st.divider()
-    st.markdown('<div style="color:#666;font-size:0.75rem;text-align:center">Sitra Engine v1.0<br>Analyse en temps reel</div>', unsafe_allow_html=True)
+    st.markdown('<div style="color:#666;font-size:0.75rem;text-align:center">Sitra Engine v1.0<br>Analyse en temps réel</div>', unsafe_allow_html=True)
 
 
 # Hero
 st.markdown("""
 <div class="hero-header">
     <div class="hero-title">SITRA</div>
-    <div class="hero-subtitle">Analyseur Intelligent de Sites Web &bull; Donnees Reelles &bull; Recommandations Precises</div>
+    <div class="hero-subtitle">Analyseur Intelligent de Sites Web &bull; Données Réelles &bull; Recommandations Précises</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -400,7 +396,7 @@ if "results" in st.session_state:
 else:
     st.markdown("""
     <div style="text-align:center;color:#444;margin-top:3rem;font-size:0.85rem">
-        <p><strong>Sitra</strong> analyse reellement votre site — pas de donnees aleatoires</p>
-        <p>SEO — UX — Contenu — Design — Performance — 20 criteres verifies</p>
+        <p><strong>Sitra</strong> analyse réellement votre site — pas de données aléatoires</p>
+        <p>SEO — UX — Contenu — Design — Performance — 20 critères vérifiés</p>
     </div>
     """, unsafe_allow_html=True)
