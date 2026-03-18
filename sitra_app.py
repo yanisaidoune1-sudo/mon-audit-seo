@@ -1,6 +1,32 @@
 import streamlit as st
 import time
 from analyzer import full_analysis, get_score_label, normalize_url
+from mistralai import Mistral
+
+def generer_recommandations_ia(result):
+    try:
+        client = Mistral(api_key=st.secrets["MISTRAL_API_KEY"])
+        prompt = f"""Tu es un expert en optimisation de sites web. Analyse ces donnees et genere un rapport de recommandations personnalise en 5-7 phrases naturelles et professionnelles. Sois direct et concret. Detecte automatiquement la langue du site et reponds dans cette meme langue.
+
+Site analyse : {result['final_url']}
+Score global : {result['global_score']}/100
+Score SEO : {result['seo']['score']}/100
+Score UX : {result['ux']['score']}/100
+Score Contenu : {result['content']['score']}/100
+Score Design : {result['design']['score']}/100
+Score Performance : {result['performance']['score']}/100
+Nombre de mots : {result['content']['word_count']}
+HTTPS : {'Oui' if result['is_https'] else 'Non'}
+Temps de reponse : {result['response_time']}s
+Problemes detectes : {', '.join([i['message'] for i in result['all_issues'][:5]])}"""
+
+        response = client.chat.complete(
+            model="mistral-large-latest",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return None
 
 st.set_page_config(
     page_title="Sitra | Analyseur de Sites Web",
@@ -106,7 +132,7 @@ def build_export_report(result):
 
 def render_result(result, idx=0):
     if result.get("error") and not result.get("global_score"):
-        st.warning("Impossible d'analyser ce site. Certains grands sites comme Amazon ou Decathlon bloquent volontairement les outils d'analyse. Sitra est concu pour les sites de PME, artisans, restaurants et portfolios.")
+        st.error(f"Erreur — {result['url']} : {result['error']}")
         return
 
     label_txt, _, label_color = get_score_label(result["global_score"])
@@ -130,6 +156,14 @@ def render_result(result, idx=0):
         """, unsafe_allow_html=True)
 
     st.markdown("")
+    with st.expander("Analyse IA — Recommandations personnalisees"):
+        with st.spinner("L'IA analyse votre site..."):
+            recommandations = generer_recommandations_ia(result)
+        if recommandations:
+            st.markdown(recommandations)
+        else:
+            st.warning("Impossible de generer les recommandations IA pour le moment.")
+
     tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "Recapitulatif", "Challenge"])
 
     with tabs[0]:
@@ -312,6 +346,7 @@ with col_btn2:
 # Analyse
 if launch:
     urls_to_analyze = [u for u in [url1, url2] if u and u.strip()]
+
     if not urls_to_analyze:
         st.warning("Merci d'entrer une URL valide.")
     else:
@@ -320,22 +355,17 @@ if launch:
             with st.spinner(f"Analyse de {url} en cours..."):
                 result = full_analysis(url)
             results_list.append(result)
-        st.session_state["results"] = results_list
-        st.session_state["mode_comp"] = mode_comparaison
 
-if "results" in st.session_state:
-    results_list = st.session_state["results"]
-    mode_comp = st.session_state["mode_comp"]
-    if mode_comp and len(results_list) == 2:
-        st.divider()
-        st.markdown("## Comparatif")
-        col_r1, col_r2 = st.columns(2)
-        with col_r1:
+        if mode_comparaison and len(results_list) == 2:
+            st.divider()
+            st.markdown("## Comparatif")
+            col_r1, col_r2 = st.columns(2)
+            with col_r1:
+                render_result(results_list[0], idx=0)
+            with col_r2:
+                render_result(results_list[1], idx=1)
+        else:
             render_result(results_list[0], idx=0)
-        with col_r2:
-            render_result(results_list[1], idx=1)
-    else:
-        render_result(results_list[0], idx=0)
 
 if not launch:
     st.markdown("""
