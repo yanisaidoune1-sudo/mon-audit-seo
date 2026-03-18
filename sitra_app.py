@@ -159,6 +159,31 @@ def render_result(result, idx=0):
         """, unsafe_allow_html=True)
 
     st.markdown("")
+
+    # Boutons de partage
+    score = result["global_score"]
+    url_site = result["final_url"]
+    texte_partage = f"J'ai analysé {url_site} avec Sitra et obtenu un score de {score}/100 ! Analysez votre site gratuitement sur https://mon-audit-seo.streamlit.app"
+    lien_twitter = f"https://twitter.com/intent/tweet?text={texte_partage}"
+    lien_linkedin = f"https://www.linkedin.com/sharing/share-offsite/?url=https://mon-audit-seo.streamlit.app"
+    lien_facebook = f"https://www.facebook.com/sharer/sharer.php?u=https://mon-audit-seo.streamlit.app&quote={texte_partage}"
+    lien_whatsapp = f"https://wa.me/?text={texte_partage}"
+
+    st.markdown("**Partager mes résultats :**")
+    col_sh1, col_sh2, col_sh3, col_sh4 = st.columns(4)
+    with col_sh1:
+        st.markdown(f'''<a href="{lien_twitter}" target="_blank" style="display:block;text-align:center;background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;padding:0.6rem 1rem;color:#1DA1F2;text-decoration:none;font-weight:600;font-size:0.85rem">X (Twitter)</a>''', unsafe_allow_html=True)
+    with col_sh2:
+        st.markdown(f'''<a href="{lien_linkedin}" target="_blank" style="display:block;text-align:center;background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;padding:0.6rem 1rem;color:#0A66C2;text-decoration:none;font-weight:600;font-size:0.85rem">LinkedIn</a>''', unsafe_allow_html=True)
+    with col_sh3:
+        st.markdown(f'''<a href="{lien_facebook}" target="_blank" style="display:block;text-align:center;background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;padding:0.6rem 1rem;color:#1877F2;text-decoration:none;font-weight:600;font-size:0.85rem">Facebook</a>''', unsafe_allow_html=True)
+    with col_sh4:
+        st.markdown(f'''<a href="{lien_whatsapp}" target="_blank" style="display:block;text-align:center;background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;padding:0.6rem 1rem;color:#25D366;text-decoration:none;font-weight:600;font-size:0.85rem">WhatsApp</a>''', unsafe_allow_html=True)
+
+    st.caption("Instagram et TikTok ne permettent pas le partage direct — copiez le texte ci-dessous et collez-le dans votre post :")
+    st.code(texte_partage, language=None)
+
+    st.markdown("")
     with st.expander("Analyse IA — Recommandations personnalisées"):
         with st.spinner("L'IA analyse votre site..."):
             recommandations = generer_recommandations_ia(result)
