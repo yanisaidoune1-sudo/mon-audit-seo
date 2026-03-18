@@ -240,33 +240,37 @@ def render_result(result, idx=0):
     with tabs[5]:
         st.markdown("### Analyse Google PageSpeed")
         st.caption("Metriques officielles Google — meme outil que les professionnels du web")
-        with st.spinner("Recuperation des donnees Google PageSpeed..."):
-            ps = get_pagespeed(result["final_url"])
-        if ps["error"]:
-            st.warning(f"PageSpeed indisponible pour ce site : {ps['error']}")
-        else:
-            col_ps1, col_ps2, col_ps3, col_ps4 = st.columns(4)
-            for col, score, lbl in [
-                (col_ps1, ps["performance"], "Performance"),
-                (col_ps2, ps["accessibility"], "Accessibilite"),
-                (col_ps3, ps["seo"], "SEO Google"),
-                (col_ps4, ps["best_practices"], "Bonnes pratiques"),
-            ]:
-                if score is not None:
-                    lbl_t, _, clr = get_score_label(score)
-                    col.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value" style="color:{clr}">{score}</div>
-                        <div class="metric-label">{lbl}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-            st.markdown("")
-            st.markdown("**Metriques Core Web Vitals :**")
-            col_v1, col_v2, col_v3 = st.columns(3)
-            col_v1.metric("FCP (Premier affichage)", ps["fcp"] or "N/A")
-            col_v2.metric("LCP (Contenu principal)", ps["lcp"] or "N/A")
-            col_v3.metric("CLS (Stabilite visuelle)", ps["cls"] or "N/A")
+        ps_key = f"pagespeed_{idx}"
+        if st.button("Lancer l'analyse PageSpeed", key=f"ps_btn_{idx}"):
+            with st.spinner("Recuperation des donnees Google PageSpeed..."):
+                ps = get_pagespeed(result["final_url"])
+            st.session_state[ps_key] = ps
+        if ps_key in st.session_state:
+            ps = st.session_state[ps_key]
+            if ps["error"]:
+                st.warning(f"PageSpeed indisponible pour ce site : {ps['error']}")
+            else:
+                col_ps1, col_ps2, col_ps3, col_ps4 = st.columns(4)
+                for col, score, lbl in [
+                    (col_ps1, ps["performance"], "Performance"),
+                    (col_ps2, ps["accessibility"], "Accessibilite"),
+                    (col_ps3, ps["seo"], "SEO Google"),
+                    (col_ps4, ps["best_practices"], "Bonnes pratiques"),
+                ]:
+                    if score is not None:
+                        lbl_t, _, clr = get_score_label(score)
+                        col.markdown(f"""
+                        <div class="metric-card">
+                            <div class="metric-value" style="color:{clr}">{score}</div>
+                            <div class="metric-label">{lbl}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                st.markdown("")
+                st.markdown("**Metriques Core Web Vitals :**")
+                col_v1, col_v2, col_v3 = st.columns(3)
+                col_v1.metric("FCP (Premier affichage)", ps["fcp"] or "N/A")
+                col_v2.metric("LCP (Contenu principal)", ps["lcp"] or "N/A")
+                col_v3.metric("CLS (Stabilite visuelle)", ps["cls"] or "N/A")
 
     with tabs[6]:
         st.markdown(f"### Score global : **{result['global_score']}/100** — {label_txt}")
@@ -332,7 +336,14 @@ def render_result(result, idx=0):
             challenge_items.append(generals.pop(0))
 
         total = len(challenge_items)
-        completed = sum(1 for i, obj in enumerate(challenge_items) if st.checkbox(obj, key=f"ch_{idx}_{i}"))
+        completed = 0
+        for i, obj in enumerate(challenge_items):
+            key = f"ch_{idx}_{i}"
+            if key not in st.session_state:
+                st.session_state[key] = False
+            checked = st.checkbox(obj, key=key)
+            if checked:
+                completed += 1
 
         st.markdown("")
         if total > 0:
