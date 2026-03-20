@@ -133,6 +133,85 @@ def build_export_report(result):
     return "\n".join(lines)
 
 
+def build_pdf_report(result):
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.units import cm
+    import io
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+                            rightMargin=2*cm, leftMargin=2*cm,
+                            topMargin=2*cm, bottomMargin=2*cm)
+
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # Titre
+    title_style = ParagraphStyle('title', fontSize=22, fontName='Helvetica-Bold',
+                                  textColor=colors.HexColor('#667eea'), spaceAfter=6)
+    sub_style = ParagraphStyle('sub', fontSize=10, fontName='Helvetica',
+                                textColor=colors.HexColor('#888888'), spaceAfter=20)
+    heading_style = ParagraphStyle('heading', fontSize=13, fontName='Helvetica-Bold',
+                                    textColor=colors.HexColor('#222222'), spaceAfter=8, spaceBefore=16)
+    normal_style = ParagraphStyle('normal', fontSize=10, fontName='Helvetica',
+                                   textColor=colors.HexColor('#333333'), spaceAfter=4)
+
+    elements.append(Paragraph("SITRA — Rapport d'analyse", title_style))
+    elements.append(Paragraph(f"Site : {result['final_url']}", sub_style))
+    elements.append(Paragraph(f"Date : {time.strftime('%d/%m/%Y à %H:%M')}", sub_style))
+    elements.append(Spacer(1, 0.5*cm))
+
+    # Score global
+    elements.append(Paragraph("Score Global", heading_style))
+    score_data = [
+        ["Catégorie", "Score", "Évaluation"],
+        ["Score Global", f"{result['global_score']}/100", get_score_label(result['global_score'])[0]],
+        ["SEO", f"{result['seo']['score']}/100", get_score_label(result['seo']['score'])[0]],
+        ["UX", f"{result['ux']['score']}/100", get_score_label(result['ux']['score'])[0]],
+        ["Contenu", f"{result['content']['score']}/100", get_score_label(result['content']['score'])[0]],
+        ["Design", f"{result['design']['score']}/100", get_score_label(result['design']['score'])[0]],
+        ["Performance", f"{result['performance']['score']}/100", get_score_label(result['performance']['score'])[0]],
+    ]
+    score_table = Table(score_data, colWidths=[6*cm, 4*cm, 5*cm])
+    score_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#f7f7f7'), colors.white]),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dddddd')),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(score_table)
+    elements.append(Spacer(1, 0.5*cm))
+
+    # Problèmes détectés
+    elements.append(Paragraph(f"Problèmes détectés ({result['total_issues']})", heading_style))
+    cats = {}
+    for item in result['all_issues']:
+        cats.setdefault(item['category'], []).append(item['message'])
+    for cat, msgs in cats.items():
+        elements.append(Paragraph(f"<b>{cat}</b>", normal_style))
+        for msg in msgs:
+            elements.append(Paragraph(f"• {msg}", normal_style))
+        elements.append(Spacer(1, 0.2*cm))
+
+    elements.append(Spacer(1, 0.5*cm))
+    elements.append(Paragraph("Rapport généré par Sitra — Analyseur Intelligent de Sites Web",
+                               ParagraphStyle('footer', fontSize=8, textColor=colors.HexColor('#aaaaaa'))))
+
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
 def render_result(result, idx=0):
     if result.get("error"):
         st.warning("Impossible d'analyser ce site. Certains grands sites bloquent volontairement les outils d'analyse automatiques. Sitra est conçu pour les sites de PME, artisans, restaurants et portfolios.")
@@ -140,31 +219,7 @@ def render_result(result, idx=0):
 
     label_txt, _, label_color = get_score_label(result["global_score"])
     st.divider()
-
-    score = result["global_score"]
-    if score >= 90:
-        medaille = "Diamant"
-        medaille_color = "#a8d8f0"
-        medaille_bg = "rgba(168,216,240,0.15)"
-    elif score >= 75:
-        medaille = "Or"
-        medaille_color = "#ffd700"
-        medaille_bg = "rgba(255,215,0,0.15)"
-    elif score >= 55:
-        medaille = "Argent"
-        medaille_color = "#c0c0c0"
-        medaille_bg = "rgba(192,192,192,0.15)"
-    else:
-        medaille = "Bronze"
-        medaille_color = "#cd7f32"
-        medaille_bg = "rgba(205,127,50,0.15)"
-
-    st.markdown(f"""
-    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.5rem">
-        <span style="font-size:1.3rem;font-weight:700">{result['final_url']}</span>
-        <span style="background:{medaille_bg};border:1px solid {medaille_color};color:{medaille_color};padding:0.2rem 0.8rem;border-radius:999px;font-size:0.85rem;font-weight:700">{medaille}</span>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"### {result['final_url']}")
 
     c1, c2, c3, c4, c5 = st.columns(5)
     for col, score, lbl in [
@@ -291,14 +346,28 @@ def render_result(result, idx=0):
             with st.expander(f"{cat} — {len(msgs)} problème(s)"):
                 render_issues(msgs)
         st.divider()
-        report_txt = build_export_report(result)
-        st.download_button(
-            label="Télécharger le rapport (.txt)",
-            data=report_txt,
-            file_name=f"sitra_rapport_{idx}.txt",
-            mime="text/plain",
-            key=f"download_{idx}"
-        )
+        col_dl1, col_dl2 = st.columns(2)
+        with col_dl1:
+            report_txt = build_export_report(result)
+            st.download_button(
+                label="Télécharger le rapport (.txt)",
+                data=report_txt,
+                file_name=f"sitra_rapport_{idx}.txt",
+                mime="text/plain",
+                key=f"download_txt_{idx}"
+            )
+        with col_dl2:
+            try:
+                pdf_data = build_pdf_report(result)
+                st.download_button(
+                    label="Télécharger le rapport (.pdf)",
+                    data=pdf_data,
+                    file_name=f"sitra_rapport_{idx}.pdf",
+                    mime="application/pdf",
+                    key=f"download_pdf_{idx}"
+                )
+            except Exception as e:
+                st.caption("Export PDF indisponible")
 
     with tabs[7]:
         st.markdown("### Mode Challenge")
@@ -412,6 +481,13 @@ else:
     url1 = st.text_input("Votre site :", placeholder="ex : monsite.fr ou https://monsite.fr", key="url1")
     url2 = ""
 
+# Option analyse multi-pages
+with st.expander("Analyser plusieurs pages de mon site (optionnel)"):
+    st.caption("Ajoutez jusqu'à 3 pages supplémentaires à analyser en plus de la page d'accueil")
+    page2 = st.text_input("Page 2 :", placeholder="ex : monsite.fr/contact", key="page2")
+    page3 = st.text_input("Page 3 :", placeholder="ex : monsite.fr/services", key="page3")
+    page4 = st.text_input("Page 4 :", placeholder="ex : monsite.fr/about", key="page4")
+
 col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
 with col_btn2:
     launch = st.button("Lancer l'analyse", use_container_width=True)
@@ -430,6 +506,32 @@ if launch:
             results_list.append(result)
         st.session_state["results"] = results_list
         st.session_state["mode_comp"] = mode_comparaison
+
+        # Analyse multi-pages
+        pages_sup = [p for p in [page2, page3, page4] if p and p.strip()]
+        if pages_sup and not mode_comparaison:
+            st.divider()
+            st.markdown("## Analyse des pages supplémentaires")
+            for page_url in pages_sup:
+                with st.spinner(f"Analyse de {page_url} en cours..."):
+                    page_result = full_analysis(page_url)
+                if page_result.get("error"):
+                    st.warning(f"Impossible d'analyser {page_url}")
+                else:
+                    score = page_result["global_score"]
+                    label_txt, _, label_color = get_score_label(score)
+                    st.markdown(f"**{page_result['final_url']}** — Score : **{score}/100** — {label_txt}")
+                    col_p1, col_p2, col_p3, col_p4, col_p5 = st.columns(5)
+                    for col, s, lbl in [
+                        (col_p1, score, "Global"),
+                        (col_p2, page_result["seo"]["score"], "SEO"),
+                        (col_p3, page_result["ux"]["score"], "UX"),
+                        (col_p4, page_result["design"]["score"], "Design"),
+                        (col_p5, page_result["performance"]["score"], "Perf."),
+                    ]:
+                        _, _, clr = get_score_label(s)
+                        col.markdown(f"""<div class="metric-card"><div class="metric-value" style="color:{clr}">{s}</div><div class="metric-label">{lbl}</div></div>""", unsafe_allow_html=True)
+                    st.markdown("")
 
 if "results" in st.session_state:
     results_list = st.session_state["results"]
