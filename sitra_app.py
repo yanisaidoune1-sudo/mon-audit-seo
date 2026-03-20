@@ -140,7 +140,31 @@ def render_result(result, idx=0):
 
     label_txt, _, label_color = get_score_label(result["global_score"])
     st.divider()
-    st.markdown(f"### {result['final_url']}")
+
+    score = result["global_score"]
+    if score >= 90:
+        medaille = "Diamant"
+        medaille_color = "#a8d8f0"
+        medaille_bg = "rgba(168,216,240,0.15)"
+    elif score >= 75:
+        medaille = "Or"
+        medaille_color = "#ffd700"
+        medaille_bg = "rgba(255,215,0,0.15)"
+    elif score >= 55:
+        medaille = "Argent"
+        medaille_color = "#c0c0c0"
+        medaille_bg = "rgba(192,192,192,0.15)"
+    else:
+        medaille = "Bronze"
+        medaille_color = "#cd7f32"
+        medaille_bg = "rgba(205,127,50,0.15)"
+
+    st.markdown(f"""
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.5rem">
+        <span style="font-size:1.3rem;font-weight:700">{result['final_url']}</span>
+        <span style="background:{medaille_bg};border:1px solid {medaille_color};color:{medaille_color};padding:0.2rem 0.8rem;border-radius:999px;font-size:0.85rem;font-weight:700">{medaille}</span>
+    </div>
+    """, unsafe_allow_html=True)
 
     c1, c2, c3, c4, c5 = st.columns(5)
     for col, score, lbl in [
@@ -364,8 +388,6 @@ with st.sidebar:
     st.divider()
     mode_comparaison = st.checkbox("Mode comparatif", key="compare_mode",
                                    help="Analysez deux sites en parallèle")
-    mode_avantapres = st.checkbox("Mode avant/après", key="avantapres_mode",
-                                   help="Comparez votre site avant et après corrections")
     st.divider()
     st.markdown('<div style="color:#666;font-size:0.75rem;text-align:center">Sitra Engine v1.0<br>Analyse en temps réel</div>', unsafe_allow_html=True)
 
@@ -406,48 +428,12 @@ if launch:
             with st.spinner(f"Analyse de {url} en cours..."):
                 result = full_analysis(url)
             results_list.append(result)
-
-        # Mode avant/après : sauvegarde l'analyse précédente
-        if mode_avantapres and "results" in st.session_state:
-            st.session_state["results_avant"] = st.session_state["results"]
-
         st.session_state["results"] = results_list
         st.session_state["mode_comp"] = mode_comparaison
 
 if "results" in st.session_state:
     results_list = st.session_state["results"]
     mode_comp = st.session_state.get("mode_comp", False)
-
-    # Affichage comparaison avant/après
-    if mode_avantapres and "results_avant" in st.session_state:
-        st.divider()
-        st.markdown("## Comparaison Avant / Après")
-        avant = st.session_state["results_avant"][0]
-        apres = results_list[0]
-
-        col_av1, col_av2, col_av3, col_av4, col_av5 = st.columns(5)
-        categories = [
-            ("Score Global", avant["global_score"], apres["global_score"]),
-            ("SEO", avant["seo"]["score"], apres["seo"]["score"]),
-            ("UX", avant["ux"]["score"], apres["ux"]["score"]),
-            ("Design", avant["design"]["score"], apres["design"]["score"]),
-            ("Performance", avant["performance"]["score"], apres["performance"]["score"]),
-        ]
-        for col, (cat, score_av, score_ap) in zip([col_av1, col_av2, col_av3, col_av4, col_av5], categories):
-            diff = score_ap - score_av
-            diff_color = "#28a745" if diff > 0 else ("#dc3545" if diff < 0 else "#888")
-            diff_txt = f"+{diff}" if diff > 0 else str(diff)
-            col.markdown(f"""
-            <div class="metric-card">
-                <div style="font-size:0.75rem;color:#888;text-transform:uppercase;margin-bottom:0.3rem">{cat}</div>
-                <div style="font-size:1rem;color:#888">{score_av} → {score_ap}</div>
-                <div style="font-size:1.4rem;font-weight:700;color:{diff_color}">{diff_txt}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.caption("Relancez l'analyse après avoir corrigé votre site pour voir la progression.")
-        st.divider()
-
     if mode_comp and len(results_list) == 2:
         st.divider()
         st.markdown("## Comparatif")
