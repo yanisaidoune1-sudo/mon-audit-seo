@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages, detect_pages
+from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages
 
 def generer_recommandations_ia(result):
     try:
