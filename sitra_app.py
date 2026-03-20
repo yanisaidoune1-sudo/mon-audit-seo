@@ -364,6 +364,8 @@ with st.sidebar:
     st.divider()
     mode_comparaison = st.checkbox("Mode comparatif", key="compare_mode",
                                    help="Analysez deux sites en parallèle")
+    mode_avantapres = st.checkbox("Mode avant/après", key="avantapres_mode",
+                                   help="Comparez votre site avant et après corrections")
     st.divider()
     st.markdown('<div style="color:#666;font-size:0.75rem;text-align:center">Sitra Engine v1.0<br>Analyse en temps réel</div>', unsafe_allow_html=True)
 
@@ -404,12 +406,48 @@ if launch:
             with st.spinner(f"Analyse de {url} en cours..."):
                 result = full_analysis(url)
             results_list.append(result)
+
+        # Mode avant/après : sauvegarde l'analyse précédente
+        if mode_avantapres and "results" in st.session_state:
+            st.session_state["results_avant"] = st.session_state["results"]
+
         st.session_state["results"] = results_list
         st.session_state["mode_comp"] = mode_comparaison
 
 if "results" in st.session_state:
     results_list = st.session_state["results"]
     mode_comp = st.session_state.get("mode_comp", False)
+
+    # Affichage comparaison avant/après
+    if mode_avantapres and "results_avant" in st.session_state:
+        st.divider()
+        st.markdown("## Comparaison Avant / Après")
+        avant = st.session_state["results_avant"][0]
+        apres = results_list[0]
+
+        col_av1, col_av2, col_av3, col_av4, col_av5 = st.columns(5)
+        categories = [
+            ("Score Global", avant["global_score"], apres["global_score"]),
+            ("SEO", avant["seo"]["score"], apres["seo"]["score"]),
+            ("UX", avant["ux"]["score"], apres["ux"]["score"]),
+            ("Design", avant["design"]["score"], apres["design"]["score"]),
+            ("Performance", avant["performance"]["score"], apres["performance"]["score"]),
+        ]
+        for col, (cat, score_av, score_ap) in zip([col_av1, col_av2, col_av3, col_av4, col_av5], categories):
+            diff = score_ap - score_av
+            diff_color = "#28a745" if diff > 0 else ("#dc3545" if diff < 0 else "#888")
+            diff_txt = f"+{diff}" if diff > 0 else str(diff)
+            col.markdown(f"""
+            <div class="metric-card">
+                <div style="font-size:0.75rem;color:#888;text-transform:uppercase;margin-bottom:0.3rem">{cat}</div>
+                <div style="font-size:1rem;color:#888">{score_av} → {score_ap}</div>
+                <div style="font-size:1.4rem;font-weight:700;color:{diff_color}">{diff_txt}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.caption("Relancez l'analyse après avoir corrigé votre site pour voir la progression.")
+        st.divider()
+
     if mode_comp and len(results_list) == 2:
         st.divider()
         st.markdown("## Comparatif")
