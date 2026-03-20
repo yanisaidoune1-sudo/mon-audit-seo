@@ -80,6 +80,8 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .stTabs [data-baseweb="tab-list"] { background: #0f0f1a; border-radius: 10px; padding: 4px; gap: 4px; }
 .stTabs [data-baseweb="tab"] { background: transparent; color: #888; border-radius: 8px; font-weight: 500; }
 .stTabs [aria-selected="true"] { background: linear-gradient(135deg, #667eea, #764ba2) !important; color: white !important; }
+.stCheckbox input[type="checkbox"]:checked + div { background-color: #667eea !important; border-color: #667eea !important; }
+input[type="checkbox"]:checked { accent-color: #667eea; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -532,7 +534,7 @@ if launch:
                     import pandas as pd
                     df = pd.DataFrame(tableau)
                     st.dataframe(df, use_container_width=True, hide_index=True)
-                    st.caption("Cliquez sur une ligne pour voir plus de détails.")
+
             else:
                 st.info("Aucune page supplémentaire détectée dans la navigation du site.")
 
