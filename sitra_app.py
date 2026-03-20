@@ -80,8 +80,9 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .stTabs [data-baseweb="tab-list"] { background: #0f0f1a; border-radius: 10px; padding: 4px; gap: 4px; }
 .stTabs [data-baseweb="tab"] { background: transparent; color: #888; border-radius: 8px; font-weight: 500; }
 .stTabs [aria-selected="true"] { background: linear-gradient(135deg, #667eea, #764ba2) !important; color: white !important; }
-.stCheckbox input[type="checkbox"]:checked + div { background-color: #667eea !important; border-color: #667eea !important; }
-input[type="checkbox"]:checked { accent-color: #667eea; }
+input[type="checkbox"] { accent-color: #667eea !important; }
+[data-testid="stCheckbox"] input[type="checkbox"] { accent-color: #667eea !important; }
+[data-testid="stCheckbox"] span { color: #e0e0e0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
