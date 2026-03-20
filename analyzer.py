@@ -19,8 +19,51 @@ HEADERS = {
 TIMEOUT = 10
 
 
+def detect_pages(url: str) -> list:
+    """Détecte automatiquement les pages principales du site en lisant la navigation"""
+    url = normalize_url(url)
+    pages = []
+    try:
+        parsed = urlparse(url)
+        base_url = f"{parsed.scheme}://{parsed.netloc}"
+
+        session = requests.Session()
+        session.headers.update(HEADERS)
+        r = session.get(url, timeout=TIMEOUT, allow_redirects=True)
+        if r.status_code != 200:
+            return []
+
+        soup = BeautifulSoup(r.text, "lxml")
+
+        # Cherche les liens dans la navigation
+        nav_links = []
+        for nav in soup.find_all(["nav", "header"]):
+            for a in nav.find_all("a", href=True):
+                href = a.get("href", "").strip()
+                if not href or href == "/" or href.startswith("#") or href.startswith("javascript"):
+                    continue
+                # Construit l'URL complète
+                if href.startswith("http"):
+                    full_url = href
+                elif href.startswith("/"):
+                    full_url = base_url + href
+                else:
+                    full_url = base_url + "/" + href
+
+                # Garde seulement les pages du même domaine
+                if parsed.netloc in full_url and full_url != url and full_url not in nav_links:
+                    # Filtre les URLs de ressources
+                    if not any(ext in full_url.lower() for ext in [".css", ".js", ".png", ".jpg", ".pdf", ".ico"]):
+                        nav_links.append(full_url)
+
+        # Garde max 4 pages
+        return nav_links[:4]
+
+    except Exception:
+        return []
+
+
 def normalize_url(url: str) -> str:
-    """Normalise une URL : ajoute https:// si absent"""
     url = url.strip()
     if not url:
         return ""
