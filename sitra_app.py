@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages, detect_pages
+from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages
 
 def generer_recommandations_ia(result):
     try:
@@ -510,27 +510,29 @@ if launch:
                 pages_detectees = detect_pages(normalize_url(url1))
             if pages_detectees:
                 st.divider()
-                st.markdown(f"## Pages détectées automatiquement ({len(pages_detectees)})")
+                st.markdown(f"## Pages analysées automatiquement")
+
+                tableau = []
                 for page_url in pages_detectees:
                     with st.spinner(f"Analyse de {page_url}..."):
                         page_result = full_analysis(page_url)
-                    if page_result.get("error"):
-                        st.warning(f"Impossible d'analyser {page_url}")
-                    else:
-                        score = page_result["global_score"]
-                        label_txt, _, label_color = get_score_label(score)
-                        st.markdown(f"**{page_result['final_url']}** — Score : **{score}/100** — {label_txt}")
-                        col_p1, col_p2, col_p3, col_p4, col_p5 = st.columns(5)
-                        for col, s, lbl in [
-                            (col_p1, score, "Global"),
-                            (col_p2, page_result["seo"]["score"], "SEO"),
-                            (col_p3, page_result["ux"]["score"], "UX"),
-                            (col_p4, page_result["design"]["score"], "Design"),
-                            (col_p5, page_result["performance"]["score"], "Perf."),
-                        ]:
-                            _, _, clr = get_score_label(s)
-                            col.markdown(f"""<div class="metric-card"><div class="metric-value" style="color:{clr}">{s}</div><div class="metric-label">{lbl}</div></div>""", unsafe_allow_html=True)
-                        st.markdown("")
+                    if not page_result.get("error"):
+                        label_txt, _, _ = get_score_label(page_result["global_score"])
+                        tableau.append({
+                            "Page": page_result["final_url"],
+                            "Score Global": f"{page_result['global_score']}/100",
+                            "SEO": f"{page_result['seo']['score']}/100",
+                            "UX": f"{page_result['ux']['score']}/100",
+                            "Design": f"{page_result['design']['score']}/100",
+                            "Performance": f"{page_result['performance']['score']}/100",
+                            "Niveau": label_txt,
+                        })
+
+                if tableau:
+                    import pandas as pd
+                    df = pd.DataFrame(tableau)
+                    st.dataframe(df, use_container_width=True, hide_index=True)
+                    st.caption("Cliquez sur une ligne pour voir plus de détails.")
             else:
                 st.info("Aucune page supplémentaire détectée dans la navigation du site.")
 
