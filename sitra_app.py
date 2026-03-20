@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed
+from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages, detect_pages
 
 def generer_recommandations_ia(result):
     try:
@@ -482,11 +482,8 @@ else:
     url2 = ""
 
 # Option analyse multi-pages
-with st.expander("Analyser plusieurs pages de mon site (optionnel)"):
-    st.caption("Ajoutez jusqu'à 3 pages supplémentaires à analyser en plus de la page d'accueil")
-    page2 = st.text_input("Page 2 :", placeholder="ex : monsite.fr/contact", key="page2")
-    page3 = st.text_input("Page 3 :", placeholder="ex : monsite.fr/services", key="page3")
-    page4 = st.text_input("Page 4 :", placeholder="ex : monsite.fr/about", key="page4")
+mode_multipages = st.checkbox("Analyser automatiquement toutes les pages du site", key="multipages",
+                              help="Sitra détecte et analyse les pages principales de votre site automatiquement")
 
 col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
 with col_btn2:
@@ -507,31 +504,35 @@ if launch:
         st.session_state["results"] = results_list
         st.session_state["mode_comp"] = mode_comparaison
 
-        # Analyse multi-pages
-        pages_sup = [p for p in [page2, page3, page4] if p and p.strip()]
-        if pages_sup and not mode_comparaison:
-            st.divider()
-            st.markdown("## Analyse des pages supplémentaires")
-            for page_url in pages_sup:
-                with st.spinner(f"Analyse de {page_url} en cours..."):
-                    page_result = full_analysis(page_url)
-                if page_result.get("error"):
-                    st.warning(f"Impossible d'analyser {page_url}")
-                else:
-                    score = page_result["global_score"]
-                    label_txt, _, label_color = get_score_label(score)
-                    st.markdown(f"**{page_result['final_url']}** — Score : **{score}/100** — {label_txt}")
-                    col_p1, col_p2, col_p3, col_p4, col_p5 = st.columns(5)
-                    for col, s, lbl in [
-                        (col_p1, score, "Global"),
-                        (col_p2, page_result["seo"]["score"], "SEO"),
-                        (col_p3, page_result["ux"]["score"], "UX"),
-                        (col_p4, page_result["design"]["score"], "Design"),
-                        (col_p5, page_result["performance"]["score"], "Perf."),
-                    ]:
-                        _, _, clr = get_score_label(s)
-                        col.markdown(f"""<div class="metric-card"><div class="metric-value" style="color:{clr}">{s}</div><div class="metric-label">{lbl}</div></div>""", unsafe_allow_html=True)
-                    st.markdown("")
+        # Analyse multi-pages automatique
+        if mode_multipages and not mode_comparaison and url1.strip():
+            with st.spinner("Détection des pages du site en cours..."):
+                pages_detectees = detect_pages(normalize_url(url1))
+            if pages_detectees:
+                st.divider()
+                st.markdown(f"## Pages détectées automatiquement ({len(pages_detectees)})")
+                for page_url in pages_detectees:
+                    with st.spinner(f"Analyse de {page_url}..."):
+                        page_result = full_analysis(page_url)
+                    if page_result.get("error"):
+                        st.warning(f"Impossible d'analyser {page_url}")
+                    else:
+                        score = page_result["global_score"]
+                        label_txt, _, label_color = get_score_label(score)
+                        st.markdown(f"**{page_result['final_url']}** — Score : **{score}/100** — {label_txt}")
+                        col_p1, col_p2, col_p3, col_p4, col_p5 = st.columns(5)
+                        for col, s, lbl in [
+                            (col_p1, score, "Global"),
+                            (col_p2, page_result["seo"]["score"], "SEO"),
+                            (col_p3, page_result["ux"]["score"], "UX"),
+                            (col_p4, page_result["design"]["score"], "Design"),
+                            (col_p5, page_result["performance"]["score"], "Perf."),
+                        ]:
+                            _, _, clr = get_score_label(s)
+                            col.markdown(f"""<div class="metric-card"><div class="metric-value" style="color:{clr}">{s}</div><div class="metric-label">{lbl}</div></div>""", unsafe_allow_html=True)
+                        st.markdown("")
+            else:
+                st.info("Aucune page supplémentaire détectée dans la navigation du site.")
 
 if "results" in st.session_state:
     results_list = st.session_state["results"]
