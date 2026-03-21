@@ -581,6 +581,39 @@ def get_score_label(score: int) -> tuple:
         return "Critique", "rouge", "#dc3545"
 
 
+def detect_pages(url: str) -> list:
+    """Détecte automatiquement les pages principales du site"""
+    url = normalize_url(url)
+    pages = []
+    try:
+        parsed = urlparse(url)
+        base_url = f"{parsed.scheme}://{parsed.netloc}"
+        session = requests.Session()
+        session.headers.update(HEADERS)
+        r = session.get(url, timeout=TIMEOUT, allow_redirects=True)
+        if r.status_code != 200:
+            return []
+        soup = BeautifulSoup(r.text, "lxml")
+        nav_links = []
+        for nav in soup.find_all(["nav", "header"]):
+            for a in nav.find_all("a", href=True):
+                href = a.get("href", "").strip()
+                if not href or href == "/" or href.startswith("#") or href.startswith("javascript"):
+                    continue
+                if href.startswith("http"):
+                    full_url = href
+                elif href.startswith("/"):
+                    full_url = base_url + href
+                else:
+                    full_url = base_url + "/" + href
+                if parsed.netloc in full_url and full_url != url and full_url not in nav_links:
+                    if not any(ext in full_url.lower() for ext in [".css", ".js", ".png", ".jpg", ".pdf", ".ico"]):
+                        nav_links.append(full_url)
+        return nav_links[:4]
+    except Exception:
+        return []
+
+
 def get_pagespeed(url: str) -> dict:
     """Recupere les vraies metriques Google PageSpeed sans cle API"""
     result = {
