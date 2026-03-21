@@ -20,35 +20,71 @@ TIMEOUT = 10
 
 
 def detect_secteur_et_concurrents(url: str, html: str) -> dict:
-    """Détecte le secteur du site et trouve des concurrents à comparer"""
+    """Détecte le secteur du site avec l'IA et trouve des concurrents à comparer"""
     try:
         soup = BeautifulSoup(html, "lxml")
-        text = soup.get_text(" ", strip=True).lower()[:2000]
+        text = soup.get_text(" ", strip=True)[:3000]
+        title = soup.find("title")
+        title_text = title.get_text(strip=True) if title else ""
 
-        # Détection du secteur par mots-clés
-        secteurs = {
-            "Restaurant / Food": ["restaurant", "menu", "plat", "cuisine", "food", "pizza", "burger", "reservation", "table"],
-            "E-commerce": ["acheter", "panier", "boutique", "shop", "produit", "prix", "livraison", "commander"],
-            "Artisan / Services": ["artisan", "devis", "chantier", "renovation", "plombier", "electricien", "maçon", "peinture"],
-            "Santé / Médical": ["médecin", "docteur", "consultation", "santé", "cabinet", "rendez-vous", "clinique"],
-            "Immobilier": ["immobilier", "appartement", "maison", "louer", "vente", "agence", "bien", "m2"],
-            "Éducation / Formation": ["formation", "cours", "apprendre", "école", "université", "certification", "étudiant"],
-            "Beauté / Bien-être": ["coiffeur", "salon", "beauté", "spa", "massage", "soin", "esthétique"],
-            "Juridique / Finance": ["avocat", "comptable", "juridique", "finance", "conseil", "expertise"],
-            "Tech / Digital": ["développement", "web", "application", "digital", "software", "logiciel", "startup"],
-            "Autre": []
-        }
+        # Détection du secteur via Mistral
+        secteur_detecte = None
+        try:
+            import requests as req
+            # On récupère la clé depuis les variables d'environnement
+            import os
+            api_key = os.environ.get("MISTRAL_API_KEY", "")
+            if api_key:
+                headers = {
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json"
+                }
+                prompt = f"""Analyse ce contenu de site web et réponds UNIQUEMENT avec le secteur parmi cette liste exacte :
+Restaurant / Food, E-commerce, Artisan / Services, Santé / Médical, Immobilier, Éducation / Formation, Beauté / Bien-être, Juridique / Finance, Tech / Digital, Sport / Mode, Tourisme / Voyage, Autre
 
-        scores_secteur = {}
-        for secteur, mots in secteurs.items():
-            score = sum(1 for mot in mots if mot in text)
-            scores_secteur[secteur] = score
+Titre du site : {title_text}
+Contenu : {text[:1000]}
 
-        secteur_detecte = max(scores_secteur, key=scores_secteur.get)
-        if scores_secteur[secteur_detecte] == 0:
-            secteur_detecte = "Autre"
+Réponds avec UNIQUEMENT le nom du secteur, rien d'autre."""
 
-        # Concurrents types par secteur
+                data = {
+                    "model": "mistral-large-latest",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": 20
+                }
+                r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=15)
+                secteur_ia = r.json()["choices"][0]["message"]["content"].strip()
+                secteurs_valides = ["Restaurant / Food", "E-commerce", "Artisan / Services", "Santé / Médical",
+                                   "Immobilier", "Éducation / Formation", "Beauté / Bien-être", "Juridique / Finance",
+                                   "Tech / Digital", "Sport / Mode", "Tourisme / Voyage", "Autre"]
+                if secteur_ia in secteurs_valides:
+                    secteur_detecte = secteur_ia
+        except Exception:
+            pass
+
+        # Fallback : détection par mots-clés si l'IA échoue
+        if not secteur_detecte:
+            text_lower = text.lower()
+            secteurs = {
+                "Restaurant / Food": ["restaurant", "menu", "plat", "cuisine", "food", "pizza", "burger", "reservation"],
+                "E-commerce": ["acheter", "panier", "boutique", "shop", "produit", "livraison", "commander"],
+                "Artisan / Services": ["artisan", "devis", "chantier", "renovation", "plombier", "electricien"],
+                "Santé / Médical": ["médecin", "docteur", "consultation", "santé", "cabinet", "clinique"],
+                "Immobilier": ["immobilier", "appartement", "maison", "louer", "vente", "agence"],
+                "Éducation / Formation": ["formation", "cours", "apprendre", "école", "université"],
+                "Beauté / Bien-être": ["coiffeur", "salon", "beauté", "spa", "massage", "soin"],
+                "Juridique / Finance": ["avocat", "comptable", "juridique", "finance", "conseil"],
+                "Tech / Digital": ["développement", "web", "application", "digital", "software"],
+                "Sport / Mode": ["sport", "mode", "vêtement", "chaussure", "fitness", "nike", "adidas"],
+                "Tourisme / Voyage": ["voyage", "hotel", "réservation", "tourisme", "destination"],
+                "Autre": []
+            }
+            scores = {s: sum(1 for m in mots if m in text_lower) for s, mots in secteurs.items()}
+            secteur_detecte = max(scores, key=scores.get)
+            if scores[secteur_detecte] == 0:
+                secteur_detecte = "Autre"
+
+        # Concurrents par secteur
         concurrents_types = {
             "Restaurant / Food": ["tripadvisor.fr", "lafourchette.com", "deliveroo.fr"],
             "E-commerce": ["amazon.fr", "cdiscount.com", "fnac.com"],
@@ -59,18 +95,18 @@ def detect_secteur_et_concurrents(url: str, html: str) -> dict:
             "Beauté / Bien-être": ["treatwell.fr", "fresha.com", "planity.com"],
             "Juridique / Finance": ["captain-contrat.com", "legalstart.fr", "shine.fr"],
             "Tech / Digital": ["malt.fr", "upwork.com", "clutch.co"],
+            "Sport / Mode": ["decathlon.fr", "zalando.fr", "adidas.fr"],
+            "Tourisme / Voyage": ["booking.com", "tripadvisor.fr", "airbnb.fr"],
             "Autre": ["google.fr", "wikipedia.org", "yelp.fr"],
         }
 
         concurrents = concurrents_types.get(secteur_detecte, [])
-
         return {
             "secteur": secteur_detecte,
             "concurrents": concurrents,
-            "score_detection": scores_secteur[secteur_detecte]
         }
     except Exception:
-        return {"secteur": "Autre", "concurrents": [], "score_detection": 0}
+        return {"secteur": "Autre", "concurrents": []}
 
 
     """Détecte automatiquement les pages principales du site en lisant la navigation"""
