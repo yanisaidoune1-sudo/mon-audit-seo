@@ -215,7 +215,84 @@ def build_pdf_report(result):
     return buffer.getvalue()
 
 
-def render_result(result, idx=0):
+def generer_pdf(result):
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.units import cm
+    import io
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+                           rightMargin=2*cm, leftMargin=2*cm,
+                           topMargin=2*cm, bottomMargin=2*cm)
+
+    styles = getSampleStyleSheet()
+    story = []
+
+    # Titre
+    title_style = ParagraphStyle('title', parent=styles['Title'],
+                                  fontSize=24, textColor=colors.HexColor('#667eea'),
+                                  spaceAfter=6)
+    subtitle_style = ParagraphStyle('subtitle', parent=styles['Normal'],
+                                     fontSize=10, textColor=colors.grey, spaceAfter=20)
+    section_style = ParagraphStyle('section', parent=styles['Heading2'],
+                                    fontSize=13, textColor=colors.HexColor('#333333'),
+                                    spaceBefore=16, spaceAfter=8)
+    normal_style = ParagraphStyle('normal', parent=styles['Normal'],
+                                   fontSize=10, spaceAfter=4)
+
+    story.append(Paragraph("SITRA", title_style))
+    story.append(Paragraph("Rapport d'analyse de site web", subtitle_style))
+    story.append(Paragraph(f"Site analysé : {result['final_url']}", normal_style))
+    story.append(Paragraph(f"Date : {time.strftime('%d/%m/%Y à %H:%M')}", normal_style))
+    story.append(Spacer(1, 0.5*cm))
+
+    # Scores
+    story.append(Paragraph("Scores", section_style))
+    label_txt, _, _ = get_score_label(result["global_score"])
+    data = [
+        ["Catégorie", "Score", "Niveau"],
+        ["Score Global", f"{result['global_score']}/100", label_txt],
+        ["SEO", f"{result['seo']['score']}/100", get_score_label(result['seo']['score'])[0]],
+        ["UX", f"{result['ux']['score']}/100", get_score_label(result['ux']['score'])[0]],
+        ["Contenu", f"{result['content']['score']}/100", get_score_label(result['content']['score'])[0]],
+        ["Design", f"{result['design']['score']}/100", get_score_label(result['design']['score'])[0]],
+        ["Performance", f"{result['performance']['score']}/100", get_score_label(result['performance']['score'])[0]],
+    ]
+    table = Table(data, colWidths=[6*cm, 4*cm, 6*cm])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#667eea')),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 10),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.HexColor('#f7f7f7'), colors.white]),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#dddddd')),
+        ('PADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(table)
+    story.append(Spacer(1, 0.5*cm))
+
+    # Problèmes détectés
+    story.append(Paragraph(f"Problèmes détectés ({result['total_issues']})", section_style))
+    cats = {}
+    for item in result["all_issues"]:
+        cats.setdefault(item["category"], []).append(item["message"])
+    for cat, msgs in cats.items():
+        story.append(Paragraph(f"<b>{cat}</b>", normal_style))
+        for msg in msgs:
+            story.append(Paragraph(f"• {msg}", normal_style))
+        story.append(Spacer(1, 0.2*cm))
+
+    story.append(Spacer(1, 0.3*cm))
+    story.append(Paragraph("Rapport généré par Sitra — Analyseur Intelligent de Sites Web", 
+                           ParagraphStyle('footer', parent=styles['Normal'], 
+                                         fontSize=8, textColor=colors.grey)))
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.read()
     if result.get("error"):
         st.warning("Impossible d'analyser ce site. Certains grands sites bloquent volontairement les outils d'analyse automatiques. Sitra est conçu pour les sites de PME, artisans, restaurants et portfolios.")
         return
@@ -349,28 +426,24 @@ def render_result(result, idx=0):
             with st.expander(f"{cat} — {len(msgs)} problème(s)"):
                 render_issues(msgs)
         st.divider()
-        col_dl1, col_dl2 = st.columns(2)
-        with col_dl1:
+        try:
+            pdf_data = generer_pdf(result)
+            st.download_button(
+                label="Télécharger le rapport PDF",
+                data=pdf_data,
+                file_name=f"sitra_rapport_{idx}.pdf",
+                mime="application/pdf",
+                key=f"download_{idx}"
+            )
+        except Exception:
             report_txt = build_export_report(result)
             st.download_button(
                 label="Télécharger le rapport (.txt)",
                 data=report_txt,
                 file_name=f"sitra_rapport_{idx}.txt",
                 mime="text/plain",
-                key=f"download_txt_{idx}"
+                key=f"download_{idx}"
             )
-        with col_dl2:
-            try:
-                pdf_data = build_pdf_report(result)
-                st.download_button(
-                    label="Télécharger le rapport (.pdf)",
-                    data=pdf_data,
-                    file_name=f"sitra_rapport_{idx}.pdf",
-                    mime="application/pdf",
-                    key=f"download_pdf_{idx}"
-                )
-            except Exception as e:
-                st.caption("Export PDF indisponible")
 
     with tabs[7]:
         st.markdown("### Mode Challenge")
