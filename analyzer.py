@@ -19,7 +19,60 @@ HEADERS = {
 TIMEOUT = 10
 
 
-def detect_pages(url: str) -> list:
+def detect_secteur_et_concurrents(url: str, html: str) -> dict:
+    """Détecte le secteur du site et trouve des concurrents à comparer"""
+    try:
+        soup = BeautifulSoup(html, "lxml")
+        text = soup.get_text(" ", strip=True).lower()[:2000]
+
+        # Détection du secteur par mots-clés
+        secteurs = {
+            "Restaurant / Food": ["restaurant", "menu", "plat", "cuisine", "food", "pizza", "burger", "reservation", "table"],
+            "E-commerce": ["acheter", "panier", "boutique", "shop", "produit", "prix", "livraison", "commander"],
+            "Artisan / Services": ["artisan", "devis", "chantier", "renovation", "plombier", "electricien", "maçon", "peinture"],
+            "Santé / Médical": ["médecin", "docteur", "consultation", "santé", "cabinet", "rendez-vous", "clinique"],
+            "Immobilier": ["immobilier", "appartement", "maison", "louer", "vente", "agence", "bien", "m2"],
+            "Éducation / Formation": ["formation", "cours", "apprendre", "école", "université", "certification", "étudiant"],
+            "Beauté / Bien-être": ["coiffeur", "salon", "beauté", "spa", "massage", "soin", "esthétique"],
+            "Juridique / Finance": ["avocat", "comptable", "juridique", "finance", "conseil", "expertise"],
+            "Tech / Digital": ["développement", "web", "application", "digital", "software", "logiciel", "startup"],
+            "Autre": []
+        }
+
+        scores_secteur = {}
+        for secteur, mots in secteurs.items():
+            score = sum(1 for mot in mots if mot in text)
+            scores_secteur[secteur] = score
+
+        secteur_detecte = max(scores_secteur, key=scores_secteur.get)
+        if scores_secteur[secteur_detecte] == 0:
+            secteur_detecte = "Autre"
+
+        # Concurrents types par secteur
+        concurrents_types = {
+            "Restaurant / Food": ["tripadvisor.fr", "lafourchette.com", "deliveroo.fr"],
+            "E-commerce": ["amazon.fr", "cdiscount.com", "fnac.com"],
+            "Artisan / Services": ["pages-jaunes.fr", "habitatpresto.com", "houzz.fr"],
+            "Santé / Médical": ["doctolib.fr", "ameli.fr", "sante.fr"],
+            "Immobilier": ["seloger.com", "leboncoin.fr", "logic-immo.com"],
+            "Éducation / Formation": ["openclassrooms.com", "coursera.org", "udemy.com"],
+            "Beauté / Bien-être": ["treatwell.fr", "fresha.com", "planity.com"],
+            "Juridique / Finance": ["captain-contrat.com", "legalstart.fr", "shine.fr"],
+            "Tech / Digital": ["malt.fr", "upwork.com", "clutch.co"],
+            "Autre": ["google.fr", "wikipedia.org", "yelp.fr"],
+        }
+
+        concurrents = concurrents_types.get(secteur_detecte, [])
+
+        return {
+            "secteur": secteur_detecte,
+            "concurrents": concurrents,
+            "score_detection": scores_secteur[secteur_detecte]
+        }
+    except Exception:
+        return {"secteur": "Autre", "concurrents": [], "score_detection": 0}
+
+
     """Détecte automatiquement les pages principales du site en lisant la navigation"""
     url = normalize_url(url)
     pages = []
