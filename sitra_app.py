@@ -2,6 +2,7 @@ import streamlit as st
 import time
 from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages
 
+# ── IA ────────────────────────────────────────────────────────────────────────
 def generer_recommandations_ia(result):
     try:
         import requests as req
@@ -21,22 +22,81 @@ Performance : {result['performance']['score']}/100
 HTTPS : {'Oui' if result['is_https'] else 'Non'}
 Temps de réponse : {result['response_time']}s
 Problèmes : {', '.join([i['message'] for i in result['all_issues'][:5]])}"""
-
-        data = {
-            "model": "mistral-large-latest",
-            "messages": [{"role": "user", "content": prompt}]
-        }
+        data = {"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}]}
         r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=30)
         return r.json()["choices"][0]["message"]["content"]
-    except Exception as e:
+    except Exception:
         return None
 
-st.set_page_config(
-    page_title="Sitra | Analyseur de Sites Web",
-    page_icon="S",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+
+# ── PDF ───────────────────────────────────────────────────────────────────────
+def generer_pdf(result):
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.units import cm
+    import io
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=2*cm, leftMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm)
+    styles = getSampleStyleSheet()
+    story = []
+
+    title_style = ParagraphStyle('title', fontSize=22, fontName='Helvetica-Bold', textColor=colors.HexColor('#667eea'), spaceAfter=6)
+    sub_style = ParagraphStyle('sub', fontSize=10, fontName='Helvetica', textColor=colors.HexColor('#888888'), spaceAfter=20)
+    heading_style = ParagraphStyle('heading', fontSize=13, fontName='Helvetica-Bold', textColor=colors.HexColor('#222222'), spaceAfter=8, spaceBefore=16)
+    normal_style = ParagraphStyle('normal', fontSize=10, fontName='Helvetica', textColor=colors.HexColor('#333333'), spaceAfter=4)
+
+    story.append(Paragraph("SITRA — Rapport d'analyse", title_style))
+    story.append(Paragraph(f"Site : {result['final_url']}", sub_style))
+    story.append(Paragraph(f"Date : {time.strftime('%d/%m/%Y')}", sub_style))
+    story.append(Spacer(1, 0.5*cm))
+
+    story.append(Paragraph("Scores", heading_style))
+    data = [
+        ["Categorie", "Score", "Evaluation"],
+        ["Score Global", f"{result['global_score']}/100", get_score_label(result['global_score'])[0]],
+        ["SEO", f"{result['seo']['score']}/100", get_score_label(result['seo']['score'])[0]],
+        ["UX", f"{result['ux']['score']}/100", get_score_label(result['ux']['score'])[0]],
+        ["Contenu", f"{result['content']['score']}/100", get_score_label(result['content']['score'])[0]],
+        ["Design", f"{result['design']['score']}/100", get_score_label(result['design']['score'])[0]],
+        ["Performance", f"{result['performance']['score']}/100", get_score_label(result['performance']['score'])[0]],
+    ]
+    table = Table(data, colWidths=[6*cm, 4*cm, 5*cm])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#667eea')),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 10),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.HexColor('#f7f7f7'), colors.white]),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#dddddd')),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+    ]))
+    story.append(table)
+    story.append(Spacer(1, 0.5*cm))
+
+    story.append(Paragraph(f"Problemes detectes ({result['total_issues']})", heading_style))
+    cats = {}
+    for item in result['all_issues']:
+        cats.setdefault(item['category'], []).append(item['message'])
+    for cat, msgs in cats.items():
+        story.append(Paragraph(f"<b>{cat}</b>", normal_style))
+        for msg in msgs:
+            story.append(Paragraph(f"- {msg}", normal_style))
+        story.append(Spacer(1, 0.2*cm))
+
+    story.append(Spacer(1, 0.5*cm))
+    story.append(Paragraph("Rapport genere par Sitra — Analyseur Intelligent de Sites Web",
+                           ParagraphStyle('footer', fontSize=8, textColor=colors.HexColor('#aaaaaa'))))
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+# ── CONFIG ────────────────────────────────────────────────────────────────────
+st.set_page_config(page_title="Sitra | Analyseur de Sites Web", page_icon="S", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
@@ -45,23 +105,10 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .main .block-container { padding-top: 2rem; padding-bottom: 4rem; max-width: 1200px; }
 [data-testid="stSidebar"] { background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%); }
 [data-testid="stSidebar"] * { color: #e0e0e0 !important; }
-.hero-header {
-    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a3e 50%, #0f0f1a 100%);
-    border: 1px solid #2a2a5e; border-radius: 16px;
-    padding: 2.5rem 3rem; margin-bottom: 2rem; text-align: center;
-}
-.hero-title {
-    font-size: 3.5rem; font-weight: 800;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text; margin: 0; letter-spacing: -1px;
-}
+.hero-header { background: linear-gradient(135deg, #0f0f1a 0%, #1a1a3e 50%, #0f0f1a 100%); border: 1px solid #2a2a5e; border-radius: 16px; padding: 2.5rem 3rem; margin-bottom: 2rem; text-align: center; }
+.hero-title { font-size: 3.5rem; font-weight: 800; background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0; letter-spacing: -1px; }
 .hero-subtitle { color: #888; font-size: 1rem; margin-top: 0.5rem; letter-spacing: 2px; text-transform: uppercase; }
-.metric-card {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border: 1px solid #2a2a4e; border-radius: 12px;
-    padding: 1.2rem 1.5rem; text-align: center;
-}
+.metric-card { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 1px solid #2a2a4e; border-radius: 12px; padding: 1.2rem 1.5rem; text-align: center; }
 .metric-value { font-size: 1.8rem; font-weight: 700; }
 .metric-label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-top: 0.2rem; }
 .issue-item { padding: 0.6rem 1rem; border-radius: 8px; margin: 0.4rem 0; font-size: 0.9rem; line-height: 1.5; border-left: 3px solid; }
@@ -72,21 +119,16 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .score-bar-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: #ccc; margin-bottom: 0.3rem; }
 .score-bar-bg { background: #2a2a3e; border-radius: 999px; height: 8px; overflow: hidden; }
 .score-bar-fill { height: 100%; border-radius: 999px; }
-.stButton > button {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white; border: none; border-radius: 10px;
-    font-weight: 600; font-size: 1rem; padding: 0.7rem 2rem; width: 100%;
-}
+.stButton > button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-weight: 600; font-size: 1rem; padding: 0.7rem 2rem; width: 100%; }
 .stTabs [data-baseweb="tab-list"] { background: #0f0f1a; border-radius: 10px; padding: 4px; gap: 4px; }
 .stTabs [data-baseweb="tab"] { background: transparent; color: #888; border-radius: 8px; font-weight: 500; }
 .stTabs [aria-selected="true"] { background: linear-gradient(135deg, #667eea, #764ba2) !important; color: white !important; }
 input[type="checkbox"] { accent-color: #667eea !important; }
-[data-testid="stCheckbox"] input[type="checkbox"] { accent-color: #667eea !important; }
-[data-testid="stCheckbox"] span { color: #e0e0e0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
 
+# ── HELPERS ───────────────────────────────────────────────────────────────────
 def render_score_bar(label, score):
     label_txt, _, color = get_score_label(score)
     st.markdown(f"""
@@ -111,188 +153,8 @@ def render_issues(issues):
             st.markdown(f'<div class="issue-item {css_class}">{issue}</div>', unsafe_allow_html=True)
 
 
-def build_export_report(result):
-    lines = [
-        "=" * 60,
-        "RAPPORT D'ANALYSE SITRA",
-        f"Site analysé : {result['url']}",
-        f"Date : {time.strftime('%d/%m/%Y à %H:%M')}",
-        "=" * 60,
-        f"\nSCORE GLOBAL : {result['global_score']}/100",
-        f"HTTPS : {'Oui' if result['is_https'] else 'Non'}",
-        f"Temps de réponse : {result['response_time']}s",
-        "\nSCORES PAR CATÉGORIE :",
-        f"  SEO : {result['seo']['score']}/100",
-        f"  UX : {result['ux']['score']}/100",
-        f"  Contenu : {result['content']['score']}/100",
-        f"  Design : {result['design']['score']}/100",
-        f"  Performance : {result['performance']['score']}/100",
-        f"\nPROBLÈMES DÉTECTÉS ({result['total_issues']}) :",
-    ]
-    for item in result['all_issues']:
-        lines.append(f"  [{item['category']}] {item['message']}")
-    lines.append("\n" + "=" * 60)
-    lines.append("Rapport généré par Sitra")
-    return "\n".join(lines)
-
-
-def build_pdf_report(result):
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-    from reportlab.lib.units import cm
-    import io
-
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4,
-                            rightMargin=2*cm, leftMargin=2*cm,
-                            topMargin=2*cm, bottomMargin=2*cm)
-
-    styles = getSampleStyleSheet()
-    elements = []
-
-    # Titre
-    title_style = ParagraphStyle('title', fontSize=22, fontName='Helvetica-Bold',
-                                  textColor=colors.HexColor('#667eea'), spaceAfter=6)
-    sub_style = ParagraphStyle('sub', fontSize=10, fontName='Helvetica',
-                                textColor=colors.HexColor('#888888'), spaceAfter=20)
-    heading_style = ParagraphStyle('heading', fontSize=13, fontName='Helvetica-Bold',
-                                    textColor=colors.HexColor('#222222'), spaceAfter=8, spaceBefore=16)
-    normal_style = ParagraphStyle('normal', fontSize=10, fontName='Helvetica',
-                                   textColor=colors.HexColor('#333333'), spaceAfter=4)
-
-    elements.append(Paragraph("SITRA — Rapport d'analyse", title_style))
-    elements.append(Paragraph(f"Site : {result['final_url']}", sub_style))
-    elements.append(Paragraph(f"Date : {time.strftime('%d/%m/%Y à %H:%M')}", sub_style))
-    elements.append(Spacer(1, 0.5*cm))
-
-    # Score global
-    elements.append(Paragraph("Score Global", heading_style))
-    score_data = [
-        ["Catégorie", "Score", "Évaluation"],
-        ["Score Global", f"{result['global_score']}/100", get_score_label(result['global_score'])[0]],
-        ["SEO", f"{result['seo']['score']}/100", get_score_label(result['seo']['score'])[0]],
-        ["UX", f"{result['ux']['score']}/100", get_score_label(result['ux']['score'])[0]],
-        ["Contenu", f"{result['content']['score']}/100", get_score_label(result['content']['score'])[0]],
-        ["Design", f"{result['design']['score']}/100", get_score_label(result['design']['score'])[0]],
-        ["Performance", f"{result['performance']['score']}/100", get_score_label(result['performance']['score'])[0]],
-    ]
-    score_table = Table(score_data, colWidths=[6*cm, 4*cm, 5*cm])
-    score_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 11),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 10),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#f7f7f7'), colors.white]),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dddddd')),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-    ]))
-    elements.append(score_table)
-    elements.append(Spacer(1, 0.5*cm))
-
-    # Problèmes détectés
-    elements.append(Paragraph(f"Problèmes détectés ({result['total_issues']})", heading_style))
-    cats = {}
-    for item in result['all_issues']:
-        cats.setdefault(item['category'], []).append(item['message'])
-    for cat, msgs in cats.items():
-        elements.append(Paragraph(f"<b>{cat}</b>", normal_style))
-        for msg in msgs:
-            elements.append(Paragraph(f"• {msg}", normal_style))
-        elements.append(Spacer(1, 0.2*cm))
-
-    elements.append(Spacer(1, 0.5*cm))
-    elements.append(Paragraph("Rapport généré par Sitra — Analyseur Intelligent de Sites Web",
-                               ParagraphStyle('footer', fontSize=8, textColor=colors.HexColor('#aaaaaa'))))
-
-    doc.build(elements)
-    buffer.seek(0)
-    return buffer.getvalue()
-
-
-def generer_pdf(result):
-    from reportlab.lib.pagesizes import A4
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib import colors
-    from reportlab.lib.units import cm
-    import io
-
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4,
-                           rightMargin=2*cm, leftMargin=2*cm,
-                           topMargin=2*cm, bottomMargin=2*cm)
-
-    styles = getSampleStyleSheet()
-    story = []
-
-    # Titre
-    title_style = ParagraphStyle('title', parent=styles['Title'],
-                                  fontSize=24, textColor=colors.HexColor('#667eea'),
-                                  spaceAfter=6)
-    subtitle_style = ParagraphStyle('subtitle', parent=styles['Normal'],
-                                     fontSize=10, textColor=colors.grey, spaceAfter=20)
-    section_style = ParagraphStyle('section', parent=styles['Heading2'],
-                                    fontSize=13, textColor=colors.HexColor('#333333'),
-                                    spaceBefore=16, spaceAfter=8)
-    normal_style = ParagraphStyle('normal', parent=styles['Normal'],
-                                   fontSize=10, spaceAfter=4)
-
-    story.append(Paragraph("SITRA", title_style))
-    story.append(Paragraph("Rapport d'analyse de site web", subtitle_style))
-    story.append(Paragraph(f"Site analysé : {result['final_url']}", normal_style))
-    story.append(Paragraph(f"Date : {time.strftime('%d/%m/%Y à %H:%M')}", normal_style))
-    story.append(Spacer(1, 0.5*cm))
-
-    # Scores
-    story.append(Paragraph("Scores", section_style))
-    label_txt, _, _ = get_score_label(result["global_score"])
-    data = [
-        ["Catégorie", "Score", "Niveau"],
-        ["Score Global", f"{result['global_score']}/100", label_txt],
-        ["SEO", f"{result['seo']['score']}/100", get_score_label(result['seo']['score'])[0]],
-        ["UX", f"{result['ux']['score']}/100", get_score_label(result['ux']['score'])[0]],
-        ["Contenu", f"{result['content']['score']}/100", get_score_label(result['content']['score'])[0]],
-        ["Design", f"{result['design']['score']}/100", get_score_label(result['design']['score'])[0]],
-        ["Performance", f"{result['performance']['score']}/100", get_score_label(result['performance']['score'])[0]],
-    ]
-    table = Table(data, colWidths=[6*cm, 4*cm, 6*cm])
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#667eea')),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,-1), 10),
-        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.HexColor('#f7f7f7'), colors.white]),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#dddddd')),
-        ('PADDING', (0,0), (-1,-1), 8),
-    ]))
-    story.append(table)
-    story.append(Spacer(1, 0.5*cm))
-
-    # Problèmes détectés
-    story.append(Paragraph(f"Problèmes détectés ({result['total_issues']})", section_style))
-    cats = {}
-    for item in result["all_issues"]:
-        cats.setdefault(item["category"], []).append(item["message"])
-    for cat, msgs in cats.items():
-        story.append(Paragraph(f"<b>{cat}</b>", normal_style))
-        for msg in msgs:
-            story.append(Paragraph(f"• {msg}", normal_style))
-        story.append(Spacer(1, 0.2*cm))
-
-    story.append(Spacer(1, 0.3*cm))
-    story.append(Paragraph("Rapport généré par Sitra — Analyseur Intelligent de Sites Web", 
-                           ParagraphStyle('footer', parent=styles['Normal'], 
-                                         fontSize=8, textColor=colors.grey)))
-
-    doc.build(story)
-    buffer.seek(0)
-    return buffer.read()
+# ── RENDER RESULT ─────────────────────────────────────────────────────────────
+def render_result(result, idx=0):
     if result.get("error"):
         st.warning("Impossible d'analyser ce site. Certains grands sites bloquent volontairement les outils d'analyse automatiques. Sitra est conçu pour les sites de PME, artisans, restaurants et portfolios.")
         return
@@ -403,7 +265,7 @@ def generer_pdf(result):
         url_pagespeed = f"https://pagespeed.web.dev/report?url={result['final_url']}"
         st.markdown(f"""
         <div style="background:#1a1a2e;border:1px solid #2a2a4e;border-radius:12px;padding:2rem;text-align:center;margin-top:1rem">
-            <p style="color:#ccc;font-size:1rem;margin-bottom:1.5rem">Cliquez sur le bouton ci-dessous pour voir l'analyse Google PageSpeed complète de ce site. Les résultats s'ouvriront dans un nouvel onglet.</p>
+            <p style="color:#ccc;font-size:1rem;margin-bottom:1.5rem">Cliquez sur le bouton ci-dessous pour voir l'analyse Google PageSpeed complète. Les résultats s'ouvriront dans un nouvel onglet.</p>
             <a href="{url_pagespeed}" target="_blank" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:0.8rem 2rem;border-radius:10px;text-decoration:none;font-weight:600;font-size:1rem">
                 Voir l'analyse PageSpeed
             </a>
@@ -436,23 +298,14 @@ def generer_pdf(result):
                 key=f"download_{idx}"
             )
         except Exception:
-            report_txt = build_export_report(result)
-            st.download_button(
-                label="Télécharger le rapport (.txt)",
-                data=report_txt,
-                file_name=f"sitra_rapport_{idx}.txt",
-                mime="text/plain",
-                key=f"download_{idx}"
-            )
+            st.caption("Export PDF indisponible pour le moment.")
 
     with tabs[7]:
         st.markdown("### Mode Challenge")
         st.caption("Cochez les objectifs au fur et à mesure que vous les complétez")
-
         seo = result["seo"]
         ux = result["ux"]
         challenge_items = []
-
         if not seo["title"]:
             challenge_items.append("Ajouter une balise title sur toutes les pages")
         elif len(seo["title"]) < 10 or len(seo["title"]) > 70:
@@ -473,7 +326,6 @@ def generer_pdf(result):
             challenge_items.append("Ajouter les balises Open Graph pour les réseaux sociaux")
         if result["content"]["word_count"] < 300:
             challenge_items.append(f"Enrichir le contenu ({result['content']['word_count']} mots — visez 300+)")
-
         generals = [
             "Tester le site sur mobile et tablette",
             "Vérifier la vitesse avec Google PageSpeed Insights",
@@ -483,17 +335,14 @@ def generer_pdf(result):
         ]
         while len(challenge_items) < 5 and generals:
             challenge_items.append(generals.pop(0))
-
         total = len(challenge_items)
         completed = 0
         for i, obj in enumerate(challenge_items):
             key = f"ch_{idx}_{i}"
             if key not in st.session_state:
                 st.session_state[key] = False
-            checked = st.checkbox(obj, key=key)
-            if checked:
+            if st.checkbox(obj, key=key):
                 completed += 1
-
         st.markdown("")
         if total > 0:
             st.progress(completed / total)
@@ -502,7 +351,6 @@ def generer_pdf(result):
     with tabs[8]:
         st.markdown("### Partager mes résultats")
         st.caption("Partagez votre score et faites découvrir Sitra autour de vous")
-
         score = result["global_score"]
         url_site = result["final_url"]
         texte_partage = f"J'ai analysé {url_site} avec Sitra et obtenu un score de {score}/100 ! Analysez votre site gratuitement sur https://mon-audit-seo.streamlit.app"
@@ -510,7 +358,6 @@ def generer_pdf(result):
         lien_linkedin = f"https://www.linkedin.com/sharing/share-offsite/?url=https://mon-audit-seo.streamlit.app"
         lien_facebook = f"https://www.facebook.com/sharer/sharer.php?u=https://mon-audit-seo.streamlit.app&quote={texte_partage}"
         lien_whatsapp = f"https://wa.me/?text={texte_partage}"
-
         st.markdown("")
         col_sh1, col_sh2, col_sh3, col_sh4 = st.columns(4)
         with col_sh1:
@@ -521,23 +368,22 @@ def generer_pdf(result):
             st.markdown(f'''<a href="{lien_facebook}" target="_blank" style="display:block;text-align:center;background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;padding:0.8rem 1rem;color:#1877F2;text-decoration:none;font-weight:600;font-size:0.9rem">Facebook</a>''', unsafe_allow_html=True)
         with col_sh4:
             st.markdown(f'''<a href="{lien_whatsapp}" target="_blank" style="display:block;text-align:center;background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;padding:0.8rem 1rem;color:#25D366;text-decoration:none;font-weight:600;font-size:0.9rem">WhatsApp</a>''', unsafe_allow_html=True)
-
         st.markdown("")
         st.markdown("**Pour Instagram et TikTok** — copiez ce texte et collez-le dans votre post :")
         st.code(texte_partage, language=None)
 
 
-# Sidebar
+# ── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("### Centre de contrôle")
     st.divider()
-    mode_comparaison = st.checkbox("Mode comparatif", key="compare_mode",
-                                   help="Analysez deux sites en parallèle")
+    mode_comparaison = st.checkbox("Mode comparatif", key="compare_mode", help="Analysez deux sites en parallèle")
+    mode_multipages = st.checkbox("Analyser toutes les pages", key="multipages", help="Détecte et analyse les pages principales automatiquement")
     st.divider()
     st.markdown('<div style="color:#666;font-size:0.75rem;text-align:center">Sitra Engine v1.0<br>Analyse en temps réel</div>', unsafe_allow_html=True)
 
 
-# Hero
+# ── HERO ─────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero-header">
     <div class="hero-title">SITRA</div>
@@ -546,7 +392,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# Input
+# ── INPUT ─────────────────────────────────────────────────────────────────────
 if mode_comparaison:
     col_in1, col_in2 = st.columns(2)
     with col_in1:
@@ -557,16 +403,12 @@ else:
     url1 = st.text_input("Votre site :", placeholder="ex : monsite.fr ou https://monsite.fr", key="url1")
     url2 = ""
 
-# Option analyse multi-pages
-mode_multipages = st.checkbox("Analyser automatiquement toutes les pages du site", key="multipages",
-                              help="Sitra détecte et analyse les pages principales de votre site automatiquement")
-
 col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
 with col_btn2:
     launch = st.button("Lancer l'analyse", use_container_width=True)
 
 
-# Analyse
+# ── ANALYSE ───────────────────────────────────────────────────────────────────
 if launch:
     urls_to_analyze = [u for u in [url1, url2] if u and u.strip()]
     if not urls_to_analyze:
@@ -586,8 +428,8 @@ if launch:
                 pages_detectees = detect_pages(normalize_url(url1))
             if pages_detectees:
                 st.divider()
-                st.markdown(f"## Pages analysées automatiquement")
-
+                st.markdown("## Pages analysées automatiquement")
+                import pandas as pd
                 tableau = []
                 for page_url in pages_detectees:
                     with st.spinner(f"Analyse de {page_url}..."):
@@ -603,12 +445,9 @@ if launch:
                             "Performance": f"{page_result['performance']['score']}/100",
                             "Niveau": label_txt,
                         })
-
                 if tableau:
-                    import pandas as pd
                     df = pd.DataFrame(tableau)
                     st.dataframe(df, use_container_width=True, hide_index=True)
-
             else:
                 st.info("Aucune page supplémentaire détectée dans la navigation du site.")
 
