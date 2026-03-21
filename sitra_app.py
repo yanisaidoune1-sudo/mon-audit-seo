@@ -190,6 +190,13 @@ def render_result(result, idx=0):
 
     tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Concurrents", "Récapitulatif", "Challenge", "Partager"])
 
+    # Passe la clé API à l'analyzer via les variables d'environnement
+    import os
+    try:
+        os.environ["MISTRAL_API_KEY"] = st.secrets["MISTRAL_API_KEY"]
+    except Exception:
+        pass
+
     with tabs[0]:
         seo = result["seo"]
         render_score_bar("SEO et Référencement", seo["score"])
