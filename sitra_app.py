@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages
+from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages, detect_secteur_et_concurrents
 
 # ── IA ────────────────────────────────────────────────────────────────────────
 def generer_recommandations_ia(result):
@@ -188,7 +188,7 @@ def render_result(result, idx=0):
         else:
             st.warning("Impossible de générer les recommandations IA pour le moment.")
 
-    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Récapitulatif", "Challenge", "Partager"])
+    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Concurrents", "Récapitulatif", "Challenge", "Partager"])
 
     with tabs[0]:
         seo = result["seo"]
@@ -273,6 +273,59 @@ def render_result(result, idx=0):
         """, unsafe_allow_html=True)
 
     with tabs[6]:
+        st.markdown("### Analyse Concurrentielle")
+        st.caption("Sitra détecte automatiquement votre secteur et compare votre site aux références du marché")
+
+        # Détection secteur
+        html = result.get("html", "")
+        if not html:
+            fetch_data = __import__("analyzer").fetch_site(result["final_url"])
+            html = fetch_data.get("html", "")
+
+        concurrence = detect_secteur_et_concurrents(result["final_url"], html or "")
+        secteur = concurrence["secteur"]
+        concurrents = concurrence["concurrents"]
+
+        st.info(f"**Secteur détecté automatiquement : {secteur}**")
+
+        if concurrents:
+            st.markdown("**Comparaison avec les références du secteur :**")
+            import pandas as pd
+            tableau = []
+            for concurrent_url in concurrents:
+                with st.spinner(f"Analyse de {concurrent_url}..."):
+                    c_result = full_analysis(concurrent_url)
+                if not c_result.get("error"):
+                    label_txt, _, _ = get_score_label(c_result["global_score"])
+                    diff = result["global_score"] - c_result["global_score"]
+                    diff_txt = f"+{diff}" if diff > 0 else str(diff)
+                    tableau.append({
+                        "Site": c_result["final_url"],
+                        "Score": f"{c_result['global_score']}/100",
+                        "SEO": f"{c_result['seo']['score']}/100",
+                        "UX": f"{c_result['ux']['score']}/100",
+                        "Performance": f"{c_result['performance']['score']}/100",
+                        "Vs votre site": diff_txt,
+                    })
+
+            # Ajoute votre site en premier
+            label_vous, _, _ = get_score_label(result["global_score"])
+            tableau.insert(0, {
+                "Site": f"⭐ {result['final_url']} (vous)",
+                "Score": f"{result['global_score']}/100",
+                "SEO": f"{result['seo']['score']}/100",
+                "UX": f"{result['ux']['score']}/100",
+                "Performance": f"{result['performance']['score']}/100",
+                "Vs votre site": "—",
+            })
+
+            if tableau:
+                df = pd.DataFrame(tableau)
+                st.dataframe(df, use_container_width=True, hide_index=True)
+        else:
+            st.info("Aucun concurrent de référence trouvé pour ce secteur.")
+
+    with tabs[7]:
         st.markdown(f"### Score global : **{result['global_score']}/100** — {label_txt}")
         render_score_bar("SEO", result["seo"]["score"])
         render_score_bar("UX", result["ux"]["score"])
@@ -300,8 +353,7 @@ def render_result(result, idx=0):
         except Exception:
             st.caption("Export PDF indisponible pour le moment.")
 
-    with tabs[7]:
-        st.markdown("### Mode Challenge")
+    with tabs[8]:
         st.caption("Cochez les objectifs au fur et à mesure que vous les complétez")
         seo = result["seo"]
         ux = result["ux"]
@@ -348,7 +400,7 @@ def render_result(result, idx=0):
             st.progress(completed / total)
             st.caption(f"**{completed}/{total}** objectifs complétés {'— Bravo, site optimisé !' if completed == total else ''}")
 
-    with tabs[8]:
+    with tabs[9]:
         st.markdown("### Partager mes résultats")
         st.caption("Partagez votre score et faites découvrir Sitra autour de vous")
         score = result["global_score"]
