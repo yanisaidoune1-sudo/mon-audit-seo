@@ -30,7 +30,75 @@ Problèmes : {', '.join([i['message'] for i in result['all_issues'][:5]])}"""
 
 
 # ── PDF ───────────────────────────────────────────────────────────────────────
-def generer_pdf(result):
+def envoyer_rapport_email(email: str, result: dict) -> bool:
+    """Envoie le rapport PDF par email via Resend"""
+    try:
+        import requests as req
+        import base64
+
+        # Génère le PDF
+        pdf_data = generer_pdf(result)
+        pdf_b64 = base64.b64encode(pdf_data).decode("utf-8")
+
+        # Contenu de l'email
+        score = result["global_score"]
+        label_txt, _, _ = get_score_label(score)
+        url_site = result["final_url"]
+
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 2rem; text-align: center; border-radius: 12px 12px 0 0;">
+                <h1 style="color: white; margin: 0; font-size: 2rem;">SITRA</h1>
+                <p style="color: rgba(255,255,255,0.8); margin: 0.5rem 0 0;">Rapport d'analyse de site web</p>
+            </div>
+            <div style="background: #f7f7f7; padding: 2rem; border-radius: 0 0 12px 12px;">
+                <h2 style="color: #333;">Votre rapport est prêt !</h2>
+                <p style="color: #666;">Voici les résultats de l'analyse de <strong>{url_site}</strong> :</p>
+                <div style="background: white; border-radius: 8px; padding: 1.5rem; margin: 1rem 0;">
+                    <div style="font-size: 2.5rem; font-weight: bold; color: #667eea; text-align: center;">{score}/100</div>
+                    <div style="text-align: center; color: #888; font-size: 0.9rem;">{label_txt}</div>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; margin: 1rem 0;">
+                    <tr style="background: #667eea; color: white;">
+                        <td style="padding: 8px 12px; font-weight: bold;">Catégorie</td>
+                        <td style="padding: 8px 12px; font-weight: bold;">Score</td>
+                    </tr>
+                    <tr style="background: white;"><td style="padding: 8px 12px;">SEO</td><td style="padding: 8px 12px;">{result['seo']['score']}/100</td></tr>
+                    <tr style="background: #f7f7f7;"><td style="padding: 8px 12px;">UX</td><td style="padding: 8px 12px;">{result['ux']['score']}/100</td></tr>
+                    <tr style="background: white;"><td style="padding: 8px 12px;">Contenu</td><td style="padding: 8px 12px;">{result['content']['score']}/100</td></tr>
+                    <tr style="background: #f7f7f7;"><td style="padding: 8px 12px;">Design</td><td style="padding: 8px 12px;">{result['design']['score']}/100</td></tr>
+                    <tr style="background: white;"><td style="padding: 8px 12px;">Performance</td><td style="padding: 8px 12px;">{result['performance']['score']}/100</td></tr>
+                </table>
+                <p style="color: #666; font-size: 0.9rem;">Le rapport complet en PDF est joint à cet email.</p>
+                <div style="text-align: center; margin-top: 1.5rem;">
+                    <a href="https://mon-audit-seo.streamlit.app" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 0.8rem 2rem; border-radius: 8px; text-decoration: none; font-weight: bold;">Relancer une analyse</a>
+                </div>
+            </div>
+            <p style="text-align: center; color: #aaa; font-size: 0.8rem; margin-top: 1rem;">Sitra — Analyseur Intelligent de Sites Web</p>
+        </div>
+        """
+
+        payload = {
+            "from": "Sitra <onboarding@resend.dev>",
+            "to": [email],
+            "subject": f"Votre rapport Sitra — {url_site} — Score : {score}/100",
+            "html": html_content,
+            "attachments": [{
+                "filename": f"sitra_rapport.pdf",
+                "content": pdf_b64
+            }]
+        }
+
+        headers = {
+            "Authorization": f"Bearer {st.secrets['RESEND_API_KEY']}",
+            "Content-Type": "application/json"
+        }
+
+        r = req.post("https://api.resend.com/emails", headers=headers, json=payload, timeout=30)
+        return r.status_code == 200
+
+    except Exception as e:
+        return False
     from reportlab.lib.pagesizes import A4
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -95,7 +163,32 @@ def generer_pdf(result):
     return buffer.getvalue()
 
 
-# ── CONFIG ────────────────────────────────────────────────────────────────────
+# ── LIMITE ANALYSES ───────────────────────────────────────────────────────────
+def get_analyses_count():
+    if "analyses_count" not in st.session_state:
+        st.session_state["analyses_count"] = 0
+    return st.session_state["analyses_count"]
+
+def increment_analyses_count():
+    if "analyses_count" not in st.session_state:
+        st.session_state["analyses_count"] = 0
+    st.session_state["analyses_count"] += 1
+
+def show_paywall():
+    st.markdown("""
+    <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #667eea;border-radius:16px;padding:3rem;text-align:center;margin:2rem 0">
+        <div style="font-size:2rem;font-weight:800;background:linear-gradient(135deg,#667eea,#f07cf7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:1rem">
+            Vous avez utilisé votre analyse gratuite
+        </div>
+        <p style="color:#aaa;font-size:1rem;margin-bottom:2rem;max-width:500px;margin-left:auto;margin-right:auto">
+            Pour continuer à analyser vos sites et accéder aux recommandations IA, à l'export PDF et à l'analyse concurrentielle, passez au plan Pro.
+        </p>
+        <a href="https://yanisaidoune1-sudo.github.io/mon-audit-seo#pricing" target="_blank" 
+           style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:1rem 2.5rem;border-radius:12px;text-decoration:none;font-weight:700;font-size:1rem;display:inline-block">
+            Voir les offres
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
 st.set_page_config(page_title="Sitra | Analyseur de Sites Web", page_icon="S", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
@@ -180,6 +273,20 @@ def render_result(result, idx=0):
         """, unsafe_allow_html=True)
 
     st.markdown("")
+    st.markdown("")
+    with st.expander("Recevoir le rapport par email"):
+        email_input = st.text_input("Votre email :", placeholder="exemple@email.com", key=f"email_{idx}")
+        if st.button("Envoyer le rapport PDF par email", key=f"send_email_{idx}"):
+            if email_input and "@" in email_input:
+                with st.spinner("Envoi en cours..."):
+                    succes = envoyer_rapport_email(email_input, result)
+                if succes:
+                    st.success(f"Rapport envoyé à {email_input} !")
+                else:
+                    st.error("Erreur lors de l'envoi. Vérifiez votre email.")
+            else:
+                st.warning("Merci d'entrer un email valide.")
+
     with st.expander("Analyse IA — Recommandations personnalisées"):
         with st.spinner("L'IA analyse votre site..."):
             recommandations = generer_recommandations_ia(result)
@@ -472,6 +579,8 @@ if launch:
     urls_to_analyze = [u for u in [url1, url2] if u and u.strip()]
     if not urls_to_analyze:
         st.warning("Merci d'entrer une URL valide.")
+    elif get_analyses_count() >= 1 and "results" not in st.session_state:
+        show_paywall()
     else:
         results_list = []
         for url in urls_to_analyze:
@@ -480,6 +589,7 @@ if launch:
             results_list.append(result)
         st.session_state["results"] = results_list
         st.session_state["mode_comp"] = mode_comparaison
+        increment_analyses_count()
 
         # Analyse multi-pages automatique
         if mode_multipages and not mode_comparaison and url1.strip():
