@@ -120,8 +120,8 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .score-bar-bg { background: #2a2a3e; border-radius: 999px; height: 8px; overflow: hidden; }
 .score-bar-fill { height: 100%; border-radius: 999px; }
 .stButton > button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-weight: 600; font-size: 1rem; padding: 0.7rem 2rem; width: 100%; }
-.stTabs [data-baseweb="tab-list"] { background: #0f0f1a; border-radius: 10px; padding: 4px; gap: 4px; }
-.stTabs [data-baseweb="tab"] { background: transparent; color: #888; border-radius: 8px; font-weight: 500; }
+.stTabs [data-baseweb="tab-list"] { background: #0f0f1a; border-radius: 10px; padding: 4px; gap: 8px; }
+.stTabs [data-baseweb="tab"] { background: #1a1a2e; color: #888; border-radius: 8px; font-weight: 500; padding: 0.4rem 1rem; }
 .stTabs [aria-selected="true"] { background: linear-gradient(135deg, #667eea, #764ba2) !important; color: white !important; }
 input[type="checkbox"] { accent-color: #667eea !important; }
 </style>
