@@ -649,6 +649,8 @@ with st.expander("Vous avez une question ? Posez-la à l'assistant Sitra"):
 
     if "chat_messages" not in st.session_state:
         st.session_state["chat_messages"] = []
+    if "chat_input_key" not in st.session_state:
+        st.session_state["chat_input_key"] = 0
 
     for msg in st.session_state["chat_messages"]:
         if msg["role"] == "user":
@@ -656,7 +658,7 @@ with st.expander("Vous avez une question ? Posez-la à l'assistant Sitra"):
         else:
             st.markdown(f"""<div style="background:#1a1a2e;border:1px solid #667eea;border-radius:10px;padding:0.8rem 1rem;margin:0.5rem 0;color:#ffffff;font-weight:500">{msg['content']}</div>""", unsafe_allow_html=True)
 
-    question = st.text_input("Votre question :", placeholder="Ex: C'est quoi une balise H1 ? Pourquoi mon score SEO est bas ?", key="chat_input")
+    question = st.text_input("Votre question :", placeholder="Ex: C'est quoi une balise H1 ? Pourquoi mon score SEO est bas ?", key=f"chat_input_{st.session_state['chat_input_key']}")
 
     if st.button("Envoyer", key="chat_send"):
         if question.strip():
@@ -674,22 +676,24 @@ with st.expander("Vous avez une question ? Posez-la à l'assistant Sitra"):
                     r = st.session_state["results"][0]
                     contexte = f"Le site analysé est {r['final_url']} avec un score de {r['global_score']}/100. SEO: {r['seo']['score']}/100, UX: {r['ux']['score']}/100, Performance: {r['performance']['score']}/100."
 
-                prompt = f"""Tu es l'assistant de Sitra, un outil d'analyse de sites web. Tu réponds aux questions des utilisateurs en langage simple et accessible, sans jargon technique. Si l'utilisateur ne comprend pas un terme, tu l'expliques avec des exemples concrets.
-
-{f'Contexte du site analysé : {contexte}' if contexte else ''}
-
-Question de l'utilisateur : {question}
-
-Réponds en 2-3 phrases maximum, de façon claire et simple."""
+                # Construit l'historique complet de la conversation
+                messages = [
+                    {"role": "system", "content": f"""Tu es l'assistant de Sitra, un outil d'analyse de sites web. Tu réponds aux questions en langage simple et accessible, sans jargon technique. Tu expliques les termes avec des exemples concrets. Tu gardes le contexte de la conversation.
+{f'Contexte du site analysé : {contexte}' if contexte else ''}"""}
+                ]
+                for msg in st.session_state["chat_messages"]:
+                    messages.append({"role": msg["role"], "content": msg["content"]})
 
                 data = {
                     "model": "mistral-large-latest",
-                    "messages": [{"role": "user", "content": prompt}],
+                    "messages": messages,
                     "max_tokens": 200
                 }
                 r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=15)
                 reponse = r.json()["choices"][0]["message"]["content"]
                 st.session_state["chat_messages"].append({"role": "assistant", "content": reponse})
+                # Efface la barre de question en changeant la clé
+                st.session_state["chat_input_key"] += 1
                 st.rerun()
             except Exception:
                 st.error("Impossible de contacter l'assistant pour le moment.")
