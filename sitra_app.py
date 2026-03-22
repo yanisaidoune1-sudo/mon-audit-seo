@@ -579,7 +579,7 @@ if launch:
     urls_to_analyze = [u for u in [url1, url2] if u and u.strip()]
     if not urls_to_analyze:
         st.warning("Merci d'entrer une URL valide.")
-    elif get_analyses_count() >= 1 and "results" not in st.session_state:
+    elif get_analyses_count() >= 1:
         show_paywall()
     else:
         results_list = []
@@ -640,3 +640,56 @@ else:
         <p>SEO — UX — Contenu — Design — Performance — 20 critères vérifiés</p>
     </div>
     """, unsafe_allow_html=True)
+
+
+# ── ASSISTANT IA ──────────────────────────────────────────────────────────────
+st.divider()
+with st.expander("Vous avez une question ? Posez-la à l'assistant Sitra"):
+    st.caption("L'assistant peut expliquer les termes techniques, vous aider à comprendre vos résultats et vous donner des conseils.")
+
+    if "chat_messages" not in st.session_state:
+        st.session_state["chat_messages"] = []
+
+    for msg in st.session_state["chat_messages"]:
+        if msg["role"] == "user":
+            st.markdown(f"""<div style="background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;padding:0.8rem 1rem;margin:0.5rem 0;text-align:right;color:#e0e0e0">{msg['content']}</div>""", unsafe_allow_html=True)
+        else:
+            st.markdown(f"""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:0.8rem 1rem;margin:0.5rem 0;color:#e0e0e0">{msg['content']}</div>""", unsafe_allow_html=True)
+
+    question = st.text_input("Votre question :", placeholder="Ex: C'est quoi une balise H1 ? Pourquoi mon score SEO est bas ?", key="chat_input")
+
+    if st.button("Envoyer", key="chat_send"):
+        if question.strip():
+            st.session_state["chat_messages"].append({"role": "user", "content": question})
+
+            try:
+                import requests as req
+                headers = {
+                    "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
+                    "Content-Type": "application/json"
+                }
+
+                contexte = ""
+                if "results" in st.session_state:
+                    r = st.session_state["results"][0]
+                    contexte = f"Le site analysé est {r['final_url']} avec un score de {r['global_score']}/100. SEO: {r['seo']['score']}/100, UX: {r['ux']['score']}/100, Performance: {r['performance']['score']}/100."
+
+                prompt = f"""Tu es l'assistant de Sitra, un outil d'analyse de sites web. Tu réponds aux questions des utilisateurs en langage simple et accessible, sans jargon technique. Si l'utilisateur ne comprend pas un terme, tu l'expliques avec des exemples concrets.
+
+{f'Contexte du site analysé : {contexte}' if contexte else ''}
+
+Question de l'utilisateur : {question}
+
+Réponds en 2-3 phrases maximum, de façon claire et simple."""
+
+                data = {
+                    "model": "mistral-large-latest",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": 200
+                }
+                r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=15)
+                reponse = r.json()["choices"][0]["message"]["content"]
+                st.session_state["chat_messages"].append({"role": "assistant", "content": reponse})
+                st.rerun()
+            except Exception:
+                st.error("Impossible de contacter l'assistant pour le moment.")
