@@ -273,20 +273,6 @@ def render_result(result, idx=0):
         """, unsafe_allow_html=True)
 
     st.markdown("")
-    st.markdown("")
-    with st.expander("Recevoir le rapport par email"):
-        email_input = st.text_input("Votre email :", placeholder="exemple@email.com", key=f"email_{idx}")
-        if st.button("Envoyer le rapport PDF par email", key=f"send_email_{idx}"):
-            if email_input and "@" in email_input:
-                with st.spinner("Envoi en cours..."):
-                    succes = envoyer_rapport_email(email_input, result)
-                if succes:
-                    st.success(f"Rapport envoyé à {email_input} !")
-                else:
-                    st.error("Erreur lors de l'envoi. Vérifiez votre email.")
-            else:
-                st.warning("Merci d'entrer un email valide.")
-
     with st.expander("Analyse IA — Recommandations personnalisées"):
         with st.spinner("L'IA analyse votre site..."):
             recommandations = generer_recommandations_ia(result)
@@ -466,6 +452,20 @@ def render_result(result, idx=0):
             )
         except Exception:
             st.caption("Export PDF indisponible pour le moment.")
+
+        st.markdown("")
+        st.markdown("**Recevoir le rapport par email :**")
+        email_input = st.text_input("Votre email :", placeholder="exemple@email.com", key=f"email_{idx}")
+        if st.button("Envoyer le rapport PDF par email", key=f"send_email_{idx}"):
+            if email_input and "@" in email_input:
+                with st.spinner("Envoi en cours..."):
+                    succes = envoyer_rapport_email(email_input, result)
+                if succes:
+                    st.success(f"Rapport envoyé à {email_input} !")
+                else:
+                    st.error("Erreur lors de l'envoi. Vérifiez votre email.")
+            else:
+                st.warning("Merci d'entrer un email valide.")
 
     with tabs[8]:
         st.caption("Cochez les objectifs au fur et à mesure que vous les complétez")
@@ -685,9 +685,9 @@ with st.expander("Vous avez une question ? Posez-la à l'assistant Sitra"):
                     messages.append({"role": msg["role"], "content": msg["content"]})
 
                 data = {
-                    "model": "mistral-large-latest",
+                    "model": "mistral-small-latest",
                     "messages": messages,
-                    "max_tokens": 200
+                    "max_tokens": 150
                 }
                 r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=15)
                 reponse = r.json()["choices"][0]["message"]["content"]
