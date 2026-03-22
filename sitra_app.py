@@ -178,7 +178,7 @@ def show_paywall():
     st.markdown("""
     <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #667eea;border-radius:16px;padding:3rem;text-align:center;margin:2rem 0">
         <div style="font-size:2rem;font-weight:800;background:linear-gradient(135deg,#667eea,#f07cf7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:1rem">
-            Vous avez utilisé votre analyse gratuite
+            Vous avez utilisé vos 2 analyses gratuites
         </div>
         <p style="color:#aaa;font-size:1rem;margin-bottom:2rem;max-width:500px;margin-left:auto;margin-right:auto">
             Pour continuer à analyser vos sites et accéder aux recommandations IA, à l'export PDF et à l'analyse concurrentielle, passez au plan Pro.
@@ -579,7 +579,7 @@ if launch:
     urls_to_analyze = [u for u in [url1, url2] if u and u.strip()]
     if not urls_to_analyze:
         st.warning("Merci d'entrer une URL valide.")
-    elif get_analyses_count() >= 1:
+    elif get_analyses_count() >= 2:
         show_paywall()
     else:
         results_list = []
