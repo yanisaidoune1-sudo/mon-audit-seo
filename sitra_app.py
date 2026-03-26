@@ -1,4 +1,3 @@
-
 import streamlit as st
 import time
 from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages, detect_secteur_et_concurrents
@@ -190,7 +189,7 @@ def show_paywall():
         </a>
     </div>
     """, unsafe_allow_html=True)
-st.set_page_config(page_title="Sitra | Analyseur de Sites Web", page_icon="S", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Sitra | Analyseur de Sites Web", page_icon="🔍", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
@@ -201,7 +200,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 [data-testid="stSidebar"] * { color: #e0e0e0 !important; }
 .hero-header { background: linear-gradient(135deg, #0f0f1a 0%, #1a1a3e 50%, #0f0f1a 100%); border: 1px solid #2a2a5e; border-radius: 16px; padding: 2.5rem 3rem; margin-bottom: 2rem; text-align: center; }
 .hero-title { font-size: 3.5rem; font-weight: 800; background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0; letter-spacing: -1px; }
-.hero-subtitle { color: #888; font-size: 1rem; margin-top: 0.5rem; letter-spacing: 2px; text-transform: uppercase; }
+.hero-subtitle { color: #888; font-size: 1rem; margin-top: 0.5rem; letter-spacing: 1px; }
 .metric-card { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 1px solid #2a2a4e; border-radius: 12px; padding: 1.2rem 1.5rem; text-align: center; }
 .metric-value { font-size: 1.8rem; font-weight: 700; }
 .metric-label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-top: 0.2rem; }
