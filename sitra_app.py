@@ -189,7 +189,7 @@ def show_paywall():
         </a>
     </div>
     """, unsafe_allow_html=True)
-st.set_page_config(page_title="Sitra | Analyseur de Sites Web", page_icon="🔍", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Sitra | Analyseur de Sites Web", page_icon="https://yanisaidoune1-sudo.github.io/mon-audit-seo/favicon.svg", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
