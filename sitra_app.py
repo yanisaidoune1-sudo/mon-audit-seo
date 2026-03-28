@@ -3,7 +3,74 @@ import time
 from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages, detect_secteur_et_concurrents
 
 
-# ── WORDPRESS AUTO-FIX ────────────────────────────────────────────────────────
+# ── WIX AUTO-FIX ─────────────────────────────────────────────────────────────
+def wix_fix_seo(wix_account_id, wix_site_id, wix_api_key, result):
+    """Applique les corrections SEO automatiquement sur Wix via l'API"""
+    import requests as req
+    corrections = []
+    erreurs = []
+
+    headers = {
+        "Authorization": wix_api_key,
+        "wix-account-id": wix_account_id,
+        "wix-site-id": wix_site_id,
+        "Content-Type": "application/json"
+    }
+
+    try:
+        # Vérifie la connexion
+        test = req.get("https://www.wixapis.com/site-properties/v4/properties", headers=headers, timeout=10)
+        if test.status_code == 401:
+            return [], ["Clé API invalide — vérifiez vos identifiants Wix"]
+        if test.status_code != 200:
+            return [], [f"Impossible de se connecter à Wix (code {test.status_code})"]
+
+        # Génère et met à jour la meta description si manquante
+        if not result["seo"]["meta_description"]:
+            try:
+                import requests as req2
+                headers_mistral = {
+                    "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
+                    "Content-Type": "application/json"
+                }
+                prompt = f"Génère une meta description de 150 caractères maximum pour ce site : {result['final_url']}. Titre : {result['seo']['title']}. Réponds UNIQUEMENT avec la meta description."
+                data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 60}
+                r_mistral = req2.post("https://api.mistral.ai/v1/chat/completions", headers=headers_mistral, json=data, timeout=15)
+                meta_desc = r_mistral.json()["choices"][0]["message"]["content"].strip()
+
+                # Met à jour les propriétés du site Wix
+                update = req.patch(
+                    "https://www.wixapis.com/site-properties/v4/properties",
+                    headers=headers,
+                    json={"properties": {"description": meta_desc}},
+                    timeout=10
+                )
+                if update.status_code in [200, 201]:
+                    corrections.append(f"Meta description ajoutée : '{meta_desc[:80]}...'")
+                else:
+                    erreurs.append("Impossible de mettre à jour la meta description sur Wix")
+            except Exception:
+                erreurs.append("Erreur lors de la génération de la meta description")
+
+        # Met à jour les balises SEO des pages
+        pages = req.get("https://www.wixapis.com/site-pages/v2/pages", headers=headers, timeout=10)
+        if pages.status_code == 200:
+            pages_data = pages.json().get("pages", [])
+            for page in pages_data[:5]:
+                page_id = page.get("id")
+                if page_id and not page.get("seo", {}).get("description"):
+                    req.patch(
+                        f"https://www.wixapis.com/site-pages/v2/pages/{page_id}",
+                        headers=headers,
+                        json={"page": {"seo": {"description": meta_desc if not result["seo"]["meta_description"] else result["seo"]["meta_description"]}}},
+                        timeout=10
+                    )
+            corrections.append(f"{len(pages_data)} page(s) SEO vérifiées et optimisées")
+
+    except Exception as e:
+        erreurs.append(str(e))
+
+    return corrections, erreurs
 def wordpress_get_posts(wp_url, wp_user, wp_password):
     """Récupère les pages et articles WordPress"""
     import requests as req
@@ -278,7 +345,7 @@ def show_paywall():
         </a>
     </div>
     """, unsafe_allow_html=True)
-st.set_page_config(page_title="Sitra | Analyseur de Sites Web", page_icon="🔍", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Sitra | Analyseur de Sites Web", page_icon="https://yanisaidoune1-sudo.github.io/mon-audit-seo/favicon.svg", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <head>
@@ -380,7 +447,7 @@ def render_result(result, idx=0):
         else:
             st.warning("Impossible de générer les recommandations IA pour le moment.")
 
-    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Concurrents", "Récapitulatif", "Challenge", "Partager", "WordPress"])
+    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Concurrents", "Récapitulatif", "Challenge", "Partager", "WordPress", "Wix"])
 
     # Passe la clé API à l'analyzer via les variables d'environnement
     import os
@@ -672,6 +739,42 @@ def render_result(result, idx=0):
 
                 if not corrections and not erreurs:
                     st.info("Aucune correction nécessaire — votre site WordPress est déjà bien optimisé !")
+            else:
+                st.warning("Merci de remplir tous les champs.")
+
+    with tabs[11]:
+        st.markdown("### Corrections automatiques Wix")
+        st.caption("Connectez votre site Wix et Sitra corrige automatiquement les problèmes détectés.")
+
+        st.markdown("""
+        <div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin-bottom:1rem">
+            <b>Comment obtenir vos identifiants Wix :</b><br>
+            1. Connectez-vous à <b>manage.wix.com</b><br>
+            2. Allez dans <b>Paramètres → Avancé → Clés API</b><br>
+            3. Créez une nouvelle clé avec les permissions <b>Site</b><br>
+            4. Copiez l'Account ID, le Site ID et la clé API
+        </div>
+        """, unsafe_allow_html=True)
+
+        wix_account_id = st.text_input("Account ID Wix :", placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", key=f"wix_account_{idx}")
+        wix_site_id = st.text_input("Site ID Wix :", placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", key=f"wix_site_{idx}")
+        wix_api_key = st.text_input("Clé API Wix :", type="password", key=f"wix_key_{idx}")
+
+        if st.button("Lancer les corrections automatiques Wix", key=f"wix_fix_{idx}"):
+            if wix_account_id and wix_site_id and wix_api_key:
+                with st.spinner("Connexion à Wix et application des corrections..."):
+                    corrections, erreurs = wix_fix_seo(wix_account_id, wix_site_id, wix_api_key, result)
+
+                if corrections:
+                    st.success(f"**{len(corrections)} correction(s) appliquée(s) :**")
+                    for c in corrections:
+                        st.markdown(f"✅ {c}")
+                if erreurs:
+                    st.error("**Erreurs :**")
+                    for e in erreurs:
+                        st.markdown(f"❌ {e}")
+                if not corrections and not erreurs:
+                    st.info("Aucune correction nécessaire — votre site Wix est déjà bien optimisé !")
             else:
                 st.warning("Merci de remplir tous les champs.")
 
