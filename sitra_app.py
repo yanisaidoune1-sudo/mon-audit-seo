@@ -189,7 +189,17 @@ def show_paywall():
         </a>
     </div>
     """, unsafe_allow_html=True)
-st.set_page_config(page_title="Sitra | Analyseur de Sites Web", page_icon="https://yanisaidoune1-sudo.github.io/mon-audit-seo/favicon.svg", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Sitra | Analyseur de Sites Web", page_icon="🔍", layout="wide", initial_sidebar_state="expanded")
+
+st.markdown("""
+<head>
+<meta property="og:title" content="Sitra — Analyseur Intelligent de Sites Web" />
+<meta property="og:description" content="Analysez votre site gratuitement en 30 secondes. SEO, UX, Performance, Design — 20 critères vérifiés avec des recommandations IA personnalisées." />
+<meta property="og:image" content="https://yanisaidoune1-sudo.github.io/mon-audit-seo/favicon.svg" />
+<meta property="og:url" content="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" />
+<meta property="og:type" content="website" />
+</head>
+""", unsafe_allow_html=True)
 
 st.markdown("""
 <style>
