@@ -2,6 +2,95 @@ import streamlit as st
 import time
 from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages, detect_secteur_et_concurrents
 
+
+# ── WORDPRESS AUTO-FIX ────────────────────────────────────────────────────────
+def wordpress_get_posts(wp_url, wp_user, wp_password):
+    """Récupère les pages et articles WordPress"""
+    import requests as req
+    from requests.auth import HTTPBasicAuth
+    auth = HTTPBasicAuth(wp_user, wp_password)
+    base = wp_url.rstrip("/")
+    try:
+        r = req.get(f"{base}/wp-json/wp/v2/pages?per_page=10", auth=auth, timeout=10)
+        pages = r.json() if r.status_code == 200 else []
+        r2 = req.get(f"{base}/wp-json/wp/v2/posts?per_page=10", auth=auth, timeout=10)
+        posts = r2.json() if r2.status_code == 200 else []
+        return pages + posts, None
+    except Exception as e:
+        return [], str(e)
+
+
+def wordpress_fix_seo(wp_url, wp_user, wp_password, result):
+    """Applique les corrections SEO automatiquement sur WordPress via l'API REST"""
+    import requests as req
+    from requests.auth import HTTPBasicAuth
+
+    auth = HTTPBasicAuth(wp_user, wp_password)
+    base = wp_url.rstrip("/")
+    corrections = []
+    erreurs = []
+
+    try:
+        # Vérifie que l'API WordPress est accessible
+        test = req.get(f"{base}/wp-json/wp/v2/", auth=auth, timeout=10)
+        if test.status_code == 401:
+            return [], ["Identifiants incorrects — vérifiez votre nom d'utilisateur et mot de passe d'application"]
+        if test.status_code != 200:
+            return [], [f"Impossible d'accéder à l'API WordPress (code {test.status_code})"]
+
+        # Récupère les settings du site
+        settings = req.get(f"{base}/wp-json/wp/v2/settings", auth=auth, timeout=10)
+
+        if settings.status_code == 200:
+            site_data = settings.json()
+
+            # Génère une meta description avec Mistral si elle manque
+            if not result["seo"]["meta_description"]:
+                try:
+                    import requests as req2
+                    headers_mistral = {
+                        "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
+                        "Content-Type": "application/json"
+                    }
+                    prompt = f"Génère une meta description de 150 caractères maximum pour ce site web : {result['final_url']}. Titre du site : {result['seo']['title']}. Réponds UNIQUEMENT avec la meta description, rien d'autre."
+                    data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 60}
+                    r_mistral = req2.post("https://api.mistral.ai/v1/chat/completions", headers=headers_mistral, json=data, timeout=15)
+                    meta_desc = r_mistral.json()["choices"][0]["message"]["content"].strip()
+
+                    # Met à jour la description du site
+                    update = req.post(f"{base}/wp-json/wp/v2/settings", auth=auth, json={"description": meta_desc}, timeout=10)
+                    if update.status_code == 200:
+                        corrections.append(f"Meta description ajoutée : '{meta_desc[:80]}...'")
+                    else:
+                        erreurs.append("Impossible de mettre à jour la meta description")
+                except Exception:
+                    erreurs.append("Erreur lors de la génération de la meta description")
+
+        # Corrige les images sans attribut alt
+        if result["seo"]["images_no_alt"] > 0:
+            media = req.get(f"{base}/wp-json/wp/v2/media?per_page=50", auth=auth, timeout=10)
+            if media.status_code == 200:
+                images = media.json()
+                fixed = 0
+                for img in images:
+                    if not img.get("alt_text"):
+                        title = img.get("title", {}).get("rendered", "image")
+                        update_img = req.post(
+                            f"{base}/wp-json/wp/v2/media/{img['id']}",
+                            auth=auth,
+                            json={"alt_text": title},
+                            timeout=10
+                        )
+                        if update_img.status_code == 200:
+                            fixed += 1
+                if fixed > 0:
+                    corrections.append(f"{fixed} image(s) — attribut alt ajouté automatiquement")
+
+    except Exception as e:
+        erreurs.append(str(e))
+
+    return corrections, erreurs
+
 # ── IA ────────────────────────────────────────────────────────────────────────
 def generer_recommandations_ia(result):
     try:
@@ -291,7 +380,7 @@ def render_result(result, idx=0):
         else:
             st.warning("Impossible de générer les recommandations IA pour le moment.")
 
-    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Concurrents", "Récapitulatif", "Challenge", "Partager"])
+    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Concurrents", "Récapitulatif", "Challenge", "Partager", "WordPress"])
 
     # Passe la clé API à l'analyzer via les variables d'environnement
     import os
@@ -547,6 +636,44 @@ def render_result(result, idx=0):
         st.markdown("")
         st.markdown("**Pour Instagram et TikTok** — copiez ce texte et collez-le dans votre post :")
         st.code(texte_partage, language=None)
+
+    with tabs[10]:
+        st.markdown("### Corrections automatiques WordPress")
+        st.caption("Connectez votre site WordPress et Sitra corrige automatiquement les problèmes détectés — sans que vous touchiez à quoi que ce soit.")
+
+        st.markdown("""
+        <div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin-bottom:1rem">
+            <b>Comment obtenir un mot de passe d'application WordPress :</b><br>
+            1. Connectez-vous à votre WordPress<br>
+            2. Allez dans <b>Utilisateurs → Votre profil</b><br>
+            3. Scrollez jusqu'à <b>Mots de passe d'application</b><br>
+            4. Créez un nouveau mot de passe et copiez-le
+        </div>
+        """, unsafe_allow_html=True)
+
+        wp_url = st.text_input("URL de votre site WordPress :", placeholder="https://monsite.fr", key=f"wp_url_{idx}")
+        wp_user = st.text_input("Nom d'utilisateur WordPress :", placeholder="admin", key=f"wp_user_{idx}")
+        wp_password = st.text_input("Mot de passe d'application :", placeholder="xxxx xxxx xxxx xxxx", type="password", key=f"wp_pass_{idx}")
+
+        if st.button("Lancer les corrections automatiques", key=f"wp_fix_{idx}"):
+            if wp_url and wp_user and wp_password:
+                with st.spinner("Connexion à WordPress et application des corrections..."):
+                    corrections, erreurs = wordpress_fix_seo(wp_url, wp_user, wp_password, result)
+
+                if corrections:
+                    st.success(f"**{len(corrections)} correction(s) appliquée(s) automatiquement :**")
+                    for c in corrections:
+                        st.markdown(f"✅ {c}")
+
+                if erreurs:
+                    st.error("**Erreurs :**")
+                    for e in erreurs:
+                        st.markdown(f"❌ {e}")
+
+                if not corrections and not erreurs:
+                    st.info("Aucune correction nécessaire — votre site WordPress est déjà bien optimisé !")
+            else:
+                st.warning("Merci de remplir tous les champs.")
 
 
 # ── SIDEBAR ───────────────────────────────────────────────────────────────────
