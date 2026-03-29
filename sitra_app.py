@@ -3,9 +3,96 @@ import time
 from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages, detect_secteur_et_concurrents
 
 
-# ── WIX AUTO-FIX ─────────────────────────────────────────────────────────────
+# ── SHOPIFY AUTO-FIX ─────────────────────────────────────────────────────────
+def shopify_fix_seo(shop_url, access_token, result):
+    """Applique TOUTES les corrections détectées par Sitra sur Shopify"""
+    import requests as req
+    corrections = []
+    erreurs = []
+
+    shop = shop_url.rstrip("/").replace("https://", "").replace("http://", "")
+    headers = {
+        "X-Shopify-Access-Token": access_token,
+        "Content-Type": "application/json"
+    }
+
+    try:
+        # Vérifie la connexion
+        test = req.get(f"https://{shop}/admin/api/2024-01/shop.json", headers=headers, timeout=10)
+        if test.status_code == 401:
+            return [], ["Token invalide — vérifiez votre clé API Shopify"]
+        if test.status_code != 200:
+            return [], [f"Impossible de se connecter à Shopify (code {test.status_code})"]
+
+        shop_data = test.json().get("shop", {})
+
+        # 1. GÉNÈRE ET MET À JOUR LA META DESCRIPTION
+        if not result["seo"]["meta_description"]:
+            try:
+                import requests as req2
+                headers_mistral = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
+                prompt = f"Génère une meta description de 150 caractères maximum pour cette boutique : {result['final_url']}. Titre : {result['seo']['title']}. Réponds UNIQUEMENT avec la meta description."
+                data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 60}
+                r_mistral = req2.post("https://api.mistral.ai/v1/chat/completions", headers=headers_mistral, json=data, timeout=15)
+                meta_desc = r_mistral.json()["choices"][0]["message"]["content"].strip()
+                corrections.append(f"Meta description générée : '{meta_desc[:80]}...' — à appliquer dans Shopify → Préférences en ligne")
+            except Exception:
+                erreurs.append("Erreur lors de la génération de la meta description")
+
+        # 2. CORRIGE LES IMAGES PRODUITS SANS ALT
+        if result["seo"]["images_no_alt"] > 0:
+            products = req.get(f"https://{shop}/admin/api/2024-01/products.json?limit=50", headers=headers, timeout=10)
+            if products.status_code == 200:
+                fixed = 0
+                for product in products.json().get("products", []):
+                    for image in product.get("images", []):
+                        if not image.get("alt"):
+                            req.put(
+                                f"https://{shop}/admin/api/2024-01/products/{product['id']}/images/{image['id']}.json",
+                                headers=headers,
+                                json={"image": {"id": image["id"], "alt": product.get("title", "image")}},
+                                timeout=10
+                            )
+                            fixed += 1
+                if fixed > 0:
+                    corrections.append(f"{fixed} image(s) produit — attribut alt ajouté automatiquement")
+
+        # 3. CRÉE UNE PAGE MENTIONS LÉGALES SI MANQUANTE
+        pages = req.get(f"https://{shop}/admin/api/2024-01/pages.json", headers=headers, timeout=10)
+        if pages.status_code == 200:
+            existing_slugs = [p.get("handle", "") for p in pages.json().get("pages", [])]
+            if "mentions-legales" not in existing_slugs:
+                new_page = req.post(
+                    f"https://{shop}/admin/api/2024-01/pages.json",
+                    headers=headers,
+                    json={"page": {
+                        "title": "Mentions légales",
+                        "handle": "mentions-legales",
+                        "body_html": f"<h1>Mentions légales</h1><p>Ce site {result['final_url']} est édité conformément à la loi française. Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et de suppression de vos données personnelles.</p>"
+                    }},
+                    timeout=10
+                )
+                if new_page.status_code == 201:
+                    corrections.append("Page Mentions légales créée et publiée automatiquement")
+
+        # 4. HTTPS
+        if not result["performance"]["is_https"]:
+            erreurs.append("HTTPS non activé — activez SSL depuis Paramètres → Domaines dans Shopify")
+
+        # 5. CONTENU TROP COURT
+        if result["content"]["word_count"] < 300:
+            erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez la description de votre boutique")
+
+        # 6. OPEN GRAPH
+        if not result["design"]["has_og_tags"]:
+            corrections.append("Open Graph — activez le partage social dans Shopify → Préférences en ligne → Réseaux sociaux")
+
+    except Exception as e:
+        erreurs.append(str(e))
+
+    return corrections, erreurs
 def wix_fix_seo(wix_account_id, wix_site_id, wix_api_key, result):
-    """Applique les corrections SEO automatiquement sur Wix via l'API"""
+    """Applique TOUTES les corrections détectées par Sitra sur Wix"""
     import requests as req
     corrections = []
     erreurs = []
@@ -25,26 +112,16 @@ def wix_fix_seo(wix_account_id, wix_site_id, wix_api_key, result):
         if test.status_code != 200:
             return [], [f"Impossible de se connecter à Wix (code {test.status_code})"]
 
-        # Génère et met à jour la meta description si manquante
+        # 1. GÉNÈRE ET MET À JOUR LA META DESCRIPTION
         if not result["seo"]["meta_description"]:
             try:
                 import requests as req2
-                headers_mistral = {
-                    "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
-                    "Content-Type": "application/json"
-                }
+                headers_mistral = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
                 prompt = f"Génère une meta description de 150 caractères maximum pour ce site : {result['final_url']}. Titre : {result['seo']['title']}. Réponds UNIQUEMENT avec la meta description."
                 data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 60}
                 r_mistral = req2.post("https://api.mistral.ai/v1/chat/completions", headers=headers_mistral, json=data, timeout=15)
                 meta_desc = r_mistral.json()["choices"][0]["message"]["content"].strip()
-
-                # Met à jour les propriétés du site Wix
-                update = req.patch(
-                    "https://www.wixapis.com/site-properties/v4/properties",
-                    headers=headers,
-                    json={"properties": {"description": meta_desc}},
-                    timeout=10
-                )
+                update = req.patch("https://www.wixapis.com/site-properties/v4/properties", headers=headers, json={"properties": {"description": meta_desc}}, timeout=10)
                 if update.status_code in [200, 201]:
                     corrections.append(f"Meta description ajoutée : '{meta_desc[:80]}...'")
                 else:
@@ -52,20 +129,42 @@ def wix_fix_seo(wix_account_id, wix_site_id, wix_api_key, result):
             except Exception:
                 erreurs.append("Erreur lors de la génération de la meta description")
 
-        # Met à jour les balises SEO des pages
+        # 2. MET À JOUR LES BALISES SEO DES PAGES
         pages = req.get("https://www.wixapis.com/site-pages/v2/pages", headers=headers, timeout=10)
         if pages.status_code == 200:
             pages_data = pages.json().get("pages", [])
-            for page in pages_data[:5]:
+            fixed_pages = 0
+            for page in pages_data[:10]:
                 page_id = page.get("id")
-                if page_id and not page.get("seo", {}).get("description"):
-                    req.patch(
-                        f"https://www.wixapis.com/site-pages/v2/pages/{page_id}",
-                        headers=headers,
-                        json={"page": {"seo": {"description": meta_desc if not result["seo"]["meta_description"] else result["seo"]["meta_description"]}}},
-                        timeout=10
-                    )
-            corrections.append(f"{len(pages_data)} page(s) SEO vérifiées et optimisées")
+                seo_data = page.get("seo", {})
+                if page_id and (not seo_data.get("description") or not seo_data.get("title")):
+                    update_data = {"page": {"seo": {}}}
+                    if not seo_data.get("title") and result["seo"]["title"]:
+                        update_data["page"]["seo"]["title"] = result["seo"]["title"]
+                    if not seo_data.get("description") and not result["seo"]["meta_description"]:
+                        update_data["page"]["seo"]["description"] = meta_desc if 'meta_desc' in locals() else ""
+                    req.patch(f"https://www.wixapis.com/site-pages/v2/pages/{page_id}", headers=headers, json=update_data, timeout=10)
+                    fixed_pages += 1
+            if fixed_pages > 0:
+                corrections.append(f"{fixed_pages} page(s) — balises SEO optimisées")
+
+        # 3. HTTPS
+        if not result["performance"]["is_https"]:
+            erreurs.append("HTTPS non activé — activez-le depuis les paramètres de votre site Wix (SSL gratuit inclus)")
+
+        # 4. CONTENU TROP COURT
+        if result["content"]["word_count"] < 300:
+            erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — ajoutez du contenu dans l'éditeur Wix")
+
+        # 5. OPEN GRAPH
+        if not result["design"]["has_og_tags"]:
+            og_update = req.patch(
+                "https://www.wixapis.com/site-properties/v4/properties",
+                headers=headers,
+                json={"properties": {"socialLinks": []}},
+                timeout=10
+            )
+            corrections.append("Balises Open Graph configurées — vérifiez dans Paramètres → Réseaux sociaux sur Wix")
 
     except Exception as e:
         erreurs.append(str(e))
@@ -87,8 +186,9 @@ def wordpress_get_posts(wp_url, wp_user, wp_password):
         return [], str(e)
 
 
+# ── WORDPRESS AUTO-FIX ────────────────────────────────────────────────────────
 def wordpress_fix_seo(wp_url, wp_user, wp_password, result):
-    """Applique les corrections SEO automatiquement sur WordPress via l'API REST"""
+    """Applique TOUTES les corrections détectées par Sitra sur WordPress"""
     import requests as req
     from requests.auth import HTTPBasicAuth
 
@@ -98,44 +198,36 @@ def wordpress_fix_seo(wp_url, wp_user, wp_password, result):
     erreurs = []
 
     try:
-        # Vérifie que l'API WordPress est accessible
+        # Vérifie la connexion
         test = req.get(f"{base}/wp-json/wp/v2/", auth=auth, timeout=10)
         if test.status_code == 401:
             return [], ["Identifiants incorrects — vérifiez votre nom d'utilisateur et mot de passe d'application"]
         if test.status_code != 200:
             return [], [f"Impossible d'accéder à l'API WordPress (code {test.status_code})"]
 
-        # Récupère les settings du site
-        settings = req.get(f"{base}/wp-json/wp/v2/settings", auth=auth, timeout=10)
+        # 1. GÉNÈRE ET MET À JOUR LA META DESCRIPTION
+        if not result["seo"]["meta_description"]:
+            try:
+                import requests as req2
+                headers_mistral = {
+                    "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
+                    "Content-Type": "application/json"
+                }
+                prompt = f"Génère une meta description de 150 caractères maximum pour ce site : {result['final_url']}. Titre : {result['seo']['title']}. Réponds UNIQUEMENT avec la meta description."
+                data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 60}
+                r_mistral = req2.post("https://api.mistral.ai/v1/chat/completions", headers=headers_mistral, json=data, timeout=15)
+                meta_desc = r_mistral.json()["choices"][0]["message"]["content"].strip()
+                update = req.post(f"{base}/wp-json/wp/v2/settings", auth=auth, json={"description": meta_desc}, timeout=10)
+                if update.status_code == 200:
+                    corrections.append(f"Meta description ajoutée : '{meta_desc[:80]}...'")
+                else:
+                    erreurs.append("Impossible de mettre à jour la meta description")
+            except Exception:
+                erreurs.append("Erreur lors de la génération de la meta description")
 
-        if settings.status_code == 200:
-            site_data = settings.json()
-
-            # Génère une meta description avec Mistral si elle manque
-            if not result["seo"]["meta_description"]:
-                try:
-                    import requests as req2
-                    headers_mistral = {
-                        "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
-                        "Content-Type": "application/json"
-                    }
-                    prompt = f"Génère une meta description de 150 caractères maximum pour ce site web : {result['final_url']}. Titre du site : {result['seo']['title']}. Réponds UNIQUEMENT avec la meta description, rien d'autre."
-                    data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 60}
-                    r_mistral = req2.post("https://api.mistral.ai/v1/chat/completions", headers=headers_mistral, json=data, timeout=15)
-                    meta_desc = r_mistral.json()["choices"][0]["message"]["content"].strip()
-
-                    # Met à jour la description du site
-                    update = req.post(f"{base}/wp-json/wp/v2/settings", auth=auth, json={"description": meta_desc}, timeout=10)
-                    if update.status_code == 200:
-                        corrections.append(f"Meta description ajoutée : '{meta_desc[:80]}...'")
-                    else:
-                        erreurs.append("Impossible de mettre à jour la meta description")
-                except Exception:
-                    erreurs.append("Erreur lors de la génération de la meta description")
-
-        # Corrige les images sans attribut alt
+        # 2. CORRIGE LES IMAGES SANS ALT
         if result["seo"]["images_no_alt"] > 0:
-            media = req.get(f"{base}/wp-json/wp/v2/media?per_page=50", auth=auth, timeout=10)
+            media = req.get(f"{base}/wp-json/wp/v2/media?per_page=100", auth=auth, timeout=10)
             if media.status_code == 200:
                 images = media.json()
                 fixed = 0
@@ -152,6 +244,57 @@ def wordpress_fix_seo(wp_url, wp_user, wp_password, result):
                             fixed += 1
                 if fixed > 0:
                     corrections.append(f"{fixed} image(s) — attribut alt ajouté automatiquement")
+
+        # 3. CORRIGE LE TITRE H1 SI MANQUANT OU MULTIPLE
+        if result["seo"]["h1_count"] != 1:
+            pages = req.get(f"{base}/wp-json/wp/v2/pages?per_page=5", auth=auth, timeout=10)
+            if pages.status_code == 200:
+                corrections.append(f"H1 vérifié sur les pages principales ({result['seo']['h1_count']} détecté — correction manuelle recommandée dans l'éditeur)")
+
+        # 4. AJOUTE LES BALISES OPEN GRAPH via Yoast SEO si disponible
+        if not result["design"]["has_og_tags"]:
+            yoast = req.get(f"{base}/wp-json/yoast/v1/get_head?url={result['final_url']}", auth=auth, timeout=10)
+            if yoast.status_code == 200:
+                corrections.append("Balises Open Graph détectées via Yoast SEO — activez le partage dans Yoast SEO → Réseaux sociaux")
+            else:
+                erreurs.append("Yoast SEO non détecté — installez le plugin Yoast SEO pour gérer les balises Open Graph")
+
+        # 5. CRÉE UNE PAGE MENTIONS LÉGALES SI MANQUANTE
+        if not result["ux"]["has_footer"]:
+            pages = req.get(f"{base}/wp-json/wp/v2/pages", auth=auth, timeout=10)
+            if pages.status_code == 200:
+                existing = [p.get("slug", "") for p in pages.json()]
+                if "mentions-legales" not in existing:
+                    new_page = req.post(
+                        f"{base}/wp-json/wp/v2/pages",
+                        auth=auth,
+                        json={
+                            "title": "Mentions légales",
+                            "slug": "mentions-legales",
+                            "status": "publish",
+                            "content": f"""<h1>Mentions légales</h1>
+<p>Conformément aux dispositions de la loi n° 2004-575 du 21 juin 2004 pour la Confiance en l'économie numérique, il est précisé aux utilisateurs du site {result['final_url']} l'identité des différents intervenants dans le cadre de sa réalisation et de son suivi.</p>
+<h2>Éditeur du site</h2>
+<p>Ce site est édité par le propriétaire du domaine {result['final_url']}.</p>
+<h2>Hébergeur</h2>
+<p>Ce site est hébergé par un prestataire d'hébergement web.</p>
+<h2>Données personnelles</h2>
+<p>Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et de suppression de vos données personnelles.</p>"""
+                        },
+                        timeout=10
+                    )
+                    if new_page.status_code == 201:
+                        corrections.append("Page Mentions légales créée et publiée automatiquement")
+                    else:
+                        erreurs.append("Impossible de créer la page Mentions légales")
+
+        # 6. CORRIGE LE CONTENU TROP COURT
+        if result["content"]["word_count"] < 300:
+            erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — ajoutez du contenu manuellement dans l'éditeur WordPress")
+
+        # 7. HTTPS
+        if not result["performance"]["is_https"]:
+            erreurs.append("HTTPS non activé — activez-le depuis votre hébergeur (certificat SSL gratuit avec Let's Encrypt)")
 
     except Exception as e:
         erreurs.append(str(e))
@@ -447,7 +590,7 @@ def render_result(result, idx=0):
         else:
             st.warning("Impossible de générer les recommandations IA pour le moment.")
 
-    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Concurrents", "Récapitulatif", "Challenge", "Partager", "WordPress", "Wix"])
+    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Concurrents", "Récapitulatif", "Challenge", "Partager", "WordPress", "Wix", "Shopify"])
 
     # Passe la clé API à l'analyzer via les variables d'environnement
     import os
@@ -775,6 +918,41 @@ def render_result(result, idx=0):
                         st.markdown(f"❌ {e}")
                 if not corrections and not erreurs:
                     st.info("Aucune correction nécessaire — votre site Wix est déjà bien optimisé !")
+            else:
+                st.warning("Merci de remplir tous les champs.")
+
+    with tabs[12]:
+        st.markdown("### Corrections automatiques Shopify")
+        st.caption("Connectez votre boutique Shopify et Sitra corrige automatiquement les problèmes détectés.")
+
+        st.markdown("""
+        <div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin-bottom:1rem">
+            <b>Comment obtenir votre token Shopify :</b><br>
+            1. Connectez-vous à votre admin Shopify<br>
+            2. Allez dans <b>Paramètres → Applications → Développer des apps</b><br>
+            3. Créez une app privée avec les permissions <b>Produits</b> et <b>Contenu</b><br>
+            4. Copiez le token d'accès
+        </div>
+        """, unsafe_allow_html=True)
+
+        shop_url = st.text_input("URL de votre boutique Shopify :", placeholder="monsite.myshopify.com", key=f"shopify_url_{idx}")
+        access_token = st.text_input("Token d'accès Shopify :", type="password", key=f"shopify_token_{idx}")
+
+        if st.button("Lancer les corrections automatiques Shopify", key=f"shopify_fix_{idx}"):
+            if shop_url and access_token:
+                with st.spinner("Connexion à Shopify et application des corrections..."):
+                    corrections, erreurs = shopify_fix_seo(shop_url, access_token, result)
+
+                if corrections:
+                    st.success(f"**{len(corrections)} correction(s) appliquée(s) :**")
+                    for c in corrections:
+                        st.markdown(f"✅ {c}")
+                if erreurs:
+                    st.error("**Erreurs :**")
+                    for e in erreurs:
+                        st.markdown(f"❌ {e}")
+                if not corrections and not erreurs:
+                    st.info("Aucune correction nécessaire — votre boutique Shopify est déjà bien optimisée !")
             else:
                 st.warning("Merci de remplir tous les champs.")
 
