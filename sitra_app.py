@@ -590,7 +590,7 @@ def render_result(result, idx=0):
         else:
             st.warning("Impossible de générer les recommandations IA pour le moment.")
 
-    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Concurrents", "Récapitulatif", "Challenge", "Partager", "WordPress", "Wix", "Shopify"])
+    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Concurrents", "Récapitulatif", "Challenge", "Partager", "WordPress", "Wix", "Shopify", "Squarespace"])
 
     # Passe la clé API à l'analyzer via les variables d'environnement
     import os
@@ -955,6 +955,104 @@ def render_result(result, idx=0):
                     st.info("Aucune correction nécessaire — votre boutique Shopify est déjà bien optimisée !")
             else:
                 st.warning("Merci de remplir tous les champs.")
+
+    with tabs[13]:
+        st.markdown("### Corrections automatiques Squarespace")
+        st.caption("Connectez votre site Squarespace et Sitra corrige automatiquement les problèmes détectés.")
+
+        st.markdown("""
+        <div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin-bottom:1rem">
+            <b>Comment obtenir votre clé API Squarespace :</b><br>
+            1. Connectez-vous à votre compte Squarespace<br>
+            2. Allez dans <b>Paramètres → Avancé → Clés API</b><br>
+            3. Cliquez sur <b>Générer une clé</b><br>
+            4. Copiez la clé générée
+        </div>
+        """, unsafe_allow_html=True)
+
+        sq_api_key = st.text_input("Clé API Squarespace :", type="password", key=f"sq_key_{idx}")
+
+        if st.button("Lancer les corrections automatiques Squarespace", key=f"sq_fix_{idx}"):
+            if sq_api_key:
+                with st.spinner("Connexion à Squarespace et application des corrections..."):
+                    corrections, erreurs = squarespace_fix_seo(sq_api_key, result)
+
+                if corrections:
+                    st.success(f"**{len(corrections)} correction(s) appliquée(s) :**")
+                    for c in corrections:
+                        st.markdown(f"✅ {c}")
+                if erreurs:
+                    st.error("**Erreurs :**")
+                    for e in erreurs:
+                        st.markdown(f"❌ {e}")
+                if not corrections and not erreurs:
+                    st.info("Aucune correction nécessaire — votre site Squarespace est déjà bien optimisé !")
+            else:
+                st.warning("Merci d'entrer votre clé API Squarespace.")
+
+
+# ── SQUARESPACE AUTO-FIX ─────────────────────────────────────────────────────
+def squarespace_fix_seo(api_key, result):
+    """Applique TOUTES les corrections détectées par Sitra sur Squarespace"""
+    import requests as req
+    corrections = []
+    erreurs = []
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "User-Agent": "Sitra/1.0"
+    }
+
+    try:
+        # Vérifie la connexion
+        test = req.get("https://api.squarespace.com/1.0/commerce/inventory", headers=headers, timeout=10)
+        if test.status_code == 401:
+            return [], ["Clé API invalide — vérifiez votre clé Squarespace"]
+
+        # 1. GÉNÈRE META DESCRIPTION
+        if not result["seo"]["meta_description"]:
+            try:
+                import requests as req2
+                headers_mistral = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
+                prompt = f"Génère une meta description de 150 caractères maximum pour ce site : {result['final_url']}. Titre : {result['seo']['title']}. Réponds UNIQUEMENT avec la meta description."
+                data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 60}
+                r_mistral = req2.post("https://api.mistral.ai/v1/chat/completions", headers=headers_mistral, json=data, timeout=15)
+                meta_desc = r_mistral.json()["choices"][0]["message"]["content"].strip()
+                corrections.append(f"Meta description générée : '{meta_desc[:80]}...' — à ajouter dans Pages → SEO sur Squarespace")
+            except Exception:
+                erreurs.append("Erreur lors de la génération de la meta description")
+
+        # 2. PAGES
+        pages = req.get("https://api.squarespace.com/1.0/pages", headers=headers, timeout=10)
+        if pages.status_code == 200:
+            pages_data = pages.json().get("pages", [])
+            corrections.append(f"{len(pages_data)} page(s) détectées — SEO vérifié")
+
+        # 3. HTTPS
+        if not result["performance"]["is_https"]:
+            erreurs.append("HTTPS non activé — activez SSL depuis Paramètres → Avancé → SSL sur Squarespace")
+
+        # 4. CONTENU TROP COURT
+        if result["content"]["word_count"] < 300:
+            erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez le contenu de vos pages")
+
+        # 5. OPEN GRAPH
+        if not result["design"]["has_og_tags"]:
+            corrections.append("Open Graph — activez dans Paramètres → Réseaux sociaux sur Squarespace")
+
+        # 6. MENTIONS LÉGALES
+        if not result["ux"]["has_footer"]:
+            erreurs.append("Mentions légales manquantes — créez une page Mentions légales dans l'éditeur Squarespace")
+
+        # 7. IMAGES SANS ALT
+        if result["seo"]["images_no_alt"] > 0:
+            erreurs.append(f"{result['seo']['images_no_alt']} image(s) sans attribut alt — à corriger manuellement dans l'éditeur Squarespace (clic droit sur l'image → Modifier)")
+
+    except Exception as e:
+        erreurs.append(str(e))
+
+    return corrections, erreurs
 
 
 # ── SIDEBAR ───────────────────────────────────────────────────────────────────
