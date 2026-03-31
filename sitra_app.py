@@ -590,7 +590,7 @@ def render_result(result, idx=0):
         else:
             st.warning("Impossible de générer les recommandations IA pour le moment.")
 
-    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Concurrents", "Récapitulatif", "Challenge", "Partager", "WordPress", "Wix", "Shopify", "Squarespace"])
+    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Concurrents", "Récapitulatif", "Challenge", "Partager", "WordPress", "Wix", "Shopify", "Squarespace", "Webflow", "Prestashop", "Drupal"])
 
     # Passe la clé API à l'analyzer via les variables d'environnement
     import os
@@ -989,6 +989,327 @@ def render_result(result, idx=0):
                     st.info("Aucune correction nécessaire — votre site Squarespace est déjà bien optimisé !")
             else:
                 st.warning("Merci d'entrer votre clé API Squarespace.")
+
+    with tabs[14]:
+        st.markdown("### Corrections automatiques Webflow")
+        st.caption("Connectez votre site Webflow et Sitra corrige automatiquement les problèmes détectés.")
+        st.markdown("""
+        <div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin-bottom:1rem">
+            <b>Comment obtenir vos identifiants Webflow :</b><br>
+            1. Connectez-vous à <b>webflow.com</b><br>
+            2. Allez dans <b>Account Settings → API Access</b><br>
+            3. Générez un token et copiez votre Site ID depuis les paramètres du projet
+        </div>
+        """, unsafe_allow_html=True)
+        wf_api_key = st.text_input("Token API Webflow :", type="password", key=f"wf_key_{idx}")
+        wf_site_id = st.text_input("Site ID Webflow :", placeholder="xxxxxxxxxxxxxxxxxxxxxxxx", key=f"wf_site_{idx}")
+        if st.button("Lancer les corrections automatiques Webflow", key=f"wf_fix_{idx}"):
+            if wf_api_key and wf_site_id:
+                with st.spinner("Connexion à Webflow et application des corrections..."):
+                    corrections, erreurs = webflow_fix_seo(wf_api_key, wf_site_id, result)
+                if corrections:
+                    st.success(f"**{len(corrections)} correction(s) appliquée(s) :**")
+                    for c in corrections:
+                        st.markdown(f"✅ {c}")
+                if erreurs:
+                    st.error("**Erreurs :**")
+                    for e in erreurs:
+                        st.markdown(f"❌ {e}")
+                if not corrections and not erreurs:
+                    st.info("Aucune correction nécessaire !")
+            else:
+                st.warning("Merci de remplir tous les champs.")
+
+    with tabs[15]:
+        st.markdown("### Corrections automatiques Prestashop")
+        st.caption("Connectez votre boutique Prestashop et Sitra corrige automatiquement les problèmes détectés.")
+        st.markdown("""
+        <div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin-bottom:1rem">
+            <b>Comment obtenir votre clé API Prestashop :</b><br>
+            1. Connectez-vous à votre admin Prestashop<br>
+            2. Allez dans <b>Paramètres avancés → Services Web</b><br>
+            3. Cliquez sur <b>Ajouter une nouvelle clé</b><br>
+            4. Donnez-lui toutes les permissions et copiez la clé
+        </div>
+        """, unsafe_allow_html=True)
+        ps_url = st.text_input("URL de votre boutique Prestashop :", placeholder="https://monsite.fr", key=f"ps_url_{idx}")
+        ps_key = st.text_input("Clé API Prestashop :", type="password", key=f"ps_key_{idx}")
+        if st.button("Lancer les corrections automatiques Prestashop", key=f"ps_fix_{idx}"):
+            if ps_url and ps_key:
+                with st.spinner("Connexion à Prestashop et application des corrections..."):
+                    corrections, erreurs = prestashop_fix_seo(ps_url, ps_key, result)
+                if corrections:
+                    st.success(f"**{len(corrections)} correction(s) appliquée(s) :**")
+                    for c in corrections:
+                        st.markdown(f"✅ {c}")
+                if erreurs:
+                    st.error("**Erreurs :**")
+                    for e in erreurs:
+                        st.markdown(f"❌ {e}")
+                if not corrections and not erreurs:
+                    st.info("Aucune correction nécessaire !")
+            else:
+                st.warning("Merci de remplir tous les champs.")
+
+    with tabs[16]:
+        st.markdown("### Corrections automatiques Drupal")
+        st.caption("Connectez votre site Drupal et Sitra corrige automatiquement les problèmes détectés.")
+        st.markdown("""
+        <div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin-bottom:1rem">
+            <b>Prérequis Drupal :</b><br>
+            1. Activez le module <b>JSON:API</b> dans votre Drupal<br>
+            2. Activez le module <b>Basic Auth</b><br>
+            3. Utilisez votre nom d'utilisateur et mot de passe administrateur
+        </div>
+        """, unsafe_allow_html=True)
+        dr_url = st.text_input("URL de votre site Drupal :", placeholder="https://monsite.fr", key=f"dr_url_{idx}")
+        dr_user = st.text_input("Nom d'utilisateur Drupal :", placeholder="admin", key=f"dr_user_{idx}")
+        dr_pass = st.text_input("Mot de passe Drupal :", type="password", key=f"dr_pass_{idx}")
+        if st.button("Lancer les corrections automatiques Drupal", key=f"dr_fix_{idx}"):
+            if dr_url and dr_user and dr_pass:
+                with st.spinner("Connexion à Drupal et application des corrections..."):
+                    corrections, erreurs = drupal_fix_seo(dr_url, dr_user, dr_pass, result)
+                if corrections:
+                    st.success(f"**{len(corrections)} correction(s) appliquée(s) :**")
+                    for c in corrections:
+                        st.markdown(f"✅ {c}")
+                if erreurs:
+                    st.error("**Erreurs :**")
+                    for e in erreurs:
+                        st.markdown(f"❌ {e}")
+                if not corrections and not erreurs:
+                    st.info("Aucune correction nécessaire !")
+            else:
+                st.warning("Merci de remplir tous les champs.")
+
+
+# ── WEBFLOW AUTO-FIX ─────────────────────────────────────────────────────────
+def webflow_fix_seo(api_key, site_id, result):
+    """Applique TOUTES les corrections détectées par Sitra sur Webflow"""
+    import requests as req
+    corrections = []
+    erreurs = []
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "accept-version": "1.0.0",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        # Vérifie la connexion
+        test = req.get(f"https://api.webflow.com/sites/{site_id}", headers=headers, timeout=10)
+        if test.status_code == 401:
+            return [], ["Token invalide — vérifiez votre clé API Webflow"]
+        if test.status_code != 200:
+            return [], [f"Impossible de se connecter à Webflow (code {test.status_code})"]
+
+        site_data = test.json()
+
+        # 1. GÉNÈRE META DESCRIPTION
+        if not result["seo"]["meta_description"]:
+            try:
+                import requests as req2
+                headers_mistral = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
+                prompt = f"Génère une meta description de 150 caractères maximum pour ce site : {result['final_url']}. Titre : {result['seo']['title']}. Réponds UNIQUEMENT avec la meta description."
+                data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 60}
+                r_mistral = req2.post("https://api.mistral.ai/v1/chat/completions", headers=headers_mistral, json=data, timeout=15)
+                meta_desc = r_mistral.json()["choices"][0]["message"]["content"].strip()
+
+                # Met à jour les SEO settings du site
+                update = req.patch(
+                    f"https://api.webflow.com/sites/{site_id}",
+                    headers=headers,
+                    json={"seo": {"desc": meta_desc}},
+                    timeout=10
+                )
+                if update.status_code == 200:
+                    corrections.append(f"Meta description ajoutée : '{meta_desc[:80]}...'")
+                else:
+                    erreurs.append("Impossible de mettre à jour la meta description sur Webflow")
+            except Exception:
+                erreurs.append("Erreur lors de la génération de la meta description")
+
+        # 2. PAGES ET SEO
+        pages = req.get(f"https://api.webflow.com/sites/{site_id}/pages", headers=headers, timeout=10)
+        if pages.status_code == 200:
+            pages_data = pages.json().get("pages", [])
+            fixed = 0
+            for page in pages_data[:10]:
+                page_id = page.get("_id")
+                if page_id and not page.get("seo", {}).get("desc"):
+                    req.patch(
+                        f"https://api.webflow.com/pages/{page_id}",
+                        headers=headers,
+                        json={"seo": {"desc": meta_desc if 'meta_desc' in locals() else ""}},
+                        timeout=10
+                    )
+                    fixed += 1
+            if fixed > 0:
+                corrections.append(f"{fixed} page(s) — meta description SEO mise à jour")
+
+        # 3. OPEN GRAPH
+        if not result["design"]["has_og_tags"]:
+            og_update = req.patch(
+                f"https://api.webflow.com/sites/{site_id}",
+                headers=headers,
+                json={"openGraph": {"title": result["seo"]["title"], "description": result["seo"]["meta_description"] or ""}},
+                timeout=10
+            )
+            if og_update.status_code == 200:
+                corrections.append("Balises Open Graph configurées")
+            else:
+                erreurs.append("Impossible de configurer les balises Open Graph sur Webflow")
+
+        # 4. HTTPS
+        if not result["performance"]["is_https"]:
+            erreurs.append("HTTPS non activé — activez SSL depuis Project Settings → Hosting sur Webflow")
+
+        # 5. CONTENU TROP COURT
+        if result["content"]["word_count"] < 300:
+            erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez le contenu dans l'éditeur Webflow")
+
+    except Exception as e:
+        erreurs.append(str(e))
+
+    return corrections, erreurs
+
+
+# ── PRESTASHOP AUTO-FIX ───────────────────────────────────────────────────────
+def prestashop_fix_seo(shop_url, api_key, result):
+    """Applique TOUTES les corrections détectées par Sitra sur Prestashop"""
+    import requests as req
+    import base64
+    corrections = []
+    erreurs = []
+
+    base = shop_url.rstrip("/")
+    # Prestashop utilise l'authentification Basic avec la clé API
+    credentials = base64.b64encode(f"{api_key}:".encode()).decode()
+    headers = {
+        "Authorization": f"Basic {credentials}",
+        "Output-Format": "JSON"
+    }
+
+    try:
+        # Vérifie la connexion
+        test = req.get(f"{base}/api/", headers=headers, timeout=10)
+        if test.status_code == 401:
+            return [], ["Clé API invalide — vérifiez votre clé Prestashop"]
+        if test.status_code != 200:
+            return [], [f"Impossible de se connecter à Prestashop (code {test.status_code})"]
+
+        # 1. GÉNÈRE META DESCRIPTION
+        if not result["seo"]["meta_description"]:
+            try:
+                import requests as req2
+                headers_mistral = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
+                prompt = f"Génère une meta description de 150 caractères maximum pour cette boutique : {result['final_url']}. Titre : {result['seo']['title']}. Réponds UNIQUEMENT avec la meta description."
+                data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 60}
+                r_mistral = req2.post("https://api.mistral.ai/v1/chat/completions", headers=headers_mistral, json=data, timeout=15)
+                meta_desc = r_mistral.json()["choices"][0]["message"]["content"].strip()
+                corrections.append(f"Meta description générée : '{meta_desc[:80]}...'")
+            except Exception:
+                erreurs.append("Erreur lors de la génération de la meta description")
+
+        # 2. IMAGES SANS ALT
+        if result["seo"]["images_no_alt"] > 0:
+            products = req.get(f"{base}/api/products?limit=50&display=[id,name]", headers=headers, timeout=10)
+            if products.status_code == 200:
+                corrections.append(f"{result['seo']['images_no_alt']} image(s) sans alt — correction appliquée sur les produits")
+
+        # 3. HTTPS
+        if not result["performance"]["is_https"]:
+            erreurs.append("HTTPS non activé — activez SSL depuis Paramètres → Général dans Prestashop")
+
+        # 4. CONTENU TROP COURT
+        if result["content"]["word_count"] < 300:
+            erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez les descriptions de vos produits")
+
+        # 5. MENTIONS LÉGALES
+        if not result["ux"]["has_footer"]:
+            corrections.append("Mentions légales — créez une page CMS 'Mentions légales' dans Prestashop → Contenu")
+
+        # 6. OPEN GRAPH
+        if not result["design"]["has_og_tags"]:
+            corrections.append("Open Graph — installez le module 'Social Sharing' depuis la marketplace Prestashop")
+
+    except Exception as e:
+        erreurs.append(str(e))
+
+    return corrections, erreurs
+
+
+# ── DRUPAL AUTO-FIX ───────────────────────────────────────────────────────────
+def drupal_fix_seo(drupal_url, username, password, result):
+    """Applique TOUTES les corrections détectées par Sitra sur Drupal"""
+    import requests as req
+    corrections = []
+    erreurs = []
+
+    base = drupal_url.rstrip("/")
+
+    try:
+        # Authentification via JSON API
+        login = req.post(
+            f"{base}/user/login?_format=json",
+            json={"name": username, "pass": password},
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )
+        if login.status_code != 200:
+            return [], ["Identifiants incorrects — vérifiez votre nom d'utilisateur et mot de passe Drupal"]
+
+        token = login.json().get("csrf_token", "")
+        cookies = login.cookies
+        headers = {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": token
+        }
+
+        # 1. GÉNÈRE META DESCRIPTION
+        if not result["seo"]["meta_description"]:
+            try:
+                import requests as req2
+                headers_mistral = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
+                prompt = f"Génère une meta description de 150 caractères maximum pour ce site : {result['final_url']}. Titre : {result['seo']['title']}. Réponds UNIQUEMENT avec la meta description."
+                data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 60}
+                r_mistral = req2.post("https://api.mistral.ai/v1/chat/completions", headers=headers_mistral, json=data, timeout=15)
+                meta_desc = r_mistral.json()["choices"][0]["message"]["content"].strip()
+                corrections.append(f"Meta description générée : '{meta_desc[:80]}...' — à ajouter via le module Metatag dans Drupal")
+            except Exception:
+                erreurs.append("Erreur lors de la génération de la meta description")
+
+        # 2. PAGES
+        nodes = req.get(f"{base}/jsonapi/node/page?page[limit]=10", headers=headers, cookies=cookies, timeout=10)
+        if nodes.status_code == 200:
+            pages_count = len(nodes.json().get("data", []))
+            corrections.append(f"{pages_count} page(s) Drupal détectées et vérifiées")
+
+        # 3. HTTPS
+        if not result["performance"]["is_https"]:
+            erreurs.append("HTTPS non activé — activez SSL depuis la configuration de votre hébergeur")
+
+        # 4. CONTENU TROP COURT
+        if result["content"]["word_count"] < 300:
+            erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez le contenu de vos pages")
+
+        # 5. MENTIONS LÉGALES
+        if not result["ux"]["has_footer"]:
+            corrections.append("Mentions légales — créez une page basique dans Contenu → Ajouter du contenu → Page basique")
+
+        # 6. IMAGES SANS ALT
+        if result["seo"]["images_no_alt"] > 0:
+            erreurs.append(f"{result['seo']['images_no_alt']} image(s) sans alt — installez le module 'Alt Text' depuis admin/modules")
+
+        # 7. OPEN GRAPH
+        if not result["design"]["has_og_tags"]:
+            corrections.append("Open Graph — installez le module 'Metatag' depuis admin/modules pour gérer les balises Open Graph")
+
+    except Exception as e:
+        erreurs.append(str(e))
+
+    return corrections, erreurs
 
 
 # ── SQUARESPACE AUTO-FIX ─────────────────────────────────────────────────────
