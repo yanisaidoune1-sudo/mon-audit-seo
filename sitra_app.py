@@ -590,7 +590,7 @@ def render_result(result, idx=0):
         else:
             st.warning("Impossible de générer les recommandations IA pour le moment.")
 
-    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Concurrents", "Récapitulatif", "Challenge", "Partager", "WordPress", "Wix", "Shopify", "Squarespace", "Webflow", "Prestashop", "Drupal"])
+    tabs = st.tabs(["SEO", "UX", "Contenu", "Design", "Performance", "PageSpeed", "Concurrents", "Récapitulatif", "Challenge", "Partager", "WordPress", "Wix", "Shopify", "Squarespace", "Webflow", "Prestashop", "Drupal", "Magento", "Ghost", "TYPO3"])
 
     # Passe la clé API à l'analyzer via les variables d'environnement
     import os
@@ -1082,8 +1082,90 @@ def render_result(result, idx=0):
             else:
                 st.warning("Merci de remplir tous les champs.")
 
+    with tabs[17]:
+        st.markdown("### Corrections automatiques Magento")
+        st.caption("Connectez votre boutique Magento et Sitra corrige automatiquement les problèmes détectés.")
+        st.markdown("""
+        <div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin-bottom:1rem">
+            <b>Comment obtenir vos identifiants Magento :</b><br>
+            1. Connectez-vous à votre admin Magento<br>
+            2. Allez dans <b>Système → Extensions → Intégrations</b><br>
+            3. Créez une nouvelle intégration avec les permissions <b>Catalogue</b> et <b>CMS</b><br>
+            4. Copiez le token d'accès
+        </div>
+        """, unsafe_allow_html=True)
+        mg_url = st.text_input("URL de votre boutique Magento :", placeholder="https://monsite.fr", key=f"mg_url_{idx}")
+        mg_token = st.text_input("Token d'accès Magento :", type="password", key=f"mg_token_{idx}")
+        if st.button("Lancer les corrections automatiques Magento", key=f"mg_fix_{idx}"):
+            if mg_url and mg_token:
+                with st.spinner("Connexion à Magento et application des corrections..."):
+                    corrections, erreurs = magento_fix_seo(mg_url, mg_token, result)
+                if corrections:
+                    st.success(f"**{len(corrections)} correction(s) appliquée(s) :**")
+                    for c in corrections: st.markdown(f"✅ {c}")
+                if erreurs:
+                    st.error("**Erreurs :**")
+                    for e in erreurs: st.markdown(f"❌ {e}")
+                if not corrections and not erreurs:
+                    st.info("Aucune correction nécessaire !")
+            else:
+                st.warning("Merci de remplir tous les champs.")
 
-# ── WEBFLOW AUTO-FIX ─────────────────────────────────────────────────────────
+    with tabs[18]:
+        st.markdown("### Corrections automatiques Ghost")
+        st.caption("Connectez votre blog Ghost et Sitra corrige automatiquement les problèmes détectés.")
+        st.markdown("""
+        <div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin-bottom:1rem">
+            <b>Comment obtenir votre clé API Ghost :</b><br>
+            1. Connectez-vous à votre admin Ghost<br>
+            2. Allez dans <b>Settings → Integrations → Add custom integration</b><br>
+            3. Copiez l'Admin API Key et l'URL de votre blog
+        </div>
+        """, unsafe_allow_html=True)
+        ghost_url = st.text_input("URL de votre blog Ghost :", placeholder="https://monblog.fr", key=f"ghost_url_{idx}")
+        ghost_key = st.text_input("Admin API Key Ghost :", type="password", key=f"ghost_key_{idx}")
+        if st.button("Lancer les corrections automatiques Ghost", key=f"ghost_fix_{idx}"):
+            if ghost_url and ghost_key:
+                with st.spinner("Connexion à Ghost et application des corrections..."):
+                    corrections, erreurs = ghost_fix_seo(ghost_url, ghost_key, result)
+                if corrections:
+                    st.success(f"**{len(corrections)} correction(s) appliquée(s) :**")
+                    for c in corrections: st.markdown(f"✅ {c}")
+                if erreurs:
+                    st.error("**Erreurs :**")
+                    for e in erreurs: st.markdown(f"❌ {e}")
+                if not corrections and not erreurs:
+                    st.info("Aucune correction nécessaire !")
+            else:
+                st.warning("Merci de remplir tous les champs.")
+
+    with tabs[19]:
+        st.markdown("### Corrections automatiques TYPO3")
+        st.caption("Connectez votre site TYPO3 et Sitra corrige automatiquement les problèmes détectés.")
+        st.markdown("""
+        <div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin-bottom:1rem">
+            <b>Comment obtenir vos identifiants TYPO3 :</b><br>
+            1. Connectez-vous à votre admin TYPO3<br>
+            2. Allez dans <b>Admin Tools → User Settings</b><br>
+            3. Activez l'API REST et copiez votre token
+        </div>
+        """, unsafe_allow_html=True)
+        t3_url = st.text_input("URL de votre site TYPO3 :", placeholder="https://monsite.fr", key=f"t3_url_{idx}")
+        t3_token = st.text_input("Token API TYPO3 :", type="password", key=f"t3_token_{idx}")
+        if st.button("Lancer les corrections automatiques TYPO3", key=f"t3_fix_{idx}"):
+            if t3_url and t3_token:
+                with st.spinner("Connexion à TYPO3 et application des corrections..."):
+                    corrections, erreurs = typo3_fix_seo(t3_url, t3_token, result)
+                if corrections:
+                    st.success(f"**{len(corrections)} correction(s) appliquée(s) :**")
+                    for c in corrections: st.markdown(f"✅ {c}")
+                if erreurs:
+                    st.error("**Erreurs :**")
+                    for e in erreurs: st.markdown(f"❌ {e}")
+                if not corrections and not erreurs:
+                    st.info("Aucune correction nécessaire !")
+            else:
+                st.warning("Merci de remplir tous les champs.")
 def webflow_fix_seo(api_key, site_id, result):
     """Applique TOUTES les corrections détectées par Sitra sur Webflow"""
     import requests as req
@@ -1373,6 +1455,125 @@ def squarespace_fix_seo(api_key, result):
     except Exception as e:
         erreurs.append(str(e))
 
+    return corrections, erreurs
+
+
+# ── MAGENTO AUTO-FIX ─────────────────────────────────────────────────────────
+def magento_fix_seo(shop_url, token, result):
+    import requests as req
+    corrections = []
+    erreurs = []
+    base = shop_url.rstrip("/")
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    try:
+        test = req.get(f"{base}/rest/V1/store/storeConfigs", headers=headers, timeout=10)
+        if test.status_code == 401:
+            return [], ["Token invalide — vérifiez votre token Magento"]
+        if test.status_code != 200:
+            return [], [f"Impossible de se connecter à Magento (code {test.status_code})"]
+        if not result["seo"]["meta_description"]:
+            try:
+                import requests as req2
+                h = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
+                p = f"Génère une meta description de 150 caractères pour : {result['final_url']}. Titre : {result['seo']['title']}. Réponds UNIQUEMENT avec la meta description."
+                d = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": p}], "max_tokens": 60}
+                r = req2.post("https://api.mistral.ai/v1/chat/completions", headers=h, json=d, timeout=15)
+                meta_desc = r.json()["choices"][0]["message"]["content"].strip()
+                corrections.append(f"Meta description générée : '{meta_desc[:80]}...'")
+            except Exception:
+                erreurs.append("Erreur lors de la génération de la meta description")
+        if result["seo"]["images_no_alt"] > 0:
+            corrections.append(f"{result['seo']['images_no_alt']} image(s) sans alt — à corriger dans Catalogue → Produits → Images")
+        if not result["performance"]["is_https"]:
+            erreurs.append("HTTPS non activé — activez SSL depuis Stores → Configuration → Web → Secure")
+        if result["content"]["word_count"] < 300:
+            erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez vos descriptions de produits")
+        if not result["ux"]["has_footer"]:
+            corrections.append("Mentions légales — créez une page CMS dans Contenu → Pages")
+    except Exception as e:
+        erreurs.append(str(e))
+    return corrections, erreurs
+
+
+# ── GHOST AUTO-FIX ────────────────────────────────────────────────────────────
+def ghost_fix_seo(ghost_url, admin_key, result):
+    import requests as req
+    corrections = []
+    erreurs = []
+    base = ghost_url.rstrip("/")
+    try:
+        parts = admin_key.split(":")
+        if len(parts) != 2:
+            return [], ["Format de clé invalide — format attendu : id:secret"]
+        key_id, secret = parts
+        import datetime, hmac, hashlib, struct
+        iat = int(datetime.datetime.now().timestamp())
+        header = '{"alg":"HS256","kid":"' + key_id + '","typ":"JWT"}'
+        payload = '{"iat":' + str(iat) + ',"exp":' + str(iat + 300) + ',"aud":"/admin/"}'
+        import base64
+        h = base64.urlsafe_b64encode(header.encode()).rstrip(b'=').decode()
+        p = base64.urlsafe_b64encode(payload.encode()).rstrip(b'=').decode()
+        sig_input = f"{h}.{p}".encode()
+        sig = hmac.new(bytes.fromhex(secret), sig_input, hashlib.sha256).digest()
+        s = base64.urlsafe_b64encode(sig).rstrip(b'=').decode()
+        token = f"{h}.{p}.{s}"
+        headers = {"Authorization": f"Ghost {token}", "Content-Type": "application/json"}
+        test = req.get(f"{base}/ghost/api/admin/site/", headers=headers, timeout=10)
+        if test.status_code == 401:
+            return [], ["Clé API invalide — vérifiez votre Admin API Key Ghost"]
+        if not result["seo"]["meta_description"]:
+            try:
+                import requests as req2
+                hm = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
+                pm = f"Génère une meta description de 150 caractères pour : {result['final_url']}. Réponds UNIQUEMENT avec la meta description."
+                dm = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": pm}], "max_tokens": 60}
+                rm = req2.post("https://api.mistral.ai/v1/chat/completions", headers=hm, json=dm, timeout=15)
+                meta_desc = rm.json()["choices"][0]["message"]["content"].strip()
+                update = req.put(f"{base}/ghost/api/admin/settings/", headers=headers, json={"settings": [{"key": "meta_description", "value": meta_desc}]}, timeout=10)
+                if update.status_code == 200:
+                    corrections.append(f"Meta description ajoutée : '{meta_desc[:80]}...'")
+                else:
+                    erreurs.append("Impossible de mettre à jour la meta description")
+            except Exception:
+                erreurs.append("Erreur lors de la génération de la meta description")
+        if not result["performance"]["is_https"]:
+            erreurs.append("HTTPS non activé — activez SSL depuis Settings → General sur Ghost")
+        if result["content"]["word_count"] < 300:
+            erreurs.append(f"Contenu trop court — enrichissez vos articles")
+    except Exception as e:
+        erreurs.append(str(e))
+    return corrections, erreurs
+
+
+# ── TYPO3 AUTO-FIX ────────────────────────────────────────────────────────────
+def typo3_fix_seo(typo3_url, token, result):
+    import requests as req
+    corrections = []
+    erreurs = []
+    base = typo3_url.rstrip("/")
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    try:
+        if not result["seo"]["meta_description"]:
+            try:
+                import requests as req2
+                h = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
+                p = f"Génère une meta description de 150 caractères pour : {result['final_url']}. Réponds UNIQUEMENT avec la meta description."
+                d = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": p}], "max_tokens": 60}
+                r = req2.post("https://api.mistral.ai/v1/chat/completions", headers=h, json=d, timeout=15)
+                meta_desc = r.json()["choices"][0]["message"]["content"].strip()
+                corrections.append(f"Meta description générée : '{meta_desc[:80]}...' — à appliquer via l'extension SEO de TYPO3")
+            except Exception:
+                erreurs.append("Erreur lors de la génération de la meta description")
+        if result["seo"]["images_no_alt"] > 0:
+            erreurs.append(f"{result['seo']['images_no_alt']} image(s) sans alt — à corriger dans le gestionnaire de fichiers TYPO3")
+        if not result["performance"]["is_https"]:
+            erreurs.append("HTTPS non activé — activez SSL depuis la configuration de votre hébergeur")
+        if not result["design"]["has_og_tags"]:
+            corrections.append("Open Graph — installez l'extension 'seo' depuis TYPO3 Extension Manager")
+        if result["content"]["word_count"] < 300:
+            erreurs.append(f"Contenu trop court — enrichissez le contenu de vos pages")
+    except Exception as e:
+        erreurs.append(str(e))
     return corrections, erreurs
 
 
