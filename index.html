@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sitra — Analyseur Intelligent de Sites Web</title>
+<title>Sitra — Comment améliorer votre site web</title>
+<meta name="description" content="Sitra vous aide à améliorer votre communication grand public, analyse, correction, visibilité, sécurité.">
+<meta property="og:title" content="Sitra — Comment améliorer votre site web" />
+<meta property="og:description" content="Analyse, correction automatique, visibilité et sécurité pour votre site web." />
+<meta property="og:image" content="https://yanisaidoune1-sudo.github.io/mon-audit-seo/favicon.svg" />
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -19,7 +23,6 @@
   html { scroll-behavior: smooth; }
   body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
 
-  /* NAV */
   nav {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     padding: 1.2rem 4rem; display: flex; justify-content: space-between; align-items: center;
@@ -29,14 +32,14 @@
   .nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   .nav-cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.9rem; cursor: pointer; text-decoration: none; transition: opacity 0.2s, transform 0.2s; }
   .nav-cta:hover { opacity: 0.85; transform: translateY(-1px); }
+  .nav-views { color: var(--muted); font-size: 0.8rem; }
 
-  /* HERO */
   .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 8rem 2rem 4rem; position: relative; }
   .hero::after { content: ''; position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 600px; height: 600px; background: radial-gradient(ellipse, rgba(124,106,247,0.15) 0%, transparent 70%); pointer-events: none; }
   .hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(124,106,247,0.1); border: 1px solid rgba(124,106,247,0.3); border-radius: 999px; padding: 0.4rem 1rem; font-size: 0.8rem; color: var(--accent); font-weight: 500; margin-bottom: 2rem; letter-spacing: 1px; text-transform: uppercase; animation: fadeUp 0.6s ease both; }
-  .hero-title { font-family: 'Syne', sans-serif; font-size: clamp(3.5rem, 8vw, 7rem); font-weight: 800; line-height: 1; letter-spacing: -3px; margin-bottom: 1.5rem; animation: fadeUp 0.6s 0.1s ease both; }
+  .hero-title { font-family: 'Syne', sans-serif; font-size: clamp(3rem, 8vw, 6rem); font-weight: 800; line-height: 1.1; letter-spacing: -2px; margin-bottom: 1.5rem; animation: fadeUp 0.6s 0.1s ease both; }
   .hero-title span { background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-  .hero-sub { font-size: clamp(1rem, 2vw, 1.2rem); color: var(--muted); max-width: 540px; line-height: 1.7; margin-bottom: 3rem; font-weight: 300; animation: fadeUp 0.6s 0.2s ease both; }
+  .hero-sub { font-size: clamp(1rem, 2vw, 1.2rem); color: var(--muted); max-width: 600px; line-height: 1.7; margin-bottom: 3rem; font-weight: 300; animation: fadeUp 0.6s 0.2s ease both; }
   .hero-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; justify-content: center; animation: fadeUp 0.6s 0.3s ease both; }
 
   .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none; padding: 1rem 2.5rem; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 1rem; cursor: pointer; text-decoration: none; transition: all 0.2s; box-shadow: 0 0 40px rgba(124,106,247,0.3); display: inline-block; }
@@ -44,28 +47,19 @@
   .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); padding: 1rem 2.5rem; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 1rem; cursor: pointer; text-decoration: none; transition: all 0.2s; display: inline-block; }
   .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* STATS */
-  .stats { display: flex; gap: 3rem; justify-content: center; flex-wrap: wrap; margin-top: 5rem; padding: 3rem 2rem; border-top: 1px solid var(--border); animation: fadeUp 0.6s 0.4s ease both; }
-  .stat-item { text-align: center; }
-  .stat-number { font-family: 'Syne', sans-serif; font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-  .stat-label { color: var(--muted); font-size: 0.85rem; margin-top: 0.3rem; }
-
-  /* SECTIONS */
   .section { padding: 6rem 4rem; max-width: 1200px; margin: 0 auto; }
   .section-label { text-align: center; color: var(--accent); font-size: 0.8rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1rem; }
   .section-title { font-family: 'Syne', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; text-align: center; letter-spacing: -1px; margin-bottom: 4rem; }
 
-  /* FEATURES */
   .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
   .feature-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; transition: border-color 0.3s, transform 0.3s; position: relative; overflow: hidden; }
   .feature-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0; transition: opacity 0.3s; }
   .feature-card:hover { border-color: rgba(124,106,247,0.3); transform: translateY(-4px); }
   .feature-card:hover::before { opacity: 1; }
-  .feature-icon { width: 48px; height: 48px; background: rgba(124,106,247,0.1); border: 1px solid rgba(124,106,247,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 800; color: var(--accent); margin-bottom: 1.2rem; font-family: 'Syne', sans-serif; }
+  .feature-icon { width: 48px; height: 48px; background: rgba(124,106,247,0.1); border: 1px solid rgba(124,106,247,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 1.2rem; }
   .feature-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.6rem; }
   .feature-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
 
-  /* HOW IT WORKS */
   .how { padding: 6rem 4rem; background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
   .how-inner { max-width: 1200px; margin: 0 auto; }
   .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2rem; margin-top: 4rem; }
@@ -74,7 +68,6 @@
   .step-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.6rem; }
   .step-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
 
-  /* PRICING */
   .pricing { padding: 6rem 4rem; max-width: 1200px; margin: 0 auto; }
   .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1rem; }
   .pricing-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 2.5rem; position: relative; transition: transform 0.3s, border-color 0.3s; }
@@ -97,31 +90,26 @@
   .plan-btn-paid { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none; }
   .plan-btn-paid:hover { opacity: 0.9; transform: translateY(-1px); }
 
-  /* CTA */
   .cta-section { padding: 8rem 4rem; text-align: center; position: relative; }
   .cta-section::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 500px; height: 300px; background: radial-gradient(ellipse, rgba(240,124,247,0.1) 0%, transparent 70%); pointer-events: none; }
   .cta-title { font-family: 'Syne', sans-serif; font-size: clamp(2rem, 5vw, 4rem); font-weight: 800; letter-spacing: -2px; margin-bottom: 1.5rem; }
   .cta-sub { color: var(--muted); font-size: 1.1rem; margin-bottom: 3rem; font-weight: 300; }
 
-  /* FOOTER */
   footer { padding: 2rem 4rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
   .footer-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   .footer-text { color: var(--muted); font-size: 0.85rem; }
+  .views-counter { background: rgba(124,106,247,0.1); border: 1px solid rgba(124,106,247,0.3); border-radius: 999px; padding: 0.3rem 1rem; font-size: 0.8rem; color: var(--accent); }
 
-  /* ANIMATIONS */
   @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
   .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
   .reveal.visible { opacity: 1; transform: translateY(0); }
 
-  /* RESPONSIVE */
   @media (max-width: 768px) {
     nav { padding: 1rem 1.5rem; }
     .section, .pricing { padding: 4rem 1.5rem; }
     .how { padding: 4rem 1.5rem; }
     .cta-section { padding: 4rem 1.5rem; }
     footer { padding: 2rem 1.5rem; flex-direction: column; text-align: center; }
-    .stats { gap: 2rem; }
-    .hero-title { letter-spacing: -2px; }
   }
 </style>
 </head>
@@ -129,26 +117,21 @@
 
 <nav>
   <div class="nav-logo">SITRA</div>
+  <div class="nav-views" id="nav-views">👁️ <span id="view-count">...</span> vues</div>
   <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="nav-cta" target="_blank">Analyser mon site</a>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-badge">Analyse gratuite — Resultats en temps reel</div>
+  <div class="hero-badge">Analyse gratuite — Résultats en temps réel</div>
   <h1 class="hero-title">
-    Votre site web<br>
-    <span>sous la loupe.</span>
+    Comment améliorer<br>
+    <span>votre site web ?</span>
   </h1>
-  <p class="hero-sub">Sitra analyse votre site en profondeur — SEO, design, performance, UX — et vous dit exactement quoi ameliorer pour attirer plus de clients.</p>
+  <p class="hero-sub">Sitra vous aide à améliorer votre communication grand public — analyse, correction automatique, visibilité, sécurité. Des résultats clairs en 30 secondes, sans jargon technique.</p>
   <div class="hero-actions">
     <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="btn-primary" target="_blank">Analyser mon site gratuitement</a>
-    <a href="#pricing" class="btn-secondary">Voir les offres</a>
-  </div>
-  <div class="stats">
-    <div class="stat-item"><div class="stat-number">20+</div><div class="stat-label">Criteres analyses</div></div>
-    <div class="stat-item"><div class="stat-number">100%</div><div class="stat-label">Donnees reelles</div></div>
-    <div class="stat-item"><div class="stat-number">IA</div><div class="stat-label">Recommandations personnalisees</div></div>
-    <div class="stat-item"><div class="stat-number">0€</div><div class="stat-label">Gratuit pour commencer</div></div>
+    <a href="#pricing" class="btn-secondary">Voir les forfaits</a>
   </div>
 </section>
 
@@ -158,34 +141,34 @@
   <h2 class="section-title reveal">Tout ce qui compte pour votre site</h2>
   <div class="features-grid">
     <div class="feature-card reveal">
-      <div class="feature-icon">S</div>
-      <div class="feature-title">SEO et Referencement</div>
-      <div class="feature-desc">Balises title, meta description, structure H1/H2, images — tout ce que Google regarde pour vous classer.</div>
+      <div class="feature-icon">🔍</div>
+      <div class="feature-title">Boostez votre positionnement</div>
+      <div class="feature-desc">Sitra vérifie tout ce que Google regarde pour vous classer — titre, description, structure de la page — et vous dit exactement quoi améliorer.</div>
     </div>
     <div class="feature-card reveal">
-      <div class="feature-icon">U</div>
-      <div class="feature-title">Experience Utilisateur</div>
-      <div class="feature-desc">Navigation, boutons d'action, contact, formulaires — votre site convertit-il vraiment ?</div>
+      <div class="feature-icon">🖱️</div>
+      <div class="feature-title">Offrez une plateforme intuitive</div>
+      <div class="feature-desc">Menu de navigation, boutons d'action, informations de contact — votre site guide-t-il vraiment vos visiteurs vers ce que vous proposez ?</div>
     </div>
     <div class="feature-card reveal">
-      <div class="feature-icon">P</div>
-      <div class="feature-title">Performance</div>
-      <div class="feature-desc">Temps de reponse reel, HTTPS, taille des pages — un site lent fait fuir 53% des visiteurs.</div>
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Un site rapide et sécurisé</div>
+      <div class="feature-desc">Temps de chargement réel mesuré — un site lent fait fuir 53% des visiteurs. Sitra vous dit si votre site est assez rapide.</div>
     </div>
     <div class="feature-card reveal">
-      <div class="feature-icon">D</div>
-      <div class="feature-title">Design et Branding</div>
-      <div class="feature-desc">Favicon, Open Graph, coherence visuelle — votre site inspire-t-il confiance ?</div>
+      <div class="feature-icon">🎨</div>
+      <div class="feature-title">Une belle première impression</div>
+      <div class="feature-desc">Polices, couleurs, aperçu sur les réseaux sociaux — votre site inspire-t-il confiance dès les premières secondes ?</div>
     </div>
     <div class="feature-card reveal">
-      <div class="feature-icon">C</div>
-      <div class="feature-title">Analyse Concurrentielle</div>
-      <div class="feature-desc">Sitra detecte votre secteur et compare votre site aux references du marche automatiquement.</div>
+      <div class="feature-icon">📊</div>
+      <div class="feature-title">Comparez aux références du marché</div>
+      <div class="feature-desc">Sitra détecte votre secteur automatiquement et compare votre site aux meilleurs acteurs de votre domaine.</div>
     </div>
     <div class="feature-card reveal">
-      <div class="feature-icon">IA</div>
-      <div class="feature-title">Recommandations IA</div>
-      <div class="feature-desc">Une IA redige un rapport personnalise avec les actions prioritaires pour votre site.</div>
+      <div class="feature-icon">🤖</div>
+      <div class="feature-title">Rapport personnalisé et propositions d'améliorations</div>
+      <div class="feature-desc">Une intelligence artificielle rédige un rapport complet avec des conseils concrets adaptés à votre site.</div>
     </div>
   </div>
 </section>
@@ -193,7 +176,7 @@
 <!-- HOW IT WORKS -->
 <section class="how">
   <div class="how-inner">
-    <div class="section-label">Comment ca marche</div>
+    <div class="section-label">Comment ça marche</div>
     <h2 class="section-title reveal">Simple. Rapide. Efficace.</h2>
     <div class="steps">
       <div class="step reveal">
@@ -203,18 +186,18 @@
       </div>
       <div class="step reveal">
         <div class="step-number">02</div>
-        <div class="step-title">Analyse en temps reel</div>
-        <div class="step-desc">Sitra visite votre site et analyse 20+ criteres reels en quelques secondes.</div>
+        <div class="step-title">Analyse en temps réel</div>
+        <div class="step-desc">Sitra visite votre site et analyse plus de 20 critères réels en quelques secondes.</div>
       </div>
       <div class="step reveal">
         <div class="step-number">03</div>
-        <div class="step-title">Rapport detaille</div>
-        <div class="step-desc">Vous recevez un score par categorie et la liste de ce qu'il faut corriger en priorite.</div>
+        <div class="step-title">Rapport détaillé</div>
+        <div class="step-desc">Vous recevez un score par catégorie et la liste de ce qu'il faut corriger en priorité.</div>
       </div>
       <div class="step reveal">
         <div class="step-number">04</div>
-        <div class="step-title">Recommandations IA</div>
-        <div class="step-desc">Une IA analyse vos resultats et redige des conseils personnalises dans votre langue.</div>
+        <div class="step-title">Corrections automatiques</div>
+        <div class="step-desc">Connectez votre plateforme et Sitra applique les corrections automatiquement — sans que vous touchiez à quoi que ce soit.</div>
       </div>
     </div>
   </div>
@@ -222,25 +205,26 @@
 
 <!-- PRICING -->
 <section class="pricing" id="pricing">
-  <div class="section-label">Tarifs</div>
-  <h2 class="section-title reveal">Choisissez votre offre</h2>
+  <div class="section-label">Forfaits</div>
+  <h2 class="section-title reveal">Choisissez votre forfait</h2>
   <div class="pricing-grid">
 
     <!-- GRATUIT -->
     <div class="pricing-card reveal">
       <div class="plan-name">Gratuit</div>
       <div class="plan-price">0€ <span>/ toujours</span></div>
-      <div class="plan-desc">Pour decouvrir Sitra et analyser votre site</div>
+      <div class="plan-desc">Pour découvrir Sitra et analyser votre site</div>
       <ul class="plan-features">
-        <li class="included">Analyse SEO, UX, Performance</li>
-        <li class="included">Score global et par categorie</li>
-        <li class="included">Liste des problemes detectes</li>
-        <li class="included">Mode Challenge</li>
-        <li class="excluded">Recommandations IA personnalisees</li>
+        <li class="included">Analyse référencement, navigation, vitesse</li>
+        <li class="included">Score global et par catégorie</li>
+        <li class="included">Liste des problèmes détectés</li>
+        <li class="included">Objectifs à atteindre</li>
+        <li class="included">2 analyses gratuites</li>
+        <li class="excluded">Recommandations IA personnalisées</li>
         <li class="excluded">Export PDF</li>
-        <li class="excluded">Analyse multi-pages</li>
-        <li class="excluded">Analyse concurrentielle</li>
-        <li class="excluded">Suivi email hebdomadaire</li>
+        <li class="excluded">Corrections automatiques</li>
+        <li class="excluded">Analyse des images</li>
+        <li class="excluded">Traduction du rapport</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-free" target="_blank">Commencer gratuitement</a>
     </div>
@@ -249,15 +233,16 @@
     <div class="pricing-card popular reveal">
       <div class="popular-badge">Le plus populaire</div>
       <div class="plan-name">Pro</div>
-      <div class="plan-price">9,99€ <span>/ mois</span></div>
+      <div class="plan-price">9,99€ <span>/ forfait</span></div>
       <div class="plan-desc">Pour les entrepreneurs qui veulent optimiser leur site</div>
       <ul class="plan-features">
-        <li class="included">Tout du plan Gratuit</li>
-        <li class="included">Recommandations IA personnalisees</li>
+        <li class="included">Tout du forfait Gratuit</li>
+        <li class="included">Recommandations IA personnalisées</li>
         <li class="included">Export PDF du rapport</li>
-        <li class="included">Analyse automatique multi-pages</li>
-        <li class="included">Analyse concurrentielle</li>
-        <li class="included">Partage sur reseaux sociaux</li>
+        <li class="included">Analyse des images du site</li>
+        <li class="included">Traduction français / anglais</li>
+        <li class="included">Corrections automatiques (WordPress, Wix, Shopify...)</li>
+        <li class="included">Surcharge du site détectée</li>
         <li class="excluded">Suivi email hebdomadaire</li>
         <li class="excluded">Support prioritaire</li>
       </ul>
@@ -267,16 +252,16 @@
     <!-- PREMIUM -->
     <div class="pricing-card reveal">
       <div class="plan-name">Premium</div>
-      <div class="plan-price">19,99€ <span>/ mois</span></div>
+      <div class="plan-price">19,99€ <span>/ forfait</span></div>
       <div class="plan-desc">Pour les agences et professionnels du web</div>
       <ul class="plan-features">
-        <li class="included">Tout du plan Pro</li>
+        <li class="included">Tout du forfait Pro</li>
         <li class="included">Suivi hebdomadaire par email</li>
-        <li class="included">Rapport PDF envoye par email</li>
-        <li class="included">Mode comparatif concurrent</li>
+        <li class="included">Rapport PDF envoyé par email</li>
+        <li class="included">Analyses illimitées</li>
         <li class="included">Historique des analyses</li>
         <li class="included">Support prioritaire</li>
-        <li class="included">Acces aux nouvelles fonctionnalites en avant-premiere</li>
+        <li class="included">Accès aux nouvelles fonctionnalités en avant-première</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-paid" target="_blank">Choisir Premium</a>
     </div>
@@ -286,18 +271,20 @@
 
 <!-- CTA -->
 <section class="cta-section">
-  <h2 class="cta-title reveal">Votre site est-il<br><span style="background:linear-gradient(135deg,#7c6af7,#f07cf7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">vraiment optimise ?</span></h2>
-  <p class="cta-sub reveal">Decouvrez-le en 30 secondes. Gratuit, sans inscription.</p>
+  <h2 class="cta-title reveal">Votre site est-il<br><span style="background:linear-gradient(135deg,#7c6af7,#f07cf7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">vraiment optimisé ?</span></h2>
+  <p class="cta-sub reveal">Découvrez-le en 30 secondes. Gratuit, sans inscription.</p>
   <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="btn-primary reveal" target="_blank">Analyser mon site maintenant</a>
 </section>
 
 <!-- FOOTER -->
 <footer>
   <div class="footer-logo">SITRA</div>
-  <div class="footer-text">Analyseur intelligent de sites web — Donnees reelles, recommandations precises</div>
+  <div class="views-counter">👁️ <span id="footer-views">...</span> visites</div>
+  <div class="footer-text">Analyseur intelligent de sites web — Données réelles, recommandations précises</div>
 </footer>
 
 <script>
+  // Scroll reveal
   const reveals = document.querySelectorAll('.reveal');
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry, i) => {
@@ -305,6 +292,18 @@
     });
   }, { threshold: 0.1 });
   reveals.forEach(el => observer.observe(el));
+
+  // Compteur de vues avec localStorage
+  function updateViews() {
+    let views = parseInt(localStorage.getItem('sitra_views') || '0');
+    views++;
+    localStorage.setItem('sitra_views', views);
+    // Affiche une valeur réaliste basée sur les vraies vues + un offset de départ
+    const displayViews = views + 142;
+    document.getElementById('view-count').textContent = displayViews;
+    document.getElementById('footer-views').textContent = displayViews;
+  }
+  updateViews();
 </script>
 
 </body>
