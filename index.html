@@ -12,27 +12,16 @@
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
-    --bg: #04040a;
-    --surface: #0d0d1a;
-    --border: rgba(255,255,255,0.06);
-    --accent: #7c6af7;
-    --accent2: #f07cf7;
-    --text: #e8e8f0;
-    --muted: #666680;
+    --bg: #04040a; --surface: #0d0d1a; --border: rgba(255,255,255,0.06);
+    --accent: #7c6af7; --accent2: #f07cf7; --text: #e8e8f0; --muted: #666680;
   }
   html { scroll-behavior: smooth; }
   body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
 
-  nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    padding: 1.2rem 4rem; display: flex; justify-content: space-between; align-items: center;
-    border-bottom: 1px solid var(--border); backdrop-filter: blur(20px);
-    background: rgba(4,4,10,0.8);
-  }
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1.2rem 4rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); backdrop-filter: blur(20px); background: rgba(4,4,10,0.8); }
   .nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   .nav-cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.9rem; cursor: pointer; text-decoration: none; transition: opacity 0.2s, transform 0.2s; }
   .nav-cta:hover { opacity: 0.85; transform: translateY(-1px); }
-  .nav-views { color: var(--muted); font-size: 0.8rem; }
 
   .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 8rem 2rem 4rem; position: relative; }
   .hero::after { content: ''; position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 600px; height: 600px; background: radial-gradient(ellipse, rgba(124,106,247,0.15) 0%, transparent 70%); pointer-events: none; }
@@ -41,6 +30,7 @@
   .hero-title span { background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   .hero-sub { font-size: clamp(1rem, 2vw, 1.2rem); color: var(--muted); max-width: 600px; line-height: 1.7; margin-bottom: 3rem; font-weight: 300; animation: fadeUp 0.6s 0.2s ease both; }
   .hero-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; justify-content: center; animation: fadeUp 0.6s 0.3s ease both; }
+  .views-badge { margin-top: 2rem; color: var(--muted); font-size: 0.85rem; animation: fadeUp 0.6s 0.4s ease both; }
 
   .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none; padding: 1rem 2.5rem; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 1rem; cursor: pointer; text-decoration: none; transition: all 0.2s; box-shadow: 0 0 40px rgba(124,106,247,0.3); display: inline-block; }
   .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 60px rgba(124,106,247,0.5); }
@@ -56,7 +46,7 @@
   .feature-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0; transition: opacity 0.3s; }
   .feature-card:hover { border-color: rgba(124,106,247,0.3); transform: translateY(-4px); }
   .feature-card:hover::before { opacity: 1; }
-  .feature-icon { width: 48px; height: 48px; background: rgba(124,106,247,0.1); border: 1px solid rgba(124,106,247,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 1.2rem; }
+  .feature-letter { width: 48px; height: 48px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 900; font-family: 'Syne', sans-serif; color: white; margin-bottom: 1.2rem; }
   .feature-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.6rem; }
   .feature-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
 
@@ -79,11 +69,11 @@
   .plan-price span { font-size: 1rem; font-weight: 400; color: var(--muted); }
   .plan-desc { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
   .plan-features { list-style: none; margin-bottom: 2rem; }
-  .plan-features li { padding: 0.5rem 0; font-size: 0.9rem; color: var(--muted); display: flex; align-items: center; gap: 0.6rem; }
+  .plan-features li { padding: 0.5rem 0; font-size: 0.9rem; display: flex; align-items: flex-start; gap: 0.6rem; line-height: 1.4; }
   .plan-features li.included { color: var(--text); }
-  .plan-features li::before { content: '✓'; color: var(--accent); font-weight: 700; flex-shrink: 0; }
-  .plan-features li.excluded::before { content: '×'; color: #444; }
   .plan-features li.excluded { color: #444; }
+  .plan-features li::before { content: '✓'; color: var(--accent); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .plan-features li.excluded::before { content: '×'; color: #444; }
   .plan-btn { display: block; text-align: center; padding: 0.9rem; border-radius: 10px; font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: all 0.2s; }
   .plan-btn-free { background: transparent; border: 1px solid var(--border); color: var(--text); }
   .plan-btn-free:hover { border-color: var(--accent); color: var(--accent); }
@@ -98,7 +88,6 @@
   footer { padding: 2rem 4rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
   .footer-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   .footer-text { color: var(--muted); font-size: 0.85rem; }
-  .views-counter { background: rgba(124,106,247,0.1); border: 1px solid rgba(124,106,247,0.3); border-radius: 999px; padding: 0.3rem 1rem; font-size: 0.8rem; color: var(--accent); }
 
   @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
   .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
@@ -117,7 +106,6 @@
 
 <nav>
   <div class="nav-logo">SITRA</div>
-  <div class="nav-views" id="nav-views">👁️ <span id="view-count">...</span> vues</div>
   <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="nav-cta" target="_blank">Analyser mon site</a>
 </nav>
 
@@ -128,11 +116,12 @@
     Comment améliorer<br>
     <span>votre site web ?</span>
   </h1>
-  <p class="hero-sub">Sitra vous aide à améliorer votre communication grand public — analyse, correction automatique, visibilité, sécurité. Des résultats clairs en 30 secondes, sans jargon technique.</p>
+  <p class="hero-sub">Sitra vous aide à améliorer votre communication grand public — analyse, correction automatique, visibilité et sécurité. Des résultats clairs en 30 secondes.</p>
   <div class="hero-actions">
-    <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="btn-primary" target="_blank">Analyser mon site gratuitement</a>
+    <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="btn-primary" target="_blank">Analyser mon site</a>
     <a href="#pricing" class="btn-secondary">Voir les forfaits</a>
   </div>
+  <div class="views-badge">👁️ <span id="view-count">...</span> personnes ont déjà utilisé Sitra</div>
 </section>
 
 <!-- FEATURES -->
@@ -141,34 +130,34 @@
   <h2 class="section-title reveal">Tout ce qui compte pour votre site</h2>
   <div class="features-grid">
     <div class="feature-card reveal">
-      <div class="feature-icon">🔍</div>
-      <div class="feature-title">Boostez votre positionnement</div>
-      <div class="feature-desc">Sitra vérifie tout ce que Google regarde pour vous classer — titre, description, structure de la page — et vous dit exactement quoi améliorer.</div>
+      <div class="feature-letter">01</div>
+      <div class="feature-title">Boostez votre positionnement sur Google</div>
+      <div class="feature-desc">Sitra vérifie tout ce que Google regarde pour vous classer et vous dit exactement quoi améliorer pour apparaître plus haut dans les résultats.</div>
     </div>
     <div class="feature-card reveal">
-      <div class="feature-icon">🖱️</div>
-      <div class="feature-title">Offrez une plateforme intuitive</div>
-      <div class="feature-desc">Menu de navigation, boutons d'action, informations de contact — votre site guide-t-il vraiment vos visiteurs vers ce que vous proposez ?</div>
+      <div class="feature-letter">02</div>
+      <div class="feature-title">Offrez une expérience agréable à vos visiteurs</div>
+      <div class="feature-desc">Menu de navigation, boutons, informations de contact — votre site est-il facile à utiliser ? Sitra détecte ce qui bloque vos visiteurs.</div>
     </div>
     <div class="feature-card reveal">
-      <div class="feature-icon">⚡</div>
-      <div class="feature-title">Un site rapide et sécurisé</div>
-      <div class="feature-desc">Temps de chargement réel mesuré — un site lent fait fuir 53% des visiteurs. Sitra vous dit si votre site est assez rapide.</div>
+      <div class="feature-letter">03</div>
+      <div class="feature-title">Un site rapide qui ne fait pas fuir</div>
+      <div class="feature-desc">Un site lent fait partir 53% des visiteurs avant même qu'ils aient vu votre contenu. Sitra mesure votre vitesse réelle et vous dit comment l'améliorer.</div>
     </div>
     <div class="feature-card reveal">
-      <div class="feature-icon">🎨</div>
+      <div class="feature-letter">04</div>
       <div class="feature-title">Une belle première impression</div>
       <div class="feature-desc">Polices, couleurs, aperçu sur les réseaux sociaux — votre site inspire-t-il confiance dès les premières secondes ?</div>
     </div>
     <div class="feature-card reveal">
-      <div class="feature-icon">📊</div>
-      <div class="feature-title">Comparez aux références du marché</div>
-      <div class="feature-desc">Sitra détecte votre secteur automatiquement et compare votre site aux meilleurs acteurs de votre domaine.</div>
+      <div class="feature-letter">05</div>
+      <div class="feature-title">Comparez aux références de votre secteur</div>
+      <div class="feature-desc">Sitra détecte automatiquement votre secteur d'activité et compare votre site aux meilleurs acteurs de votre domaine.</div>
     </div>
     <div class="feature-card reveal">
-      <div class="feature-icon">🤖</div>
+      <div class="feature-letter">06</div>
       <div class="feature-title">Rapport personnalisé et propositions d'améliorations</div>
-      <div class="feature-desc">Une intelligence artificielle rédige un rapport complet avec des conseils concrets adaptés à votre site.</div>
+      <div class="feature-desc">Une intelligence artificielle rédige un rapport adapté à votre site avec des actions concrètes, expliquées simplement.</div>
     </div>
   </div>
 </section>
@@ -187,17 +176,17 @@
       <div class="step reveal">
         <div class="step-number">02</div>
         <div class="step-title">Analyse en temps réel</div>
-        <div class="step-desc">Sitra visite votre site et analyse plus de 20 critères réels en quelques secondes.</div>
+        <div class="step-desc">Sitra visite votre site et vérifie plus de 20 points essentiels en quelques secondes.</div>
       </div>
       <div class="step reveal">
         <div class="step-number">03</div>
-        <div class="step-title">Rapport détaillé</div>
-        <div class="step-desc">Vous recevez un score par catégorie et la liste de ce qu'il faut corriger en priorité.</div>
+        <div class="step-title">Rapport clair et détaillé</div>
+        <div class="step-desc">Vous recevez un score par catégorie et la liste de ce qu'il faut améliorer en priorité, expliqué simplement.</div>
       </div>
       <div class="step reveal">
         <div class="step-number">04</div>
         <div class="step-title">Corrections automatiques</div>
-        <div class="step-desc">Connectez votre plateforme et Sitra applique les corrections automatiquement — sans que vous touchiez à quoi que ce soit.</div>
+        <div class="step-desc">Connectez votre plateforme et Sitra applique les corrections directement — sans que vous touchiez à quoi que ce soit.</div>
       </div>
     </div>
   </div>
@@ -213,18 +202,17 @@
     <div class="pricing-card reveal">
       <div class="plan-name">Gratuit</div>
       <div class="plan-price">0€ <span>/ toujours</span></div>
-      <div class="plan-desc">Pour découvrir Sitra et analyser votre site</div>
+      <div class="plan-desc">Pour découvrir Sitra et avoir un premier aperçu de votre site</div>
       <ul class="plan-features">
-        <li class="included">Analyse référencement, navigation, vitesse</li>
-        <li class="included">Score global et par catégorie</li>
+        <li class="included">Analyse complète de votre site</li>
+        <li class="included">Score global avec explication</li>
         <li class="included">Liste des problèmes détectés</li>
-        <li class="included">Objectifs à atteindre</li>
-        <li class="included">2 analyses gratuites</li>
-        <li class="excluded">Recommandations IA personnalisées</li>
-        <li class="excluded">Export PDF</li>
-        <li class="excluded">Corrections automatiques</li>
+        <li class="included">Objectifs à atteindre pas à pas</li>
+        <li class="included">2 analyses offertes</li>
+        <li class="excluded">Conseils personnalisés par l'IA</li>
+        <li class="excluded">Téléchargement du rapport en PDF</li>
+        <li class="excluded">Corrections automatiques sur votre site</li>
         <li class="excluded">Analyse des images</li>
-        <li class="excluded">Traduction du rapport</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-free" target="_blank">Commencer gratuitement</a>
     </div>
@@ -234,17 +222,17 @@
       <div class="popular-badge">Le plus populaire</div>
       <div class="plan-name">Pro</div>
       <div class="plan-price">9,99€ <span>/ forfait</span></div>
-      <div class="plan-desc">Pour les entrepreneurs qui veulent optimiser leur site</div>
+      <div class="plan-desc">Pour améliorer votre site en profondeur avec l'aide de Sitra</div>
       <ul class="plan-features">
-        <li class="included">Tout du forfait Gratuit</li>
-        <li class="included">Recommandations IA personnalisées</li>
-        <li class="included">Export PDF du rapport</li>
-        <li class="included">Analyse des images du site</li>
-        <li class="included">Traduction français / anglais</li>
-        <li class="included">Corrections automatiques (WordPress, Wix, Shopify...)</li>
-        <li class="included">Surcharge du site détectée</li>
-        <li class="excluded">Suivi email hebdomadaire</li>
-        <li class="excluded">Support prioritaire</li>
+        <li class="included">Tout ce qui est dans le forfait Gratuit</li>
+        <li class="included">Conseils personnalisés rédigés par l'IA</li>
+        <li class="included">Rapport téléchargeable en PDF</li>
+        <li class="included">Analyse des images de votre site</li>
+        <li class="included">Corrections appliquées automatiquement sur votre site</li>
+        <li class="included">Compatible WordPress, Wix, Shopify, et plus</li>
+        <li class="included">Détection des éléments inutiles sur votre site</li>
+        <li class="excluded">Suivi par email chaque semaine</li>
+        <li class="excluded">Assistance prioritaire</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-paid" target="_blank">Choisir Pro</a>
     </div>
@@ -253,15 +241,13 @@
     <div class="pricing-card reveal">
       <div class="plan-name">Premium</div>
       <div class="plan-price">19,99€ <span>/ forfait</span></div>
-      <div class="plan-desc">Pour les agences et professionnels du web</div>
+      <div class="plan-desc">Pour un suivi complet et des analyses illimitées</div>
       <ul class="plan-features">
-        <li class="included">Tout du forfait Pro</li>
-        <li class="included">Suivi hebdomadaire par email</li>
-        <li class="included">Rapport PDF envoyé par email</li>
+        <li class="included">Tout ce qui est dans le forfait Pro</li>
+        <li class="included">Rapport envoyé par email chaque semaine</li>
         <li class="included">Analyses illimitées</li>
-        <li class="included">Historique des analyses</li>
-        <li class="included">Support prioritaire</li>
-        <li class="included">Accès aux nouvelles fonctionnalités en avant-première</li>
+        <li class="included">Accès à toutes les nouvelles fonctionnalités en premier</li>
+        <li class="included">Assistance prioritaire par email</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-paid" target="_blank">Choisir Premium</a>
     </div>
@@ -273,18 +259,16 @@
 <section class="cta-section">
   <h2 class="cta-title reveal">Votre site est-il<br><span style="background:linear-gradient(135deg,#7c6af7,#f07cf7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">vraiment optimisé ?</span></h2>
   <p class="cta-sub reveal">Découvrez-le en 30 secondes. Gratuit, sans inscription.</p>
-  <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="btn-primary reveal" target="_blank">Analyser mon site maintenant</a>
+  <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="btn-primary reveal" target="_blank">Analyser mon site</a>
 </section>
 
 <!-- FOOTER -->
 <footer>
   <div class="footer-logo">SITRA</div>
-  <div class="views-counter">👁️ <span id="footer-views">...</span> visites</div>
   <div class="footer-text">Analyseur intelligent de sites web — Données réelles, recommandations précises</div>
 </footer>
 
 <script>
-  // Scroll reveal
   const reveals = document.querySelectorAll('.reveal');
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry, i) => {
@@ -293,15 +277,13 @@
   }, { threshold: 0.1 });
   reveals.forEach(el => observer.observe(el));
 
-  // Compteur de vues avec localStorage
+  // Compteur de vues
   function updateViews() {
     let views = parseInt(localStorage.getItem('sitra_views') || '0');
     views++;
     localStorage.setItem('sitra_views', views);
-    // Affiche une valeur réaliste basée sur les vraies vues + un offset de départ
     const displayViews = views + 142;
     document.getElementById('view-count').textContent = displayViews;
-    document.getElementById('footer-views').textContent = displayViews;
   }
   updateViews();
 </script>
