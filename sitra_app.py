@@ -302,26 +302,65 @@ def wordpress_fix_seo(wp_url, wp_user, wp_password, result):
     return corrections, erreurs
 
 # ── IA ────────────────────────────────────────────────────────────────────────
-def generer_recommandations_ia(result):
+def generer_deux_corrections(plateforme, result):
+    """Génère 2 propositions de corrections que l'utilisateur peut choisir"""
+    try:
+        import requests as req
+        headers_m = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
+
+        problemes = ', '.join([i['message'] for i in result['all_issues'][:6]])
+
+        prompt = f"""Tu es un expert en optimisation de sites web. Pour ce site {result['final_url']} sur {plateforme}, propose EXACTEMENT 2 versions de corrections différentes.
+
+Problèmes détectés : {problemes}
+
+VERSION 1 : Approche minimaliste (corrections essentielles seulement, rapide à faire)
+VERSION 2 : Approche complète (toutes les corrections, plus de travail mais meilleur résultat)
+
+Pour chaque version, liste en 4-5 points simples ce qui sera corrigé, expliqué en langage simple (pas de jargon technique).
+
+Format exact :
+VERSION 1 - Corrections essentielles
+• [point 1]
+• [point 2]
+• [point 3]
+• [point 4]
+
+VERSION 2 - Corrections complètes
+• [point 1]
+• [point 2]
+• [point 3]
+• [point 4]
+• [point 5]"""
+
+        data = {"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 400}
+        r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers_m, json=data, timeout=30)
+        return r.json()["choices"][0]["message"]["content"]
+    except Exception:
+        return None
     try:
         import requests as req
         headers = {
             "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
             "Content-Type": "application/json"
         }
-        prompt = f"""Tu es un expert en optimisation de sites web. Analyse ces données et génère un rapport de recommandations personnalisé en 5-7 phrases naturelles. Détecte la langue du site et réponds dans cette langue.
+        prompt = f"""Tu es un conseiller web qui aide des petits entrepreneurs et artisans à améliorer leur site. Tu dois expliquer les problèmes de façon très simple, comme si tu parlais à quelqu'un qui ne connaît rien à l'informatique.
 
-Site : {result['final_url']}
+Site analysé : {result['final_url']}
 Score global : {result['global_score']}/100
-SEO : {result['seo']['score']}/100
-UX : {result['ux']['score']}/100
-Contenu : {result['content']['score']}/100
-Design : {result['design']['score']}/100
-Performance : {result['performance']['score']}/100
-HTTPS : {'Oui' if result['is_https'] else 'Non'}
-Temps de réponse : {result['response_time']}s
-Problèmes : {', '.join([i['message'] for i in result['all_issues'][:5]])}"""
-        data = {"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}]}
+Problèmes détectés : {', '.join([i['message'] for i in result['all_issues'][:6]])}
+
+Écris exactement 5 conseils numérotés (1. 2. 3. 4. 5.) pour améliorer ce site.
+Chaque conseil doit :
+- Être sur une nouvelle ligne
+- Commencer par expliquer le problème en 1 phrase simple
+- Puis dire exactement quoi faire pour le corriger
+- Utiliser des mots du quotidien, pas de termes techniques
+- Être court (2-3 phrases maximum par conseil)
+
+Ne dis pas "balise H1", "meta description", "HTTPS" — traduis ces termes en langage simple."""
+
+        data = {"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 600}
         r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=30)
         return r.json()["choices"][0]["message"]["content"]
     except Exception:
@@ -597,20 +636,19 @@ def render_result(result, idx=0):
     except Exception:
         pass
 
-    tabs = st.tabs([
+    tabs_list = [
         "Référencement Google",
-        "Navigation et Boutons",
-        "Qualité du Texte",
-        "Apparence du Site",
-        "Vitesse du Site",
+        "Détails du site",
         "Résumé",
         "Objectifs à atteindre",
-        "Surcharge du Site",
-        "Images du Site",
-        "Traduction",
+        "Analyse approfondie",
         "Partager",
-        "Corriger mon site automatiquement"
-    ])
+    ]
+    if show_corriger:
+        tabs_list.append("Corriger mon site automatiquement")
+
+    tabs = st.tabs(tabs_list)
+
 
     with tabs[0]:
         seo = result["seo"]
@@ -631,75 +669,75 @@ def render_result(result, idx=0):
             render_issues(seo["issues"])
 
     with tabs[1]:
-        ux = result["ux"]
-        render_score_bar("Navigation et Boutons", ux["score"])
-        st.caption("Est-ce que les visiteurs trouvent facilement ce qu'ils cherchent ?")
-        st.markdown("")
-        col_u1, col_u2 = st.columns(2)
-        with col_u1:
-            st.markdown("**Ce qu'on a trouvé sur votre site**")
-            st.markdown(f"- **Menu de navigation** : {'Présent' if ux['has_nav'] else 'Absent'} ({ux['nav_links_count']} liens)")
-            st.markdown(f"- **Boutons d'action** : {ux['buttons_count']} {'(correct)' if ux['buttons_count'] > 0 else '(manquant)'}")
-            st.markdown(f"- **Informations de contact** : {'Trouvées' if ux['has_contact'] else 'Absentes'}")
-            st.markdown(f"- **Pied de page** : {'Présent' if ux['has_footer'] else 'Absent'}")
-        with col_u2:
-            st.markdown("**Ce qu'il faut améliorer**")
-            render_issues(ux["issues"])
+        st.caption("Choisissez ce que vous voulez voir")
+        sous_onglet = st.selectbox("Voir :", ["Navigation", "Qualité du texte", "Apparence du site", "Vitesse du site"], key=f"sous_{idx}")
+
+        if sous_onglet == "Navigation":
+            ux = result["ux"]
+            render_score_bar("Navigation", ux["score"])
+            st.caption("Est-ce que les visiteurs trouvent facilement ce qu'ils cherchent ?")
+            col_u1, col_u2 = st.columns(2)
+            with col_u1:
+                st.markdown("**Ce qu'on a trouvé**")
+                st.markdown(f"- **Menu** : {'Présent' if ux['has_nav'] else 'Absent'} ({ux['nav_links_count']} liens)")
+                st.markdown(f"- **Boutons** : {ux['buttons_count']} {'(correct)' if ux['buttons_count'] > 0 else '(manquant)'}")
+                st.markdown(f"- **Contact** : {'Trouvé' if ux['has_contact'] else 'Absent'}")
+                st.markdown(f"- **Pied de page** : {'Présent' if ux['has_footer'] else 'Absent'}")
+            with col_u2:
+                st.markdown("**Ce qu'il faut améliorer**")
+                render_issues(ux["issues"])
+
+        elif sous_onglet == "Qualité du texte":
+            content = result["content"]
+            render_score_bar("Qualité du texte", content["score"])
+            st.caption("Le contenu de votre site est-il clair et suffisant ?")
+            st.markdown(f"**Nombre de mots** : {content['word_count']} {'(bien !)' if content['word_count'] >= 300 else '(ajoutez plus de contenu, visez 300 mots minimum)'}")
+            render_issues(content["issues"])
+
+        elif sous_onglet == "Apparence du site":
+            design = result["design"]
+            render_score_bar("Apparence du site", design["score"])
+            st.caption("Votre site donne-t-il une bonne première impression ?")
+            col_d1, col_d2 = st.columns(2)
+            with col_d1:
+                st.markdown("**Ce qu'on a trouvé**")
+                st.markdown(f"- **Icône du site** : {'Présente' if design['has_favicon'] else 'Absente'}")
+                st.markdown(f"- **Polices personnalisées** : {'Oui' if design['has_google_fonts'] else 'Non'}")
+                st.markdown(f"- **Aperçu réseaux sociaux** : {'Configuré' if design['has_og_tags'] else 'Non configuré'}")
+            with col_d2:
+                st.markdown("**Ce qu'il faut améliorer**")
+                render_issues(design["issues"])
+
+        elif sous_onglet == "Vitesse du site":
+            perf = result["performance"]
+            render_score_bar("Vitesse du site", perf["score"])
+            st.caption("Un site lent fait fuir les visiteurs — 53% partent si ça met plus de 3 secondes")
+            col_p1, col_p2 = st.columns(2)
+            with col_p1:
+                st.markdown("**Ce qu'on a mesuré**")
+                rt = perf['response_time']
+                rt_label = "Excellent" if rt and rt < 1 else ("Moyen" if rt and rt < 2 else "Lent")
+                st.markdown(f"- **Connexion sécurisée** : {'Oui' if perf['is_https'] else 'Non'}")
+                st.markdown(f"- **Temps de chargement** : {rt}s — {rt_label}")
+                st.markdown(f"- **Taille de la page** : {perf['html_size_kb']} KB")
+            with col_p2:
+                st.markdown("**Ce qu'il faut améliorer**")
+                render_issues(perf["issues"])
 
     with tabs[2]:
-        content = result["content"]
-        render_score_bar("Qualité du Texte", content["score"])
-        st.caption("Le contenu de votre site est-il clair et suffisant ?")
-        st.markdown("")
-        st.markdown(f"**Nombre de mots sur la page** : {content['word_count']} {'(bien !)' if content['word_count'] >= 300 else '(ajoutez plus de contenu, visez 300 mots minimum)'}")
-        render_issues(content["issues"])
-
-    with tabs[3]:
-        design = result["design"]
-        render_score_bar("Apparence du Site", design["score"])
-        st.caption("Votre site donne-t-il une bonne première impression ?")
-        st.markdown("")
-        col_d1, col_d2 = st.columns(2)
-        with col_d1:
-            st.markdown("**Ce qu'on a trouvé sur votre site**")
-            st.markdown(f"- **Icône du site** : {'Présente' if design['has_favicon'] else 'Absente'}")
-            st.markdown(f"- **Polices personnalisées** : {'Oui' if design['has_google_fonts'] else 'Non détectées'}")
-            st.markdown(f"- **Aperçu réseaux sociaux** : {'Configuré' if design['has_og_tags'] else 'Non configuré'}")
-        with col_d2:
-            st.markdown("**Ce qu'il faut améliorer**")
-            render_issues(design["issues"])
-
-    with tabs[4]:
-        perf = result["performance"]
-        render_score_bar("Vitesse du Site", perf["score"])
-        st.caption("Un site lent fait fuir les visiteurs — 53% partent si ça met plus de 3 secondes")
-        st.markdown("")
-        col_p1, col_p2 = st.columns(2)
-        with col_p1:
-            st.markdown("**Ce qu'on a mesuré**")
-            rt = perf['response_time']
-            rt_label = "Excellent" if rt and rt < 1 else ("Moyen" if rt and rt < 2 else "Lent")
-            st.markdown(f"- **Connexion sécurisée (HTTPS)** : {'Oui' if perf['is_https'] else 'Non'}")
-            st.markdown(f"- **Temps de chargement** : {rt}s — {rt_label}")
-            st.markdown(f"- **Taille de la page** : {perf['html_size_kb']} KB")
-        with col_p2:
-            st.markdown("**Ce qu'il faut améliorer**")
-            render_issues(perf["issues"])
-
-    with tabs[5]:
         st.markdown(f"### Score global : **{result['global_score']}/100** — {label_txt}")
         render_score_bar("Référencement Google", result["seo"]["score"])
-        render_score_bar("Navigation et Boutons", result["ux"]["score"])
-        render_score_bar("Qualité du Texte", result["content"]["score"])
-        render_score_bar("Apparence du Site", result["design"]["score"])
-        render_score_bar("Vitesse du Site", result["performance"]["score"])
+        render_score_bar("Navigation", result["ux"]["score"])
+        render_score_bar("Qualité du texte", result["content"]["score"])
+        render_score_bar("Apparence du site", result["design"]["score"])
+        render_score_bar("Vitesse du site", result["performance"]["score"])
         st.divider()
         st.markdown(f"**{result['total_issues']} problèmes détectés :**")
         cats = {}
         for item in result["all_issues"]:
             cats.setdefault(item["category"], []).append(item["message"])
         for cat, msgs in cats.items():
-            cat_fr = {"SEO": "Référencement Google", "UX": "Navigation et Boutons", "Contenu": "Qualité du Texte", "Design": "Apparence du Site", "Performance": "Vitesse du Site"}.get(cat, cat)
+            cat_fr = {"SEO": "Référencement Google", "UX": "Navigation", "Contenu": "Qualité du texte", "Design": "Apparence du site", "Performance": "Vitesse du site"}.get(cat, cat)
             with st.expander(f"{cat_fr} — {len(msgs)} problème(s)"):
                 render_issues(msgs)
         st.divider()
@@ -722,7 +760,7 @@ def render_result(result, idx=0):
             else:
                 st.warning("Merci d'entrer un email valide.")
 
-    with tabs[6]:
+    with tabs[3]:
         st.markdown("### Objectifs à atteindre")
         st.caption("Cochez les objectifs au fur et à mesure que vous les complétez")
         seo = result["seo"]
@@ -731,30 +769,24 @@ def render_result(result, idx=0):
         if not seo["title"]:
             challenge_items.append("Ajouter un titre à votre site")
         elif len(seo["title"]) < 10 or len(seo["title"]) > 70:
-            challenge_items.append(f"Améliorer le titre de votre site ({len(seo['title'])} caractères) — viser 50-60 caractères")
+            challenge_items.append(f"Améliorer le titre ({len(seo['title'])} caractères) — viser 50-60 caractères")
         if not seo["meta_description"]:
             challenge_items.append("Écrire une description de 120-160 caractères pour Google")
         if seo["h1_count"] != 1:
-            challenge_items.append(f"Corriger le titre principal de votre page (vous en avez {seo['h1_count']}, il en faut 1)")
+            challenge_items.append(f"Corriger le titre principal (vous en avez {seo['h1_count']}, il en faut 1)")
         if seo["images_no_alt"] > 0:
             challenge_items.append(f"Ajouter une description à {seo['images_no_alt']} image(s)")
         if not ux["has_contact"]:
             challenge_items.append("Ajouter vos informations de contact visibles")
         if not result["performance"]["is_https"]:
-            challenge_items.append("Activer la connexion sécurisée (HTTPS) sur votre site")
+            challenge_items.append("Activer la connexion sécurisée sur votre site")
         if not ux["has_footer"]:
             challenge_items.append("Créer un pied de page avec vos informations et mentions légales")
         if not result["design"]["has_og_tags"]:
             challenge_items.append("Configurer l'aperçu de votre site sur les réseaux sociaux")
         if result["content"]["word_count"] < 300:
-            challenge_items.append(f"Étoffer le contenu de votre site ({result['content']['word_count']} mots — visez 300 mots minimum)")
-        generals = [
-            "Tester votre site sur téléphone et tablette",
-            "Vérifier que votre site se charge rapidement",
-            "Créer une page FAQ pour répondre aux questions fréquentes",
-            "Ajouter des avis clients ou témoignages",
-            "Vérifier l'orthographe sur toutes les pages",
-        ]
+            challenge_items.append(f"Étoffer le contenu ({result['content']['word_count']} mots — visez 300 minimum)")
+        generals = ["Tester sur téléphone et tablette", "Vérifier la vitesse de chargement", "Créer une page FAQ", "Ajouter des avis clients", "Vérifier l'orthographe"]
         while len(challenge_items) < 5 and generals:
             challenge_items.append(generals.pop(0))
         total = len(challenge_items)
@@ -765,151 +797,63 @@ def render_result(result, idx=0):
                 st.session_state[key] = False
             if st.checkbox(obj, key=key):
                 completed += 1
-        st.markdown("")
         if total > 0:
+            st.markdown("")
             st.progress(completed / total)
-            st.caption(f"**{completed}/{total}** objectifs complétés {'— Bravo, votre site est optimisé !' if completed == total else ''}")
+            st.caption(f"**{completed}/{total}** objectifs complétés {'— Bravo !' if completed == total else ''}")
 
-    with tabs[7]:
-        st.markdown("### Analyse de surcharge du site")
-        st.caption("Votre site contient-il des éléments inutiles qui ralentissent ou compliquent la navigation ?")
-        st.markdown("")
-        surcharge_items = []
-        conseils = []
-        if result["ux"]["nav_links_count"] > 7:
-            surcharge_items.append(f"Menu surchargé : {result['ux']['nav_links_count']} liens")
-            conseils.append("Réduisez votre menu à 5-7 liens maximum — gardez uniquement les pages les plus importantes")
-        if result["performance"]["html_size_kb"] > 200:
-            surcharge_items.append(f"Page trop lourde : {result['performance']['html_size_kb']} KB")
-            conseils.append("Supprimez les scripts et styles inutilisés — chaque KB en moins accélère votre site")
-        if result["seo"]["images_total"] > 20:
-            surcharge_items.append(f"Beaucoup d'images : {result['seo']['images_total']} images détectées")
-            conseils.append("Réduisez le nombre d'images ou compressez-les — gardez seulement les images qui apportent de la valeur")
-        if result["ux"]["long_paragraphs"] > 0:
-            surcharge_items.append(f"{result['ux']['long_paragraphs']} paragraphe(s) trop long(s)")
-            conseils.append("Découpez vos longs paragraphes — les visiteurs lisent en diagonale")
-        if result["content"]["word_count"] > 1000:
-            surcharge_items.append(f"Contenu très long : {result['content']['word_count']} mots")
-            conseils.append("Simplifiez votre contenu — allez à l'essentiel, les visiteurs n'ont pas le temps de tout lire")
-        if surcharge_items:
-            st.warning(f"**{len(surcharge_items)} élément(s) de surcharge détecté(s) :**")
-            for item, conseil in zip(surcharge_items, conseils):
-                st.markdown(f"""
-                <div style="background:#1a1a2e;border:1px solid #ffc107;border-radius:10px;padding:1rem;margin:0.5rem 0">
-                    <div style="color:#ffc107;font-weight:700">⚠️ {item}</div>
-                    <div style="color:#ccc;font-size:0.9rem;margin-top:0.3rem">💡 {conseil}</div>
-                </div>
-                """, unsafe_allow_html=True)
-        else:
-            st.success("Votre site ne semble pas surchargé — bonne gestion du contenu !")
+    with tabs[4]:
+        st.caption("Choisissez ce que vous voulez analyser")
+        sous2 = st.selectbox("Voir :", ["Surcharge du site", "Images du site"], key=f"sous2_{idx}")
 
-    with tabs[8]:
-        st.markdown("### Analyse des images du site")
-        st.caption("Vos images sont-elles adaptées, suffisantes et de bonne qualité ?")
-        st.markdown("")
+        if sous2 == "Surcharge du site":
+            st.markdown("**Votre site a-t-il des éléments inutiles ?**")
+            surcharge_items = []
+            conseils = []
+            if result["ux"]["nav_links_count"] > 7:
+                surcharge_items.append(f"Menu surchargé : {result['ux']['nav_links_count']} liens")
+                conseils.append("Réduisez à 5-7 liens maximum — gardez les pages les plus importantes")
+            if result["performance"]["html_size_kb"] > 200:
+                surcharge_items.append(f"Page trop lourde : {result['performance']['html_size_kb']} KB")
+                conseils.append("Supprimez les éléments inutilisés — chaque KB en moins accélère votre site")
+            if result["seo"]["images_total"] > 20:
+                surcharge_items.append(f"Beaucoup d'images : {result['seo']['images_total']} détectées")
+                conseils.append("Gardez seulement les plus importantes et compressez les autres")
+            if result["ux"]["long_paragraphs"] > 0:
+                surcharge_items.append(f"{result['ux']['long_paragraphs']} paragraphe(s) trop long(s)")
+                conseils.append("Découpez vos longs paragraphes — les visiteurs lisent en diagonale")
+            if result["content"]["word_count"] > 1000:
+                surcharge_items.append(f"Contenu très long : {result['content']['word_count']} mots")
+                conseils.append("Allez à l'essentiel — les visiteurs n'ont pas le temps de tout lire")
+            if surcharge_items:
+                for item, conseil in zip(surcharge_items, conseils):
+                    st.markdown(f"""<div style="background:#1a1a2e;border:1px solid #ffc107;border-radius:10px;padding:1rem;margin:0.5rem 0"><div style="color:#ffc107;font-weight:700">⚠️ {item}</div><div style="color:#ccc;font-size:0.9rem;margin-top:0.3rem">💡 {conseil}</div></div>""", unsafe_allow_html=True)
+            else:
+                st.success("Votre site ne semble pas surchargé !")
 
-        images_total = result["seo"]["images_total"]
-        images_no_alt = result["seo"]["images_no_alt"]
+        elif sous2 == "Images du site":
+            st.markdown("**Vos images sont-elles suffisantes et adaptées ?**")
+            images_total = result["seo"]["images_total"]
+            images_no_alt = result["seo"]["images_no_alt"]
+            if images_total == 0:
+                st.markdown("""<div style="background:#1a1a2e;border:1px solid #dc3545;border-radius:10px;padding:1rem;margin:0.5rem 0"><div style="color:#dc3545;font-weight:700">❌ Aucune image sur votre site</div><div style="color:#ccc;font-size:0.9rem;margin-top:0.3rem">💡 Ajoutez des images pour rendre votre site plus attractif</div></div>""", unsafe_allow_html=True)
+            elif images_total < 3:
+                st.markdown(f"""<div style="background:#1a1a2e;border:1px solid #ffc107;border-radius:10px;padding:1rem;margin:0.5rem 0"><div style="color:#ffc107;font-weight:700">⚠️ Seulement {images_total} image(s) — c'est peu</div><div style="color:#ccc;font-size:0.9rem;margin-top:0.3rem">💡 Ajoutez des photos de vos produits, équipe ou locaux</div></div>""", unsafe_allow_html=True)
+            elif images_total > 20:
+                st.markdown(f"""<div style="background:#1a1a2e;border:1px solid #ffc107;border-radius:10px;padding:1rem;margin:0.5rem 0"><div style="color:#ffc107;font-weight:700">⚠️ Beaucoup d'images : {images_total}</div><div style="color:#ccc;font-size:0.9rem;margin-top:0.3rem">💡 Gardez les plus importantes et compressez les autres</div></div>""", unsafe_allow_html=True)
+            else:
+                st.success(f"✅ Bon nombre d'images : {images_total}")
+            if images_no_alt > 0:
+                st.markdown(f"""<div style="background:#1a1a2e;border:1px solid #ffc107;border-radius:10px;padding:1rem;margin:0.5rem 0"><div style="color:#ffc107;font-weight:700">⚠️ {images_no_alt} image(s) sans description</div><div style="color:#ccc;font-size:0.9rem;margin-top:0.3rem">💡 Ajoutez une description à chaque image pour aider Google</div></div>""", unsafe_allow_html=True)
+            elif images_total > 0:
+                st.success("✅ Toutes vos images ont une description !")
+            st.markdown("\n**Conseils :**\n- Photos compressées (moins de 200 KB)\n- Format WebP ou JPEG\n- Pas d'images floues ou pixelisées")
 
-        if images_total == 0:
-            st.error("""
-            <div style="background:#1a1a2e;border:1px solid #dc3545;border-radius:10px;padding:1rem;margin:0.5rem 0">
-                <div style="color:#dc3545;font-weight:700">❌ Aucune image détectée sur votre site</div>
-                <div style="color:#ccc;font-size:0.9rem;margin-top:0.3rem">💡 Ajoutez des images pour rendre votre site plus attractif — les visiteurs retiennent mieux les informations avec des visuels</div>
-            </div>
-            """, unsafe_allow_html=True)
-        elif images_total < 3:
-            st.warning(f"""
-            <div style="background:#1a1a2e;border:1px solid #ffc107;border-radius:10px;padding:1rem;margin:0.5rem 0">
-                <div style="color:#ffc107;font-weight:700">⚠️ Seulement {images_total} image(s) sur votre site — c'est peu</div>
-                <div style="color:#ccc;font-size:0.9rem;margin-top:0.3rem">💡 Ajoutez plus d'images pertinentes — photos de vos produits, de votre équipe, de vos locaux</div>
-            </div>
-            """, unsafe_allow_html=True)
-        elif images_total > 20:
-            st.warning(f"""
-            <div style="background:#1a1a2e;border:1px solid #ffc107;border-radius:10px;padding:1rem;margin:0.5rem 0">
-                <div style="color:#ffc107;font-weight:700">⚠️ Beaucoup d'images : {images_total} détectées</div>
-                <div style="color:#ccc;font-size:0.9rem;margin-top:0.3rem">💡 Trop d'images ralentit votre site — gardez seulement les plus importantes et compressez les autres</div>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.success(f"✅ Bon nombre d'images : {images_total} images détectées")
-
-        if images_no_alt > 0:
-            st.markdown(f"""
-            <div style="background:#1a1a2e;border:1px solid #ffc107;border-radius:10px;padding:1rem;margin:0.5rem 0">
-                <div style="color:#ffc107;font-weight:700">⚠️ {images_no_alt} image(s) sans description textuelle</div>
-                <div style="color:#ccc;font-size:0.9rem;margin-top:0.3rem">💡 Ajoutez une description à chaque image — cela aide Google à comprendre vos images et améliore l'accessibilité</div>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            if images_total > 0:
-                st.success("✅ Toutes vos images ont une description — parfait pour Google !")
-
-        st.markdown("")
-        st.markdown("**Conseils pour de meilleures images :**")
-        st.markdown("- Utilisez des photos de bonne qualité mais compressées (moins de 200 KB par image)")
-        st.markdown("- Préférez des images au format WebP ou JPEG pour un chargement rapide")
-        st.markdown("- Évitez les images floues ou pixelisées — elles nuisent à votre crédibilité")
-        st.markdown("- Ajoutez des images qui illustrent vos produits ou services")
-
-    with tabs[9]:
-        st.markdown("### Traduction du rapport")
-        st.caption("Obtenez votre rapport d'analyse en anglais")
-        st.markdown("")
-
-        langue = st.radio("Choisissez la langue du rapport :", ["Français", "English"], horizontal=True, key=f"langue_{idx}")
-
-        if st.button("Générer le rapport traduit", key=f"translate_{idx}"):
-            with st.spinner("Traduction en cours..."):
-                try:
-                    import requests as req
-                    headers_m = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
-
-                    if langue == "English":
-                        prompt = f"""Translate this website analysis report to English. Be concise and professional.
-
-Site: {result['final_url']}
-Global Score: {result['global_score']}/100
-SEO Score: {result['seo']['score']}/100
-UX Score: {result['ux']['score']}/100
-Content Score: {result['content']['score']}/100
-Design Score: {result['design']['score']}/100
-Performance Score: {result['performance']['score']}/100
-Issues detected: {', '.join([i['message'] for i in result['all_issues'][:8]])}
-
-Write a professional analysis report in English in 8-10 sentences."""
-                    else:
-                        prompt = f"""Génère un rapport d'analyse complet en français pour ce site web.
-
-Site : {result['final_url']}
-Score global : {result['global_score']}/100
-SEO : {result['seo']['score']}/100
-UX : {result['ux']['score']}/100
-Contenu : {result['content']['score']}/100
-Design : {result['design']['score']}/100
-Performance : {result['performance']['score']}/100
-Problèmes : {', '.join([i['message'] for i in result['all_issues'][:8]])}
-
-Rédige un rapport professionnel en 8-10 phrases."""
-
-                    data = {"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 500}
-                    r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers_m, json=data, timeout=30)
-                    rapport_traduit = r.json()["choices"][0]["message"]["content"]
-                    st.markdown(f"""
-                    <div style="background:#1a1a2e;border:1px solid #667eea;border-radius:10px;padding:1.5rem;margin-top:1rem;color:#e0e0e0;line-height:1.7">
-                        {rapport_traduit}
-                    </div>
-                    """, unsafe_allow_html=True)
-                except Exception:
-                    st.error("Impossible de générer la traduction pour le moment.")
-
-    with tabs[10]:
+    with tabs[5]:
         st.markdown("### Partager mes résultats")
-        st.caption("Partagez votre score et faites découvrir Sitra autour de vous")
         score = result["global_score"]
         url_site = result["final_url"]
-        texte_partage = f"J'ai analysé {url_site} avec Sitra et obtenu un score de {score}/100 ! Analysez votre site gratuitement sur https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app"
+        texte_partage = f"J'ai analysé {url_site} avec Sitra et obtenu un score de {score}/100 ! Analysez votre site sur https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app"
         lien_twitter = f"https://twitter.com/intent/tweet?text={texte_partage}"
         lien_linkedin = f"https://www.linkedin.com/sharing/share-offsite/?url=https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app"
         lien_facebook = f"https://www.facebook.com/sharer/sharer.php?u=https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app&quote={texte_partage}"
@@ -917,158 +861,328 @@ Rédige un rapport professionnel en 8-10 phrases."""
         st.markdown("")
         col_sh1, col_sh2, col_sh3, col_sh4 = st.columns(4)
         with col_sh1:
-            st.markdown(f'''<a href="{lien_twitter}" target="_blank" style="display:block;text-align:center;background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;padding:0.8rem 1rem;color:#1DA1F2;text-decoration:none;font-weight:600;font-size:0.9rem">X (Twitter)</a>''', unsafe_allow_html=True)
+            st.markdown(f'''<a href="{lien_twitter}" target="_blank" style="display:block;text-align:center;background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;padding:0.8rem 1rem;color:#1DA1F2;text-decoration:none;font-weight:600">X (Twitter)</a>''', unsafe_allow_html=True)
         with col_sh2:
-            st.markdown(f'''<a href="{lien_linkedin}" target="_blank" style="display:block;text-align:center;background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;padding:0.8rem 1rem;color:#0A66C2;text-decoration:none;font-weight:600;font-size:0.9rem">LinkedIn</a>''', unsafe_allow_html=True)
+            st.markdown(f'''<a href="{lien_linkedin}" target="_blank" style="display:block;text-align:center;background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;padding:0.8rem 1rem;color:#0A66C2;text-decoration:none;font-weight:600">LinkedIn</a>''', unsafe_allow_html=True)
         with col_sh3:
-            st.markdown(f'''<a href="{lien_facebook}" target="_blank" style="display:block;text-align:center;background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;padding:0.8rem 1rem;color:#1877F2;text-decoration:none;font-weight:600;font-size:0.9rem">Facebook</a>''', unsafe_allow_html=True)
+            st.markdown(f'''<a href="{lien_facebook}" target="_blank" style="display:block;text-align:center;background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;padding:0.8rem 1rem;color:#1877F2;text-decoration:none;font-weight:600">Facebook</a>''', unsafe_allow_html=True)
         with col_sh4:
-            st.markdown(f'''<a href="{lien_whatsapp}" target="_blank" style="display:block;text-align:center;background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;padding:0.8rem 1rem;color:#25D366;text-decoration:none;font-weight:600;font-size:0.9rem">WhatsApp</a>''', unsafe_allow_html=True)
+            st.markdown(f'''<a href="{lien_whatsapp}" target="_blank" style="display:block;text-align:center;background:#1a1a2e;border:1px solid #2a2a4e;border-radius:10px;padding:0.8rem 1rem;color:#25D366;text-decoration:none;font-weight:600">WhatsApp</a>''', unsafe_allow_html=True)
         st.markdown("")
-        st.markdown("**Pour Instagram et TikTok** — copiez ce texte et collez-le dans votre post :")
+        st.markdown("**Pour Instagram et TikTok** — copiez ce texte :")
         st.code(texte_partage, language=None)
 
-    with tabs[11]:
-        st.markdown("### Corriger mon site automatiquement")
-        st.caption("Sélectionnez votre plateforme et Sitra applique les corrections automatiquement — sans que vous touchiez à quoi que ce soit.")
+    if show_corriger and len(tabs) > 6:
+        with tabs[6]:
+            st.markdown("### Corriger mon site automatiquement")
+            st.caption("Sitra va vous proposer 2 versions de corrections. Vous choisissez celle que vous préférez avant de l'appliquer.")
 
-        plateforme = st.selectbox("Quelle plateforme utilise votre site ?", [
-            "Choisissez votre plateforme...",
-            "WordPress", "Wix", "Shopify", "Squarespace",
-            "Webflow", "Prestashop", "Drupal", "Magento", "Ghost", "TYPO3"
-        ], key=f"plateforme_{idx}")
+            plateforme = st.selectbox("Quelle plateforme utilise votre site ?", [
+                "Choisissez votre plateforme...",
+                "WordPress", "Wix", "Shopify", "Squarespace",
+                "Webflow", "Prestashop", "Drupal", "Magento", "Ghost", "TYPO3"
+            ], key=f"plateforme_{idx}")
 
-        def show_corrections(corrections, erreurs):
-            if corrections:
-                st.success(f"**{len(corrections)} correction(s) appliquée(s) :**")
-                for c in corrections: st.markdown(f"✅ {c}")
-            if erreurs:
-                st.error("**Points à corriger manuellement :**")
-                for e in erreurs: st.markdown(f"❌ {e}")
-            if not corrections and not erreurs:
-                st.info("Aucune correction nécessaire — votre site est déjà bien optimisé !")
+            if plateforme != "Choisissez votre plateforme...":
+                if st.button("Voir les 2 propositions de corrections", key=f"voir_props_{idx}"):
+                    with st.spinner("Sitra prépare 2 propositions personnalisées..."):
+                        propositions = generer_deux_corrections(plateforme, result)
 
-        if plateforme == "WordPress":
-            st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Comment obtenir un mot de passe d'application WordPress :</b><br>1. Connectez-vous à votre WordPress<br>2. Allez dans <b>Utilisateurs → Votre profil</b><br>3. Scrollez jusqu'à <b>Mots de passe d'application</b><br>4. Créez un nouveau mot de passe et copiez-le</div>""", unsafe_allow_html=True)
-            wp_url = st.text_input("URL de votre site :", placeholder="https://monsite.fr", key=f"wp_url_{idx}")
-            wp_user = st.text_input("Nom d'utilisateur :", placeholder="admin", key=f"wp_user_{idx}")
-            wp_password = st.text_input("Mot de passe d'application :", type="password", key=f"wp_pass_{idx}")
-            if st.button("Corriger mon site WordPress", key=f"wp_fix_{idx}"):
-                if wp_url and wp_user and wp_password:
-                    with st.spinner("Application des corrections..."):
-                        c, e = wordpress_fix_seo(wp_url, wp_user, wp_password, result)
-                    show_corrections(c, e)
-                else:
-                    st.warning("Merci de remplir tous les champs.")
+                    if propositions:
+                        st.session_state[f"propositions_{idx}"] = propositions
+                        st.session_state[f"plateforme_choisie_{idx}"] = plateforme
 
-        elif plateforme == "Wix":
-            st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Comment obtenir vos identifiants Wix :</b><br>1. Connectez-vous à <b>manage.wix.com</b><br>2. Allez dans <b>Paramètres → Avancé → Clés API</b><br>3. Créez une nouvelle clé et copiez l'Account ID, le Site ID et la clé API</div>""", unsafe_allow_html=True)
-            wix_account_id = st.text_input("Account ID Wix :", key=f"wix_account_{idx}")
-            wix_site_id = st.text_input("Site ID Wix :", key=f"wix_site_{idx}")
-            wix_api_key = st.text_input("Clé API Wix :", type="password", key=f"wix_key_{idx}")
-            if st.button("Corriger mon site Wix", key=f"wix_fix_{idx}"):
-                if wix_account_id and wix_site_id and wix_api_key:
-                    with st.spinner("Application des corrections..."):
-                        c, e = wix_fix_seo(wix_account_id, wix_site_id, wix_api_key, result)
-                    show_corrections(c, e)
-                else:
-                    st.warning("Merci de remplir tous les champs.")
+                if f"propositions_{idx}" in st.session_state:
+                    propositions = st.session_state[f"propositions_{idx}"]
 
-        elif plateforme == "Shopify":
-            st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Comment obtenir votre token Shopify :</b><br>1. Allez dans <b>Paramètres → Applications → Développer des apps</b><br>2. Créez une app privée avec les permissions Produits et Contenu<br>3. Copiez le token d'accès</div>""", unsafe_allow_html=True)
-            shop_url = st.text_input("URL de votre boutique :", placeholder="monsite.myshopify.com", key=f"shopify_url_{idx}")
-            access_token = st.text_input("Token d'accès :", type="password", key=f"shopify_token_{idx}")
-            if st.button("Corriger ma boutique Shopify", key=f"shopify_fix_{idx}"):
-                if shop_url and access_token:
-                    with st.spinner("Application des corrections..."):
-                        c, e = shopify_fix_seo(shop_url, access_token, result)
-                    show_corrections(c, e)
-                else:
-                    st.warning("Merci de remplir tous les champs.")
+                    # Sépare les deux versions
+                    lignes = propositions.split("\n")
+                    version1_lines = []
+                    version2_lines = []
+                    current = None
+                    for ligne in lignes:
+                        if "VERSION 1" in ligne:
+                            current = 1
+                        elif "VERSION 2" in ligne:
+                            current = 2
+                        elif current == 1:
+                            version1_lines.append(ligne)
+                        elif current == 2:
+                            version2_lines.append(ligne)
 
-        elif plateforme == "Squarespace":
-            st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Comment obtenir votre clé API Squarespace :</b><br>1. Allez dans <b>Paramètres → Avancé → Clés API</b><br>2. Cliquez sur Générer une clé et copiez-la</div>""", unsafe_allow_html=True)
-            sq_api_key = st.text_input("Clé API Squarespace :", type="password", key=f"sq_key_{idx}")
-            if st.button("Corriger mon site Squarespace", key=f"sq_fix_{idx}"):
-                if sq_api_key:
-                    with st.spinner("Application des corrections..."):
-                        c, e = squarespace_fix_seo(sq_api_key, result)
-                    show_corrections(c, e)
-                else:
-                    st.warning("Merci d'entrer votre clé API.")
+                    col_v1, col_v2 = st.columns(2)
+                    with col_v1:
+                        st.markdown("""<div style="background:#1a1a2e;border:2px solid #667eea;border-radius:12px;padding:1.5rem">
+                        <div style="color:#667eea;font-weight:800;font-size:1.1rem;margin-bottom:1rem">Version 1 — Corrections essentielles</div>""", unsafe_allow_html=True)
+                        for l in version1_lines:
+                            if l.strip():
+                                st.markdown(l)
+                        st.markdown("</div>", unsafe_allow_html=True)
 
-        elif plateforme == "Webflow":
-            st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Comment obtenir vos identifiants Webflow :</b><br>1. Allez dans <b>Account Settings → API Access</b><br>2. Générez un token et copiez votre Site ID depuis les paramètres du projet</div>""", unsafe_allow_html=True)
-            wf_api_key = st.text_input("Token API Webflow :", type="password", key=f"wf_key_{idx}")
-            wf_site_id = st.text_input("Site ID Webflow :", key=f"wf_site_{idx}")
-            if st.button("Corriger mon site Webflow", key=f"wf_fix_{idx}"):
-                if wf_api_key and wf_site_id:
-                    with st.spinner("Application des corrections..."):
-                        c, e = webflow_fix_seo(wf_api_key, wf_site_id, result)
-                    show_corrections(c, e)
-                else:
-                    st.warning("Merci de remplir tous les champs.")
+                        if st.button("Appliquer la Version 1", key=f"apply_v1_{idx}"):
+                            st.session_state[f"version_choisie_{idx}"] = 1
+                            st.info("Version 1 sélectionnée — entrez vos identifiants ci-dessous pour appliquer.")
 
-        elif plateforme == "Prestashop":
-            st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Comment obtenir votre clé API Prestashop :</b><br>1. Allez dans <b>Paramètres avancés → Services Web</b><br>2. Cliquez sur Ajouter une nouvelle clé avec toutes les permissions</div>""", unsafe_allow_html=True)
-            ps_url = st.text_input("URL de votre boutique :", placeholder="https://monsite.fr", key=f"ps_url_{idx}")
-            ps_key = st.text_input("Clé API Prestashop :", type="password", key=f"ps_key_{idx}")
-            if st.button("Corriger ma boutique Prestashop", key=f"ps_fix_{idx}"):
-                if ps_url and ps_key:
-                    with st.spinner("Application des corrections..."):
-                        c, e = prestashop_fix_seo(ps_url, ps_key, result)
-                    show_corrections(c, e)
-                else:
-                    st.warning("Merci de remplir tous les champs.")
+                    with col_v2:
+                        st.markdown("""<div style="background:#1a1a2e;border:2px solid #f07cf7;border-radius:12px;padding:1.5rem">
+                        <div style="color:#f07cf7;font-weight:800;font-size:1.1rem;margin-bottom:1rem">Version 2 — Corrections complètes</div>""", unsafe_allow_html=True)
+                        for l in version2_lines:
+                            if l.strip():
+                                st.markdown(l)
+                        st.markdown("</div>", unsafe_allow_html=True)
 
-        elif plateforme == "Drupal":
-            st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Prérequis Drupal :</b><br>1. Activez les modules <b>JSON:API</b> et <b>Basic Auth</b><br>2. Utilisez votre nom d'utilisateur et mot de passe administrateur</div>""", unsafe_allow_html=True)
-            dr_url = st.text_input("URL de votre site :", placeholder="https://monsite.fr", key=f"dr_url_{idx}")
-            dr_user = st.text_input("Nom d'utilisateur :", key=f"dr_user_{idx}")
-            dr_pass = st.text_input("Mot de passe :", type="password", key=f"dr_pass_{idx}")
-            if st.button("Corriger mon site Drupal", key=f"dr_fix_{idx}"):
-                if dr_url and dr_user and dr_pass:
-                    with st.spinner("Application des corrections..."):
-                        c, e = drupal_fix_seo(dr_url, dr_user, dr_pass, result)
-                    show_corrections(c, e)
-                else:
-                    st.warning("Merci de remplir tous les champs.")
+                        if st.button("Appliquer la Version 2", key=f"apply_v2_{idx}"):
+                            st.session_state[f"version_choisie_{idx}"] = 2
+                            st.info("Version 2 sélectionnée — entrez vos identifiants ci-dessous pour appliquer.")
 
-        elif plateforme == "Magento":
-            st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Comment obtenir votre token Magento :</b><br>1. Allez dans <b>Système → Extensions → Intégrations</b><br>2. Créez une intégration avec les permissions Catalogue et CMS<br>3. Copiez le token d'accès</div>""", unsafe_allow_html=True)
-            mg_url = st.text_input("URL de votre boutique :", placeholder="https://monsite.fr", key=f"mg_url_{idx}")
-            mg_token = st.text_input("Token d'accès :", type="password", key=f"mg_token_{idx}")
-            if st.button("Corriger ma boutique Magento", key=f"mg_fix_{idx}"):
-                if mg_url and mg_token:
-                    with st.spinner("Application des corrections..."):
-                        c, e = magento_fix_seo(mg_url, mg_token, result)
-                    show_corrections(c, e)
-                else:
-                    st.warning("Merci de remplir tous les champs.")
+                    # Affiche les champs d'identifiants si une version est choisie
+                    if f"version_choisie_{idx}" in st.session_state:
+                        st.divider()
+                        st.markdown(f"**Entrez vos identifiants {plateforme} pour appliquer la version choisie :**")
 
-        elif plateforme == "Ghost":
-            st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Comment obtenir votre clé API Ghost :</b><br>1. Allez dans <b>Settings → Integrations → Add custom integration</b><br>2. Copiez l'Admin API Key au format id:secret</div>""", unsafe_allow_html=True)
-            ghost_url = st.text_input("URL de votre blog :", placeholder="https://monblog.fr", key=f"ghost_url_{idx}")
-            ghost_key = st.text_input("Admin API Key :", type="password", key=f"ghost_key_{idx}")
-            if st.button("Corriger mon blog Ghost", key=f"ghost_fix_{idx}"):
-                if ghost_url and ghost_key:
-                    with st.spinner("Application des corrections..."):
-                        c, e = ghost_fix_seo(ghost_url, ghost_key, result)
-                    show_corrections(c, e)
-                else:
-                    st.warning("Merci de remplir tous les champs.")
+                        def show_corrections(corrections, erreurs):
+                            if corrections:
+                                st.success(f"**{len(corrections)} correction(s) appliquée(s) :**")
+                                for c in corrections: st.markdown(f"✅ {c}")
+                            if erreurs:
+                                st.error("**Points à corriger manuellement :**")
+                                for e in erreurs: st.markdown(f"❌ {e}")
+                            if not corrections and not erreurs:
+                                st.info("Aucune correction nécessaire !")
 
-        elif plateforme == "TYPO3":
-            st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Prérequis TYPO3 :</b><br>1. Activez l'API REST dans votre TYPO3<br>2. Copiez votre token depuis Admin Tools → User Settings</div>""", unsafe_allow_html=True)
-            t3_url = st.text_input("URL de votre site :", placeholder="https://monsite.fr", key=f"t3_url_{idx}")
-            t3_token = st.text_input("Token API :", type="password", key=f"t3_token_{idx}")
-            if st.button("Corriger mon site TYPO3", key=f"t3_fix_{idx}"):
-                if t3_url and t3_token:
-                    with st.spinner("Application des corrections..."):
-                        c, e = typo3_fix_seo(t3_url, t3_token, result)
-                    show_corrections(c, e)
-                else:
-                    st.warning("Merci de remplir tous les champs.")
+                        if plateforme == "WordPress":
+                            wp_url = st.text_input("URL :", key=f"wp_url_{idx}")
+                            wp_user = st.text_input("Nom d'utilisateur :", key=f"wp_user_{idx}")
+                            wp_password = st.text_input("Mot de passe d'application :", type="password", key=f"wp_pass_{idx}")
+                            if st.button("Appliquer sur mon WordPress", key=f"wp_fix_{idx}"):
+                                if wp_url and wp_user and wp_password:
+                                    with st.spinner("Application..."):
+                                        c, e = wordpress_fix_seo(wp_url, wp_user, wp_password, result)
+                                    show_corrections(c, e)
+                                else:
+                                    st.warning("Merci de remplir tous les champs.")
+
+                        elif plateforme == "Wix":
+                            wix_account_id = st.text_input("Account ID :", key=f"wix_account_{idx}")
+                            wix_site_id = st.text_input("Site ID :", key=f"wix_site_{idx}")
+                            wix_api_key = st.text_input("Clé API :", type="password", key=f"wix_key_{idx}")
+                            if st.button("Appliquer sur mon Wix", key=f"wix_fix_{idx}"):
+                                if wix_account_id and wix_site_id and wix_api_key:
+                                    with st.spinner("Application..."):
+                                        c, e = wix_fix_seo(wix_account_id, wix_site_id, wix_api_key, result)
+                                    show_corrections(c, e)
+                                else:
+                                    st.warning("Merci de remplir tous les champs.")
+
+                        elif plateforme == "Shopify":
+                            shop_url = st.text_input("URL boutique :", key=f"shopify_url_{idx}")
+                            access_token = st.text_input("Token d'accès :", type="password", key=f"shopify_token_{idx}")
+                            if st.button("Appliquer sur ma boutique Shopify", key=f"shopify_fix_{idx}"):
+                                if shop_url and access_token:
+                                    with st.spinner("Application..."):
+                                        c, e = shopify_fix_seo(shop_url, access_token, result)
+                                    show_corrections(c, e)
+                                else:
+                                    st.warning("Merci de remplir tous les champs.")
+
+                        elif plateforme == "Squarespace":
+                            sq_api_key = st.text_input("Clé API :", type="password", key=f"sq_key_{idx}")
+                            if st.button("Appliquer sur mon Squarespace", key=f"sq_fix_{idx}"):
+                                if sq_api_key:
+                                    with st.spinner("Application..."):
+                                        c, e = squarespace_fix_seo(sq_api_key, result)
+                                    show_corrections(c, e)
+                                else:
+                                    st.warning("Merci d'entrer votre clé.")
+
+                        elif plateforme == "Webflow":
+                            wf_api_key = st.text_input("Token API :", type="password", key=f"wf_key_{idx}")
+                            wf_site_id = st.text_input("Site ID :", key=f"wf_site_{idx}")
+                            if st.button("Appliquer sur mon Webflow", key=f"wf_fix_{idx}"):
+                                if wf_api_key and wf_site_id:
+                                    with st.spinner("Application..."):
+                                        c, e = webflow_fix_seo(wf_api_key, wf_site_id, result)
+                                    show_corrections(c, e)
+                                else:
+                                    st.warning("Merci de remplir tous les champs.")
+
+                        elif plateforme == "Prestashop":
+                            ps_url = st.text_input("URL boutique :", key=f"ps_url_{idx}")
+                            ps_key = st.text_input("Clé API :", type="password", key=f"ps_key_{idx}")
+                            if st.button("Appliquer sur ma boutique Prestashop", key=f"ps_fix_{idx}"):
+                                if ps_url and ps_key:
+                                    with st.spinner("Application..."):
+                                        c, e = prestashop_fix_seo(ps_url, ps_key, result)
+                                    show_corrections(c, e)
+                                else:
+                                    st.warning("Merci de remplir tous les champs.")
+
+                        elif plateforme == "Drupal":
+                            dr_url = st.text_input("URL site :", key=f"dr_url_{idx}")
+                            dr_user = st.text_input("Nom d'utilisateur :", key=f"dr_user_{idx}")
+                            dr_pass = st.text_input("Mot de passe :", type="password", key=f"dr_pass_{idx}")
+                            if st.button("Appliquer sur mon Drupal", key=f"dr_fix_{idx}"):
+                                if dr_url and dr_user and dr_pass:
+                                    with st.spinner("Application..."):
+                                        c, e = drupal_fix_seo(dr_url, dr_user, dr_pass, result)
+                                    show_corrections(c, e)
+                                else:
+                                    st.warning("Merci de remplir tous les champs.")
+
+                        elif plateforme == "Magento":
+                            mg_url = st.text_input("URL boutique :", key=f"mg_url_{idx}")
+                            mg_token = st.text_input("Token d'accès :", type="password", key=f"mg_token_{idx}")
+                            if st.button("Appliquer sur ma boutique Magento", key=f"mg_fix_{idx}"):
+                                if mg_url and mg_token:
+                                    with st.spinner("Application..."):
+                                        c, e = magento_fix_seo(mg_url, mg_token, result)
+                                    show_corrections(c, e)
+                                else:
+                                    st.warning("Merci de remplir tous les champs.")
+
+                        elif plateforme == "Ghost":
+                            ghost_url = st.text_input("URL blog :", key=f"ghost_url_{idx}")
+                            ghost_key = st.text_input("Admin API Key :", type="password", key=f"ghost_key_{idx}")
+                            if st.button("Appliquer sur mon blog Ghost", key=f"ghost_fix_{idx}"):
+                                if ghost_url and ghost_key:
+                                    with st.spinner("Application..."):
+                                        c, e = ghost_fix_seo(ghost_url, ghost_key, result)
+                                    show_corrections(c, e)
+                                else:
+                                    st.warning("Merci de remplir tous les champs.")
+
+                        elif plateforme == "TYPO3":
+                            t3_url = st.text_input("URL site :", key=f"t3_url_{idx}")
+                            t3_token = st.text_input("Token API :", type="password", key=f"t3_token_{idx}")
+                            if st.button("Appliquer sur mon TYPO3", key=f"t3_fix_{idx}"):
+                                if t3_url and t3_token:
+                                    with st.spinner("Application..."):
+                                        c, e = typo3_fix_seo(t3_url, t3_token, result)
+                                    show_corrections(c, e)
+                                else:
+                                    st.warning("Merci de remplir tous les champs.")
+
+            if plateforme == "WordPress":
+                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Comment obtenir un mot de passe WordPress :</b><br>1. Connectez-vous à votre WordPress<br>2. Allez dans Utilisateurs → Votre profil<br>3. Scrollez jusqu'à Mots de passe d'application<br>4. Créez un nouveau mot de passe et copiez-le</div>""", unsafe_allow_html=True)
+                wp_url = st.text_input("URL de votre site :", placeholder="https://monsite.fr", key=f"wp_url_{idx}")
+                wp_user = st.text_input("Nom d'utilisateur :", key=f"wp_user_{idx}")
+                wp_password = st.text_input("Mot de passe d'application :", type="password", key=f"wp_pass_{idx}")
+                if st.button("Corriger mon site WordPress", key=f"wp_fix_{idx}"):
+                    if wp_url and wp_user and wp_password:
+                        with st.spinner("Application des corrections..."):
+                            c, e = wordpress_fix_seo(wp_url, wp_user, wp_password, result)
+                        show_corrections(c, e)
+                    else:
+                        st.warning("Merci de remplir tous les champs.")
+
+            elif plateforme == "Wix":
+                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Comment obtenir vos identifiants Wix :</b><br>1. Connectez-vous à manage.wix.com<br>2. Allez dans Paramètres → Avancé → Clés API<br>3. Créez une nouvelle clé et copiez l'Account ID, Site ID et la clé</div>""", unsafe_allow_html=True)
+                wix_account_id = st.text_input("Account ID Wix :", key=f"wix_account_{idx}")
+                wix_site_id = st.text_input("Site ID Wix :", key=f"wix_site_{idx}")
+                wix_api_key = st.text_input("Clé API Wix :", type="password", key=f"wix_key_{idx}")
+                if st.button("Corriger mon site Wix", key=f"wix_fix_{idx}"):
+                    if wix_account_id and wix_site_id and wix_api_key:
+                        with st.spinner("Application des corrections..."):
+                            c, e = wix_fix_seo(wix_account_id, wix_site_id, wix_api_key, result)
+                        show_corrections(c, e)
+                    else:
+                        st.warning("Merci de remplir tous les champs.")
+
+            elif plateforme == "Shopify":
+                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Comment obtenir votre token Shopify :</b><br>1. Allez dans Paramètres → Applications → Développer des apps<br>2. Créez une app avec les permissions Produits et Contenu<br>3. Copiez le token d'accès</div>""", unsafe_allow_html=True)
+                shop_url = st.text_input("URL boutique :", placeholder="monsite.myshopify.com", key=f"shopify_url_{idx}")
+                access_token = st.text_input("Token d'accès :", type="password", key=f"shopify_token_{idx}")
+                if st.button("Corriger ma boutique Shopify", key=f"shopify_fix_{idx}"):
+                    if shop_url and access_token:
+                        with st.spinner("Application des corrections..."):
+                            c, e = shopify_fix_seo(shop_url, access_token, result)
+                        show_corrections(c, e)
+                    else:
+                        st.warning("Merci de remplir tous les champs.")
+
+            elif plateforme == "Squarespace":
+                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Clé API Squarespace :</b><br>Allez dans Paramètres → Avancé → Clés API → Générer une clé</div>""", unsafe_allow_html=True)
+                sq_api_key = st.text_input("Clé API Squarespace :", type="password", key=f"sq_key_{idx}")
+                if st.button("Corriger mon site Squarespace", key=f"sq_fix_{idx}"):
+                    if sq_api_key:
+                        with st.spinner("Application des corrections..."):
+                            c, e = squarespace_fix_seo(sq_api_key, result)
+                        show_corrections(c, e)
+                    else:
+                        st.warning("Merci d'entrer votre clé API.")
+
+            elif plateforme == "Webflow":
+                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Identifiants Webflow :</b><br>Account Settings → API Access → Générez un token + copiez votre Site ID</div>""", unsafe_allow_html=True)
+                wf_api_key = st.text_input("Token API Webflow :", type="password", key=f"wf_key_{idx}")
+                wf_site_id = st.text_input("Site ID Webflow :", key=f"wf_site_{idx}")
+                if st.button("Corriger mon site Webflow", key=f"wf_fix_{idx}"):
+                    if wf_api_key and wf_site_id:
+                        with st.spinner("Application des corrections..."):
+                            c, e = webflow_fix_seo(wf_api_key, wf_site_id, result)
+                        show_corrections(c, e)
+                    else:
+                        st.warning("Merci de remplir tous les champs.")
+
+            elif plateforme == "Prestashop":
+                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Clé API Prestashop :</b><br>Paramètres avancés → Services Web → Ajouter une nouvelle clé</div>""", unsafe_allow_html=True)
+                ps_url = st.text_input("URL boutique :", placeholder="https://monsite.fr", key=f"ps_url_{idx}")
+                ps_key = st.text_input("Clé API :", type="password", key=f"ps_key_{idx}")
+                if st.button("Corriger ma boutique Prestashop", key=f"ps_fix_{idx}"):
+                    if ps_url and ps_key:
+                        with st.spinner("Application des corrections..."):
+                            c, e = prestashop_fix_seo(ps_url, ps_key, result)
+                        show_corrections(c, e)
+                    else:
+                        st.warning("Merci de remplir tous les champs.")
+
+            elif plateforme == "Drupal":
+                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Prérequis Drupal :</b><br>Activez JSON:API et Basic Auth dans vos modules</div>""", unsafe_allow_html=True)
+                dr_url = st.text_input("URL site :", key=f"dr_url_{idx}")
+                dr_user = st.text_input("Nom d'utilisateur :", key=f"dr_user_{idx}")
+                dr_pass = st.text_input("Mot de passe :", type="password", key=f"dr_pass_{idx}")
+                if st.button("Corriger mon site Drupal", key=f"dr_fix_{idx}"):
+                    if dr_url and dr_user and dr_pass:
+                        with st.spinner("Application des corrections..."):
+                            c, e = drupal_fix_seo(dr_url, dr_user, dr_pass, result)
+                        show_corrections(c, e)
+                    else:
+                        st.warning("Merci de remplir tous les champs.")
+
+            elif plateforme == "Magento":
+                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Token Magento :</b><br>Système → Extensions → Intégrations → Créez une intégration</div>""", unsafe_allow_html=True)
+                mg_url = st.text_input("URL boutique :", key=f"mg_url_{idx}")
+                mg_token = st.text_input("Token d'accès :", type="password", key=f"mg_token_{idx}")
+                if st.button("Corriger ma boutique Magento", key=f"mg_fix_{idx}"):
+                    if mg_url and mg_token:
+                        with st.spinner("Application des corrections..."):
+                            c, e = magento_fix_seo(mg_url, mg_token, result)
+                        show_corrections(c, e)
+                    else:
+                        st.warning("Merci de remplir tous les champs.")
+
+            elif plateforme == "Ghost":
+                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Clé API Ghost :</b><br>Settings → Integrations → Add custom integration → Copiez l'Admin API Key</div>""", unsafe_allow_html=True)
+                ghost_url = st.text_input("URL blog :", key=f"ghost_url_{idx}")
+                ghost_key = st.text_input("Admin API Key :", type="password", key=f"ghost_key_{idx}")
+                if st.button("Corriger mon blog Ghost", key=f"ghost_fix_{idx}"):
+                    if ghost_url and ghost_key:
+                        with st.spinner("Application des corrections..."):
+                            c, e = ghost_fix_seo(ghost_url, ghost_key, result)
+                        show_corrections(c, e)
+                    else:
+                        st.warning("Merci de remplir tous les champs.")
+
+            elif plateforme == "TYPO3":
+                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Token TYPO3 :</b><br>Admin Tools → User Settings → Activez l'API REST</div>""", unsafe_allow_html=True)
+                t3_url = st.text_input("URL site :", key=f"t3_url_{idx}")
+                t3_token = st.text_input("Token API :", type="password", key=f"t3_token_{idx}")
+                if st.button("Corriger mon site TYPO3", key=f"t3_fix_{idx}"):
+                    if t3_url and t3_token:
+                        with st.spinner("Application des corrections..."):
+                            c, e = typo3_fix_seo(t3_url, t3_token, result)
+                        show_corrections(c, e)
+                    else:
+                        st.warning("Merci de remplir tous les champs.")
 
 def webflow_fix_seo(api_key, site_id, result):
     """Applique TOUTES les corrections détectées par Sitra sur Webflow"""
@@ -1483,9 +1597,11 @@ def typo3_fix_seo(typo3_url, token, result):
 
 # ── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### Centre de contrôle")
+    st.markdown("### Menu")
     st.divider()
     mode_comparaison = st.checkbox("Mode comparatif", key="compare_mode", help="Analysez deux sites en parallèle")
+    st.divider()
+    show_corriger = st.checkbox("Corriger mon site automatiquement", key="show_corriger", help="Connectez votre plateforme pour appliquer les corrections automatiquement")
     st.divider()
     st.markdown('<div style="color:#666;font-size:0.75rem;text-align:center">Sitra Engine v1.0<br>Analyse en temps réel</div>', unsafe_allow_html=True)
 
