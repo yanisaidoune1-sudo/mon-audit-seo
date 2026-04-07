@@ -319,7 +319,7 @@ Problèmes détectés : {', '.join([i['message'] for i in result['all_issues'][:
 Chaque conseil doit être sur une nouvelle ligne, expliquer le problème simplement et dire quoi faire.
 Pas de termes techniques — utilise des mots du quotidien."""
 
-        data = {"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 600}
+        data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 600}
         r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=30)
         return r.json()["choices"][0]["message"]["content"]
     except Exception:
@@ -357,7 +357,7 @@ VERSION 2 - Corrections complètes
 • [point 4]
 • [point 5]"""
 
-        data = {"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 400}
+        data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 400}
         r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers_m, json=data, timeout=30)
         return r.json()["choices"][0]["message"]["content"]
     except Exception:
@@ -384,7 +384,7 @@ Chaque conseil doit :
 
 Ne dis pas "balise H1", "meta description", "HTTPS" — traduis ces termes en langage simple."""
 
-        data = {"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 600}
+        data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 600}
         r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=30)
         return r.json()["choices"][0]["message"]["content"]
     except Exception:
@@ -750,11 +750,27 @@ def render_result(result, idx=0):
 
     with tabs[2]:
         st.markdown(f"### Score global : **{result['global_score']}/100** — {label_txt}")
-        render_score_bar("Référencement Google", result["seo"]["score"])
-        render_score_bar("Navigation", result["ux"]["score"])
-        render_score_bar("Qualité du texte", result["content"]["score"])
-        render_score_bar("Apparence du site", result["design"]["score"])
-        render_score_bar("Vitesse du site", result["performance"]["score"])
+
+        tooltips = {
+            "Référencement Google": "Comment Google voit et comprend votre site — titre, description, structure",
+            "Navigation": "Est-ce que les visiteurs trouvent facilement ce qu'ils cherchent ?",
+            "Qualité du texte": "Le contenu de votre site est-il clair et suffisant ?",
+            "Apparence du site": "Votre site donne-t-il une bonne première impression ?",
+            "Vitesse du site": "Un site lent fait fuir les visiteurs — 53% partent si ça met plus de 3 secondes"
+        }
+        scores = [
+            ("Référencement Google", result["seo"]["score"]),
+            ("Navigation", result["ux"]["score"]),
+            ("Qualité du texte", result["content"]["score"]),
+            ("Apparence du site", result["design"]["score"]),
+            ("Vitesse du site", result["performance"]["score"]),
+        ]
+        for label, score in scores:
+            col_bar, col_tip = st.columns([10, 1])
+            with col_bar:
+                render_score_bar(label, score)
+            with col_tip:
+                st.markdown(f'<div title="{tooltips[label]}" style="cursor:help;font-size:1.2rem;color:#667eea;margin-top:0.4rem;text-align:center">❓</div>', unsafe_allow_html=True)
         st.divider()
         st.markdown(f"**{result['total_issues']} problèmes détectés :**")
         cats = {}
@@ -1688,8 +1704,7 @@ if "results" in st.session_state:
 else:
     st.markdown("""
     <div style="text-align:center;color:#444;margin-top:3rem;font-size:0.85rem">
-        <p><strong>Sitra</strong> analyse réellement votre site — pas de données aléatoires</p>
-        <p>SEO — UX — Contenu — Design — Performance — 20 critères vérifiés</p>
+        <p><strong>Sitra</strong> analyse votre site en temps réel et vous dit exactement quoi améliorer</p>
     </div>
     """, unsafe_allow_html=True)
 
