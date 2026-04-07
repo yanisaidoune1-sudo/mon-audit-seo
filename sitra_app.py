@@ -302,6 +302,30 @@ def wordpress_fix_seo(wp_url, wp_user, wp_password, result):
     return corrections, erreurs
 
 # ── IA ────────────────────────────────────────────────────────────────────────
+def generer_recommandations_ia(result):
+    try:
+        import requests as req
+        headers = {
+            "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
+            "Content-Type": "application/json"
+        }
+        prompt = f"""Tu es un conseiller web qui aide des petits entrepreneurs à améliorer leur site. Explique les problèmes simplement, comme si tu parlais à quelqu'un qui ne connaît rien à l'informatique.
+
+Site : {result['final_url']}
+Score global : {result['global_score']}/100
+Problèmes détectés : {', '.join([i['message'] for i in result['all_issues'][:6]])}
+
+Écris exactement 5 conseils numérotés (1. 2. 3. 4. 5.).
+Chaque conseil doit être sur une nouvelle ligne, expliquer le problème simplement et dire quoi faire.
+Pas de termes techniques — utilise des mots du quotidien."""
+
+        data = {"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 600}
+        r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=30)
+        return r.json()["choices"][0]["message"]["content"]
+    except Exception:
+        return None
+
+
 def generer_deux_corrections(plateforme, result):
     """Génère 2 propositions de corrections que l'utilisateur peut choisir"""
     try:
