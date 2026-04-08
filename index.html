@@ -104,7 +104,71 @@
 </head>
 <body>
 
-<nav>
+<style>
+  #intro-screen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #04040a; display: flex; align-items: center; justify-content: center;
+    z-index: 9999; flex-direction: column; gap: 1.5rem;
+  }
+  #intro-screen svg { width: 160px; height: 160px; }
+  .s-path {
+    fill: none; stroke: url(#grad-s); stroke-width: 8; stroke-linecap: round;
+    stroke-dasharray: 400; stroke-dashoffset: 400;
+    animation: draw-s 1.6s cubic-bezier(0.4,0,0.2,1) forwards 0.3s;
+  }
+  @keyframes draw-s {
+    to { stroke-dashoffset: 0; }
+  }
+  .intro-glow {
+    width: 200px; height: 200px; position: absolute;
+    background: radial-gradient(ellipse, rgba(124,106,247,0.35) 0%, transparent 70%);
+    border-radius: 50%; animation: pulse-glow 1.6s ease-in-out infinite alternate;
+  }
+  @keyframes pulse-glow { from { transform: scale(0.8); opacity: 0.5; } to { transform: scale(1.2); opacity: 1; } }
+  .intro-tagline {
+    font-family: 'Syne', sans-serif; font-size: 1rem; letter-spacing: 6px;
+    text-transform: uppercase; color: transparent;
+    background: linear-gradient(135deg, #7c6af7, #f07cf7);
+    -webkit-background-clip: text; background-clip: text;
+    opacity: 0; animation: fade-in-tag 0.6s ease forwards 1.6s;
+  }
+  @keyframes fade-in-tag { to { opacity: 1; } }
+  #intro-screen.fade-out {
+    animation: fade-out-screen 0.5s ease forwards;
+  }
+  @keyframes fade-out-screen { to { opacity: 0; pointer-events: none; } }
+</style>
+
+<div id="intro-screen">
+  <div class="intro-glow"></div>
+  <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="grad-s" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#7c6af7"/>
+        <stop offset="100%" style="stop-color:#f07cf7"/>
+      </linearGradient>
+    </defs>
+    <!-- S path tracé comme une courbe fluide -->
+    <path class="s-path" d="
+      M 72 28
+      C 72 28 30 20 28 42
+      C 26 58 70 55 72 72
+      C 74 88 30 95 28 95
+    "/>
+  </svg>
+  <div class="intro-tagline">SITRA</div>
+</div>
+
+<script>
+  // Cache le body pendant l'intro
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => {
+    const intro = document.getElementById('intro-screen');
+    intro.classList.add('fade-out');
+    document.body.style.overflow = '';
+    setTimeout(() => intro.remove(), 500);
+  }, 2600);
+</script>
   <div class="nav-logo">SITRA</div>
   <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="nav-cta" target="_blank">Analyser mon site</a>
 </nav>
@@ -231,7 +295,6 @@
         <li class="included">Corrections appliquées automatiquement sur votre site</li>
         <li class="included">Compatible WordPress, Wix, Shopify, et plus</li>
         <li class="included">Détection des éléments inutiles sur votre site</li>
-        <li class="excluded">Suivi par email chaque semaine</li>
         <li class="excluded">Assistance prioritaire</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-paid" target="_blank">Choisir Pro</a>
@@ -244,7 +307,6 @@
       <div class="plan-desc">Pour un suivi complet et des analyses illimitées</div>
       <ul class="plan-features">
         <li class="included">Tout ce qui est dans le forfait Pro</li>
-        <li class="included">Rapport envoyé par email chaque semaine</li>
         <li class="included">Analyses illimitées</li>
         <li class="included">Accès à toutes les nouvelles fonctionnalités en premier</li>
         <li class="included">Assistance prioritaire par email</li>
