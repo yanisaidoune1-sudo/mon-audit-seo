@@ -596,11 +596,18 @@ input[type="checkbox"] { accent-color: #667eea !important; }
 # ── HELPERS ───────────────────────────────────────────────────────────────────
 def render_score_bar(label, score, tooltip=""):
     label_txt, _, color = get_score_label(score)
-    tip_html = f' <span title="{tooltip}" style="cursor:help;color:#667eea;font-size:0.85rem;vertical-align:middle">(?)</span>' if tooltip else ""
+    tip_html = ""
+    if tooltip:
+        tip_html = f'''<span class="sitra-tooltip">(?)<span class="sitra-tooltiptext">{tooltip}</span></span>'''
     st.markdown(f"""
+    <style>
+    .sitra-tooltip {{ position: relative; display: inline-block; cursor: help; color: #667eea; font-size: 0.8rem; margin-left: 4px; vertical-align: middle; }}
+    .sitra-tooltip .sitra-tooltiptext {{ visibility: hidden; background: #1a1a2e; color: #fff; border: 1px solid #667eea; border-radius: 6px; padding: 5px 10px; position: absolute; z-index: 999; bottom: 125%; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 0.78rem; opacity: 0; transition: opacity 0.1s; }}
+    .sitra-tooltip:hover .sitra-tooltiptext {{ visibility: visible; opacity: 1; }}
+    </style>
     <div class="score-bar-container">
         <div class="score-bar-label">
-            <span>{label}{tip_html}</span>
+            <span>{label} {tip_html}</span>
             <span style="color:{color};font-weight:700">{score}/100 — {label_txt}</span>
         </div>
         <div class="score-bar-bg">
@@ -815,13 +822,16 @@ def render_result(result, idx=0):
         while len(challenge_items) < 5 and generals:
             challenge_items.append(generals.pop(0))
         total = len(challenge_items)
-        completed = 0
+
+        # Stocker les items dans session_state pour le fragment
+        st.session_state[f"challenge_items_{idx}"] = challenge_items
+
+        completed = sum(1 for i in range(total) if st.session_state.get(f"ch_{idx}_{i}", False))
         for i, obj in enumerate(challenge_items):
             key = f"ch_{idx}_{i}"
-            if key not in st.session_state:
-                st.session_state[key] = False
             if st.checkbox(obj, key=key):
-                completed += 1
+                pass
+        completed = sum(1 for i in range(total) if st.session_state.get(f"ch_{idx}_{i}", False))
         if total > 0:
             st.markdown("")
             st.progress(completed / total)
