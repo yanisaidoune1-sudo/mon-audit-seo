@@ -594,12 +594,13 @@ input[type="checkbox"] { accent-color: #667eea !important; }
 
 
 # ── HELPERS ───────────────────────────────────────────────────────────────────
-def render_score_bar(label, score):
+def render_score_bar(label, score, tooltip=""):
     label_txt, _, color = get_score_label(score)
+    tip_html = f' <span title="{tooltip}" style="cursor:help;color:#667eea;font-size:0.85rem;vertical-align:middle">(?)</span>' if tooltip else ""
     st.markdown(f"""
     <div class="score-bar-container">
         <div class="score-bar-label">
-            <span>{label}</span>
+            <span>{label}{tip_html}</span>
             <span style="color:{color};font-weight:700">{score}/100 — {label_txt}</span>
         </div>
         <div class="score-bar-bg">
@@ -663,9 +664,9 @@ def render_result(result, idx=0):
     tabs_list = [
         "Référencement Google",
         "Détails du site",
+        "Analyse approfondie",
         "Résumé",
         "Objectifs à atteindre",
-        "Analyse approfondie",
         "Partager",
     ]
     if show_corriger:
@@ -748,29 +749,13 @@ def render_result(result, idx=0):
                 st.markdown("**Ce qu'il faut améliorer**")
                 render_issues(perf["issues"])
 
-    with tabs[2]:
+    with tabs[3]:
         st.markdown(f"### Score global : **{result['global_score']}/100** — {label_txt}")
-
-        tooltips = {
-            "Référencement Google": "Comment Google voit et comprend votre site — titre, description, structure",
-            "Navigation": "Est-ce que les visiteurs trouvent facilement ce qu'ils cherchent ?",
-            "Qualité du texte": "Le contenu de votre site est-il clair et suffisant ?",
-            "Apparence du site": "Votre site donne-t-il une bonne première impression ?",
-            "Vitesse du site": "Un site lent fait fuir les visiteurs — 53% partent si ça met plus de 3 secondes"
-        }
-        scores = [
-            ("Référencement Google", result["seo"]["score"]),
-            ("Navigation", result["ux"]["score"]),
-            ("Qualité du texte", result["content"]["score"]),
-            ("Apparence du site", result["design"]["score"]),
-            ("Vitesse du site", result["performance"]["score"]),
-        ]
-        for label, score in scores:
-            col_bar, col_tip = st.columns([10, 1])
-            with col_bar:
-                render_score_bar(label, score)
-            with col_tip:
-                st.markdown(f'<div title="{tooltips[label]}" style="cursor:help;font-size:1.2rem;color:#667eea;margin-top:0.4rem;text-align:center">❓</div>', unsafe_allow_html=True)
+        render_score_bar("Référencement Google", result["seo"]["score"], "Comment Google voit votre site")
+        render_score_bar("Navigation", result["ux"]["score"], "Les visiteurs trouvent-ils facilement ce qu'ils cherchent ?")
+        render_score_bar("Qualité du texte", result["content"]["score"], "Votre contenu est-il clair et suffisant ?")
+        render_score_bar("Apparence du site", result["design"]["score"], "Votre site donne-t-il une bonne première impression ?")
+        render_score_bar("Vitesse du site", result["performance"]["score"], "Votre site se charge-t-il rapidement ?")
         st.divider()
         st.markdown(f"**{result['total_issues']} problèmes détectés :**")
         cats = {}
@@ -800,7 +785,7 @@ def render_result(result, idx=0):
             else:
                 st.warning("Merci d'entrer un email valide.")
 
-    with tabs[3]:
+    with tabs[4]:
         st.markdown("### Objectifs à atteindre")
         st.caption("Cochez les objectifs au fur et à mesure que vous les complétez")
         seo = result["seo"]
@@ -842,7 +827,7 @@ def render_result(result, idx=0):
             st.progress(completed / total)
             st.caption(f"**{completed}/{total}** objectifs complétés {'— Bravo !' if completed == total else ''}")
 
-    with tabs[4]:
+    with tabs[2]:
         st.caption("Choisissez ce que vous voulez analyser")
         sous2 = st.selectbox("Voir :", ["Surcharge du site", "Images du site"], key=f"sous2_{idx}")
 
