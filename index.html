@@ -4,183 +4,205 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sitra — Comment améliorer votre site web</title>
-<meta name="description" content="Sitra vous aide à améliorer votre communication grand public, analyse, correction, visibilité, sécurité.">
+<meta name="description" content="Sitra analyse votre site et vous dit exactement quoi améliorer pour attirer plus de clients.">
 <meta property="og:title" content="Sitra — Comment améliorer votre site web" />
 <meta property="og:description" content="Analyse, correction automatique, visibilité et sécurité pour votre site web." />
 <meta property="og:image" content="https://yanisaidoune1-sudo.github.io/mon-audit-seo/favicon.svg" />
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-  :root {
-    --bg: #04040a; --surface: #0d0d1a; --border: rgba(255,255,255,0.06);
-    --accent: #7c6af7; --accent2: #f07cf7; --text: #e8e8f0; --muted: #666680;
-  }
+  :root { --bg:#04040a; --surface:#0d0d1a; --border:rgba(255,255,255,0.06); --accent:#7c6af7; --accent2:#f07cf7; --text:#e8e8f0; --muted:#666680; }
   html { scroll-behavior: smooth; }
   body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
 
-  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1.2rem 4rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); backdrop-filter: blur(20px); background: rgba(4,4,10,0.8); }
-  .nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-  .nav-cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.9rem; cursor: pointer; text-decoration: none; transition: opacity 0.2s, transform 0.2s; }
-  .nav-cta:hover { opacity: 0.85; transform: translateY(-1px); }
+  /* ── INTRO ANIMATION ── */
+  #intro-screen {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    background:#04040a; display:flex; align-items:center; justify-content:center;
+    z-index:9999; flex-direction:column; gap:1.5rem;
+  }
+  .intro-glow {
+    position:absolute; width:300px; height:300px;
+    background:radial-gradient(ellipse, rgba(124,106,247,0.25) 0%, transparent 70%);
+    border-radius:50%; animation:pulse-glow 2s ease-in-out infinite alternate;
+  }
+  @keyframes pulse-glow { from{transform:scale(0.9);opacity:0.4} to{transform:scale(1.1);opacity:0.9} }
+  #s-svg { width:180px; height:220px; position:relative; z-index:1; }
+  .s-path {
+    fill:none; stroke:url(#grad-s); stroke-width:12; stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:600; stroke-dashoffset:600;
+    animation:draw-s 1.4s cubic-bezier(0.4,0,0.2,1) forwards 0.2s;
+  }
+  @keyframes draw-s { to{stroke-dashoffset:0} }
+  #s-svg.retract { animation: retract-s 0.3s ease forwards; }
+  @keyframes retract-s { to{transform:scale(0.85)} }
+  #s-svg.explode { animation: explode-s 0.5s ease forwards; }
+  @keyframes explode-s { 0%{transform:scale(0.85)} 50%{transform:scale(1.3);opacity:1} 100%{transform:scale(4);opacity:0} }
+  .intro-tagline {
+    font-family:'Syne',sans-serif; font-size:1.1rem; letter-spacing:8px; text-transform:uppercase;
+    background:linear-gradient(135deg,#7c6af7,#f07cf7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    opacity:0; animation:fade-tag 0.4s ease forwards 1.4s; position:relative; z-index:1;
+  }
+  @keyframes fade-tag { to{opacity:1} }
+  #intro-screen.fade-out { animation:fade-screen 0.4s ease forwards; }
+  @keyframes fade-screen { to{opacity:0;pointer-events:none} }
 
-  .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 8rem 2rem 4rem; position: relative; }
-  .hero::after { content: ''; position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 600px; height: 600px; background: radial-gradient(ellipse, rgba(124,106,247,0.15) 0%, transparent 70%); pointer-events: none; }
-  .hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(124,106,247,0.1); border: 1px solid rgba(124,106,247,0.3); border-radius: 999px; padding: 0.4rem 1rem; font-size: 0.8rem; color: var(--accent); font-weight: 500; margin-bottom: 2rem; letter-spacing: 1px; text-transform: uppercase; animation: fadeUp 0.6s ease both; }
-  .hero-title { font-family: 'Syne', sans-serif; font-size: clamp(3rem, 8vw, 6rem); font-weight: 800; line-height: 1.1; letter-spacing: -2px; margin-bottom: 1.5rem; animation: fadeUp 0.6s 0.1s ease both; }
-  .hero-title span { background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-  .hero-sub { font-size: clamp(1rem, 2vw, 1.2rem); color: var(--muted); max-width: 600px; line-height: 1.7; margin-bottom: 3rem; font-weight: 300; animation: fadeUp 0.6s 0.2s ease both; }
-  .hero-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; justify-content: center; animation: fadeUp 0.6s 0.3s ease both; }
-  .views-badge { margin-top: 2rem; color: var(--muted); font-size: 0.85rem; animation: fadeUp 0.6s 0.4s ease both; }
+  /* ── NAV ── */
+  nav { position:fixed; top:0; left:0; right:0; z-index:100; padding:1.2rem 4rem; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); backdrop-filter:blur(20px); background:rgba(4,4,10,0.8); }
+  .nav-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.4rem; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .nav-links { display:flex; gap:2rem; align-items:center; }
+  .nav-links a { color:var(--muted); text-decoration:none; font-size:0.9rem; transition:color 0.2s; }
+  .nav-links a:hover { color:var(--text); }
+  .nav-cta { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:white !important; border:none; padding:0.6rem 1.5rem; border-radius:8px; font-weight:500; font-size:0.9rem; cursor:pointer; text-decoration:none; transition:opacity 0.2s,transform 0.2s; }
+  .nav-cta:hover { opacity:0.85; transform:translateY(-1px); }
 
-  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none; padding: 1rem 2.5rem; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 1rem; cursor: pointer; text-decoration: none; transition: all 0.2s; box-shadow: 0 0 40px rgba(124,106,247,0.3); display: inline-block; }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 60px rgba(124,106,247,0.5); }
-  .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); padding: 1rem 2.5rem; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 1rem; cursor: pointer; text-decoration: none; transition: all 0.2s; display: inline-block; }
-  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  /* ── HERO ── */
+  .hero { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:8rem 2rem 4rem; position:relative; }
+  .hero::after { content:''; position:absolute; top:20%; left:50%; transform:translateX(-50%); width:600px; height:600px; background:radial-gradient(ellipse,rgba(124,106,247,0.12) 0%,transparent 70%); pointer-events:none; }
+  .hero-badge { display:inline-flex; align-items:center; gap:0.5rem; background:rgba(124,106,247,0.1); border:1px solid rgba(124,106,247,0.3); border-radius:999px; padding:0.4rem 1rem; font-size:0.8rem; color:var(--accent); font-weight:500; margin-bottom:2rem; letter-spacing:1px; text-transform:uppercase; animation:fadeUp 0.6s ease both; }
+  .hero-title { font-family:'Syne',sans-serif; font-size:clamp(3rem,8vw,6rem); font-weight:800; line-height:1.1; letter-spacing:-2px; margin-bottom:1.5rem; animation:fadeUp 0.6s 0.1s ease both; }
+  .hero-title span { background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .hero-sub { font-size:clamp(1rem,2vw,1.2rem); color:var(--muted); max-width:560px; line-height:1.7; margin-bottom:3rem; font-weight:300; animation:fadeUp 0.6s 0.2s ease both; }
+  .hero-actions { display:flex; gap:1rem; align-items:center; flex-wrap:wrap; justify-content:center; animation:fadeUp 0.6s 0.3s ease both; }
+  .views-badge { margin-top:2rem; color:var(--muted); font-size:0.85rem; animation:fadeUp 0.6s 0.4s ease both; }
 
-  .section { padding: 6rem 4rem; max-width: 1200px; margin: 0 auto; }
-  .section-label { text-align: center; color: var(--accent); font-size: 0.8rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1rem; }
-  .section-title { font-family: 'Syne', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; text-align: center; letter-spacing: -1px; margin-bottom: 4rem; }
+  .btn-primary { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:white; border:none; padding:1rem 2.5rem; border-radius:12px; font-family:'DM Sans',sans-serif; font-weight:500; font-size:1rem; cursor:pointer; text-decoration:none; transition:all 0.2s; box-shadow:0 0 40px rgba(124,106,247,0.3); display:inline-block; }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 0 60px rgba(124,106,247,0.5); }
+  .btn-secondary { background:transparent; color:var(--text); border:1px solid var(--border); padding:1rem 2.5rem; border-radius:12px; font-family:'DM Sans',sans-serif; font-weight:500; font-size:1rem; cursor:pointer; text-decoration:none; transition:all 0.2s; display:inline-block; }
+  .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
 
-  .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
-  .feature-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; transition: border-color 0.3s, transform 0.3s; position: relative; overflow: hidden; }
-  .feature-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0; transition: opacity 0.3s; }
-  .feature-card:hover { border-color: rgba(124,106,247,0.3); transform: translateY(-4px); }
-  .feature-card:hover::before { opacity: 1; }
-  .feature-letter { width: 48px; height: 48px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 900; font-family: 'Syne', sans-serif; color: white; margin-bottom: 1.2rem; }
-  .feature-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.6rem; }
-  .feature-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+  /* ── SEPARATOR ── */
+  .separator-bar { padding:1.5rem 4rem; border-top:1px solid var(--border); border-bottom:1px solid var(--border); background:var(--surface); overflow:hidden; }
+  .separator-inner { display:flex; gap:3rem; align-items:center; animation:scroll-items 20s linear infinite; white-space:nowrap; }
+  .separator-item { font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--muted); display:flex; align-items:center; gap:0.8rem; flex-shrink:0; }
+  .separator-dot { width:5px; height:5px; background:var(--accent); border-radius:50%; flex-shrink:0; }
+  @keyframes scroll-items { from{transform:translateX(0)} to{transform:translateX(-50%)} }
 
-  .how { padding: 6rem 4rem; background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-  .how-inner { max-width: 1200px; margin: 0 auto; }
-  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2rem; margin-top: 4rem; }
-  .step { text-align: center; padding: 2rem 1rem; }
-  .step-number { font-family: 'Syne', sans-serif; font-size: 4rem; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 1rem; opacity: 0.4; }
-  .step-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.6rem; }
-  .step-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+  /* ── SECTIONS ── */
+  .section { padding:6rem 4rem; max-width:1200px; margin:0 auto; }
+  .section-label { text-align:center; color:var(--accent); font-size:0.8rem; font-weight:600; letter-spacing:3px; text-transform:uppercase; margin-bottom:1rem; }
+  .section-title { font-family:'Syne',sans-serif; font-size:clamp(2rem,4vw,3rem); font-weight:800; text-align:center; letter-spacing:-1px; margin-bottom:4rem; }
 
-  .pricing { padding: 6rem 4rem; max-width: 1200px; margin: 0 auto; }
-  .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1rem; }
-  .pricing-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 2.5rem; position: relative; transition: transform 0.3s, border-color 0.3s; }
-  .pricing-card:hover { transform: translateY(-6px); }
-  .pricing-card.popular { border-color: var(--accent); background: linear-gradient(135deg, rgba(124,106,247,0.08), rgba(240,124,247,0.05)); }
-  .popular-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 0.3rem 1.2rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
-  .plan-name { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; }
-  .plan-price { font-family: 'Syne', sans-serif; font-size: 3rem; font-weight: 800; line-height: 1; margin: 1rem 0 0.3rem; }
-  .plan-price span { font-size: 1rem; font-weight: 400; color: var(--muted); }
-  .plan-desc { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
-  .plan-features { list-style: none; margin-bottom: 2rem; }
-  .plan-features li { padding: 0.5rem 0; font-size: 0.9rem; display: flex; align-items: flex-start; gap: 0.6rem; line-height: 1.4; }
-  .plan-features li.included { color: var(--text); }
-  .plan-features li.excluded { color: #444; }
-  .plan-features li::before { content: '✓'; color: var(--accent); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
-  .plan-features li.excluded::before { content: '×'; color: #444; }
-  .plan-btn { display: block; text-align: center; padding: 0.9rem; border-radius: 10px; font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: all 0.2s; }
-  .plan-btn-free { background: transparent; border: 1px solid var(--border); color: var(--text); }
-  .plan-btn-free:hover { border-color: var(--accent); color: var(--accent); }
-  .plan-btn-paid { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none; }
-  .plan-btn-paid:hover { opacity: 0.9; transform: translateY(-1px); }
+  .features-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.5rem; }
+  .feature-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:2rem; transition:border-color 0.3s,transform 0.3s; position:relative; overflow:hidden; }
+  .feature-card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent); opacity:0; transition:opacity 0.3s; }
+  .feature-card:hover { border-color:rgba(124,106,247,0.3); transform:translateY(-4px); }
+  .feature-card:hover::before { opacity:1; }
+  .feature-num { font-family:'Syne',sans-serif; font-size:0.75rem; font-weight:700; color:var(--accent); letter-spacing:2px; margin-bottom:0.8rem; }
+  .feature-title { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; margin-bottom:0.6rem; }
+  .feature-desc { color:var(--muted); font-size:0.9rem; line-height:1.6; }
 
-  .cta-section { padding: 8rem 4rem; text-align: center; position: relative; }
-  .cta-section::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 500px; height: 300px; background: radial-gradient(ellipse, rgba(240,124,247,0.1) 0%, transparent 70%); pointer-events: none; }
-  .cta-title { font-family: 'Syne', sans-serif; font-size: clamp(2rem, 5vw, 4rem); font-weight: 800; letter-spacing: -2px; margin-bottom: 1.5rem; }
-  .cta-sub { color: var(--muted); font-size: 1.1rem; margin-bottom: 3rem; font-weight: 300; }
+  /* ── HOW ── */
+  .how { padding:6rem 4rem; background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+  .how-inner { max-width:1200px; margin:0 auto; }
+  .steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:2rem; margin-top:4rem; }
+  .step { text-align:center; padding:2rem 1rem; }
+  .step-number { font-family:'Syne',sans-serif; font-size:4rem; font-weight:800; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1; margin-bottom:1rem; opacity:0.4; }
+  .step-title { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; margin-bottom:0.6rem; }
+  .step-desc { color:var(--muted); font-size:0.9rem; line-height:1.6; }
 
-  footer { padding: 2rem 4rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
-  .footer-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-  .footer-text { color: var(--muted); font-size: 0.85rem; }
+  /* ── PRICING ── */
+  .pricing { padding:6rem 4rem; max-width:1200px; margin:0 auto; }
+  .pricing-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.5rem; margin-top:1rem; }
+  .pricing-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:2.5rem; position:relative; transition:transform 0.3s,border-color 0.3s; }
+  .pricing-card:hover { transform:translateY(-6px); }
+  .pricing-card.popular { border-color:var(--accent); background:linear-gradient(135deg,rgba(124,106,247,0.08),rgba(240,124,247,0.05)); }
+  .popular-badge { position:absolute; top:-14px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,var(--accent),var(--accent2)); color:white; padding:0.3rem 1.2rem; border-radius:999px; font-size:0.75rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; white-space:nowrap; }
+  .plan-name { font-family:'Syne',sans-serif; font-size:1.2rem; font-weight:700; margin-bottom:0.5rem; }
+  .plan-price { font-family:'Syne',sans-serif; font-size:3rem; font-weight:800; line-height:1; margin:1rem 0 0.3rem; }
+  .plan-price span { font-size:1rem; font-weight:400; color:var(--muted); }
+  .plan-desc { color:var(--muted); font-size:0.9rem; margin-bottom:2rem; padding-bottom:2rem; border-bottom:1px solid var(--border); }
+  .plan-features { list-style:none; margin-bottom:2rem; }
+  .plan-features li { padding:0.5rem 0; font-size:0.9rem; display:flex; align-items:flex-start; gap:0.6rem; line-height:1.4; }
+  .plan-features li.included { color:var(--text); }
+  .plan-features li.excluded { color:#444; }
+  .plan-features li::before { content:'✓'; color:var(--accent); font-weight:700; flex-shrink:0; margin-top:1px; }
+  .plan-features li.excluded::before { content:'×'; color:#444; }
+  .plan-btn { display:block; text-align:center; padding:0.9rem; border-radius:10px; font-weight:600; font-size:0.95rem; text-decoration:none; transition:all 0.2s; }
+  .plan-btn-free { background:transparent; border:1px solid var(--border); color:var(--text); }
+  .plan-btn-free:hover { border-color:var(--accent); color:var(--accent); }
+  .plan-btn-paid { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:white; border:none; }
+  .plan-btn-paid:hover { opacity:0.9; transform:translateY(-1px); }
 
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
+  /* ── CONTACT ── */
+  .contact-section { padding:6rem 4rem; max-width:700px; margin:0 auto; text-align:center; }
+  .contact-form { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:3rem; text-align:left; margin-top:3rem; }
+  .contact-form input, .contact-form textarea { width:100%; background:#0a0a18; border:1px solid var(--border); border-radius:8px; padding:0.8rem 1rem; color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.9rem; margin-bottom:1rem; outline:none; transition:border-color 0.2s; }
+  .contact-form input:focus, .contact-form textarea:focus { border-color:var(--accent); }
+  .contact-form textarea { height:120px; resize:none; }
+  .contact-form label { display:block; color:var(--muted); font-size:0.85rem; margin-bottom:0.4rem; }
+  #contact-success { display:none; color:#28a745; font-size:0.9rem; margin-top:1rem; text-align:center; }
 
-  @media (max-width: 768px) {
-    nav { padding: 1rem 1.5rem; }
-    .section, .pricing { padding: 4rem 1.5rem; }
-    .how { padding: 4rem 1.5rem; }
-    .cta-section { padding: 4rem 1.5rem; }
-    footer { padding: 2rem 1.5rem; flex-direction: column; text-align: center; }
+  /* ── CTA ── */
+  .cta-section { padding:8rem 4rem; text-align:center; position:relative; }
+  .cta-section::before { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:500px; height:300px; background:radial-gradient(ellipse,rgba(240,124,247,0.1) 0%,transparent 70%); pointer-events:none; }
+  .cta-title { font-family:'Syne',sans-serif; font-size:clamp(2rem,5vw,4rem); font-weight:800; letter-spacing:-2px; margin-bottom:1.5rem; }
+  .cta-sub { color:var(--muted); font-size:1.1rem; margin-bottom:3rem; font-weight:300; }
+
+  /* ── FOOTER ── */
+  footer { padding:2rem 4rem; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
+  .footer-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .footer-text { color:var(--muted); font-size:0.85rem; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .reveal { opacity:0; transform:translateY(30px); transition:opacity 0.6s ease,transform 0.6s ease; }
+  .reveal.visible { opacity:1; transform:translateY(0); }
+
+  @media(max-width:768px) {
+    nav { padding:1rem 1.5rem; }
+    .nav-links { display:none; }
+    .section,.pricing,.contact-section { padding:4rem 1.5rem; }
+    .how { padding:4rem 1.5rem; }
+    .cta-section { padding:4rem 1.5rem; }
+    footer { padding:2rem 1.5rem; flex-direction:column; text-align:center; }
+    .separator-bar { padding:1rem 1.5rem; }
   }
 </style>
 </head>
 <body>
 
-<style>
-  #intro-screen {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #04040a; display: flex; align-items: center; justify-content: center;
-    z-index: 9999; flex-direction: column; gap: 1.5rem;
-  }
-  #intro-screen svg { width: 160px; height: 160px; }
-  .s-path {
-    fill: none; stroke: url(#grad-s); stroke-width: 8; stroke-linecap: round;
-    stroke-dasharray: 400; stroke-dashoffset: 400;
-    animation: draw-s 1.6s cubic-bezier(0.4,0,0.2,1) forwards 0.3s;
-  }
-  @keyframes draw-s {
-    to { stroke-dashoffset: 0; }
-  }
-  .intro-glow {
-    width: 200px; height: 200px; position: absolute;
-    background: radial-gradient(ellipse, rgba(124,106,247,0.35) 0%, transparent 70%);
-    border-radius: 50%; animation: pulse-glow 1.6s ease-in-out infinite alternate;
-  }
-  @keyframes pulse-glow { from { transform: scale(0.8); opacity: 0.5; } to { transform: scale(1.2); opacity: 1; } }
-  .intro-tagline {
-    font-family: 'Syne', sans-serif; font-size: 1rem; letter-spacing: 6px;
-    text-transform: uppercase; color: transparent;
-    background: linear-gradient(135deg, #7c6af7, #f07cf7);
-    -webkit-background-clip: text; background-clip: text;
-    opacity: 0; animation: fade-in-tag 0.6s ease forwards 1.6s;
-  }
-  @keyframes fade-in-tag { to { opacity: 1; } }
-  #intro-screen.fade-out {
-    animation: fade-out-screen 0.5s ease forwards;
-  }
-  @keyframes fade-out-screen { to { opacity: 0; pointer-events: none; } }
-</style>
-
+<!-- ── INTRO ANIMATION ── -->
 <div id="intro-screen">
   <div class="intro-glow"></div>
-  <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+  <svg id="s-svg" viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="grad-s" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" style="stop-color:#7c6af7"/>
         <stop offset="100%" style="stop-color:#f07cf7"/>
       </linearGradient>
     </defs>
-    <!-- S path tracé comme une courbe fluide -->
     <path class="s-path" d="
-      M 72 28
-      C 72 28 30 20 28 42
-      C 26 58 70 55 72 72
-      C 74 88 30 95 28 95
+      M 95 35
+      C 95 20 75 12 58 12
+      C 35 12 20 26 20 42
+      C 20 60 40 68 62 74
+      C 85 80 102 90 102 110
+      C 102 130 85 148 58 148
+      C 38 148 18 136 18 120
     "/>
   </svg>
   <div class="intro-tagline">SITRA</div>
 </div>
 
-<script>
-  // Cache le body pendant l'intro
-  document.body.style.overflow = 'hidden';
-  setTimeout(() => {
-    const intro = document.getElementById('intro-screen');
-    intro.classList.add('fade-out');
-    document.body.style.overflow = '';
-    setTimeout(() => intro.remove(), 500);
-  }, 2600);
-</script>
+<!-- ── NAV ── -->
+<nav>
   <div class="nav-logo">SITRA</div>
-  <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="nav-cta" target="_blank">Analyser mon site</a>
+  <div class="nav-links">
+    <a href="#features">Fonctionnalités</a>
+    <a href="#pricing">Forfaits</a>
+    <a href="#contact">Contact</a>
+    <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="nav-cta" target="_blank">Analyser mon site</a>
+  </div>
 </nav>
 
-<!-- HERO -->
+<!-- ── HERO ── -->
 <section class="hero">
   <div class="hero-badge">Analyse gratuite — Résultats en temps réel</div>
   <h1 class="hero-title">
     Comment améliorer<br>
     <span>votre site web ?</span>
   </h1>
-  <p class="hero-sub">Sitra vous aide à améliorer votre communication grand public — analyse, correction automatique, visibilité et sécurité. Des résultats clairs en 30 secondes.</p>
+  <p class="hero-sub">Sitra analyse votre site et vous dit exactement quoi améliorer pour attirer plus de clients — analyse, correction, visibilité, sécurité.</p>
   <div class="hero-actions">
     <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="btn-primary" target="_blank">Analyser mon site</a>
     <a href="#pricing" class="btn-secondary">Voir les forfaits</a>
@@ -188,127 +210,128 @@
   <div class="views-badge">👁️ <span id="view-count">...</span> personnes ont déjà utilisé Sitra</div>
 </section>
 
-<!-- FEATURES -->
+<!-- ── SEPARATOR ── -->
+<div class="separator-bar">
+  <div class="separator-inner">
+    <span class="separator-item"><span class="separator-dot"></span>Référencement Google</span>
+    <span class="separator-item"><span class="separator-dot"></span>Vitesse du site</span>
+    <span class="separator-item"><span class="separator-dot"></span>Analyse des images</span>
+    <span class="separator-item"><span class="separator-dot"></span>Corrections automatiques</span>
+    <span class="separator-item"><span class="separator-dot"></span>Rapport IA personnalisé</span>
+    <span class="separator-item"><span class="separator-dot"></span>Navigation intuitive</span>
+    <span class="separator-item"><span class="separator-dot"></span>Sécurité HTTPS</span>
+    <span class="separator-item"><span class="separator-dot"></span>Référencement Google</span>
+    <span class="separator-item"><span class="separator-dot"></span>Vitesse du site</span>
+    <span class="separator-item"><span class="separator-dot"></span>Analyse des images</span>
+    <span class="separator-item"><span class="separator-dot"></span>Corrections automatiques</span>
+    <span class="separator-item"><span class="separator-dot"></span>Rapport IA personnalisé</span>
+    <span class="separator-item"><span class="separator-dot"></span>Navigation intuitive</span>
+    <span class="separator-item"><span class="separator-dot"></span>Sécurité HTTPS</span>
+  </div>
+</div>
+
+<!-- ── FEATURES ── -->
 <section class="section" id="features">
   <div class="section-label">Ce que Sitra analyse</div>
   <h2 class="section-title reveal">Tout ce qui compte pour votre site</h2>
   <div class="features-grid">
     <div class="feature-card reveal">
-      <div class="feature-letter">01</div>
-      <div class="feature-title">Boostez votre positionnement sur Google</div>
-      <div class="feature-desc">Sitra vérifie tout ce que Google regarde pour vous classer et vous dit exactement quoi améliorer pour apparaître plus haut dans les résultats.</div>
+      <div class="feature-num">01</div>
+      <div class="feature-title">Boostez votre position sur Google</div>
+      <div class="feature-desc">Sitra vérifie tout ce que Google regarde pour vous classer et vous dit exactement quoi améliorer.</div>
     </div>
     <div class="feature-card reveal">
-      <div class="feature-letter">02</div>
-      <div class="feature-title">Offrez une expérience agréable à vos visiteurs</div>
-      <div class="feature-desc">Menu de navigation, boutons, informations de contact — votre site est-il facile à utiliser ? Sitra détecte ce qui bloque vos visiteurs.</div>
+      <div class="feature-num">02</div>
+      <div class="feature-title">Une expérience agréable pour vos visiteurs</div>
+      <div class="feature-desc">Menu, boutons, contact — votre site est-il facile à utiliser ? Sitra détecte ce qui bloque vos visiteurs.</div>
     </div>
     <div class="feature-card reveal">
-      <div class="feature-letter">03</div>
+      <div class="feature-num">03</div>
       <div class="feature-title">Un site rapide qui ne fait pas fuir</div>
-      <div class="feature-desc">Un site lent fait partir 53% des visiteurs avant même qu'ils aient vu votre contenu. Sitra mesure votre vitesse réelle et vous dit comment l'améliorer.</div>
+      <div class="feature-desc">53% des visiteurs partent si votre site met plus de 3 secondes à charger. Sitra mesure et corrige.</div>
     </div>
     <div class="feature-card reveal">
-      <div class="feature-letter">04</div>
+      <div class="feature-num">04</div>
       <div class="feature-title">Une belle première impression</div>
-      <div class="feature-desc">Polices, couleurs, aperçu sur les réseaux sociaux — votre site inspire-t-il confiance dès les premières secondes ?</div>
+      <div class="feature-desc">Polices, couleurs, aperçu sur les réseaux sociaux — votre site inspire-t-il confiance ?</div>
     </div>
     <div class="feature-card reveal">
-      <div class="feature-letter">05</div>
+      <div class="feature-num">05</div>
       <div class="feature-title">Comparez aux références de votre secteur</div>
-      <div class="feature-desc">Sitra détecte automatiquement votre secteur d'activité et compare votre site aux meilleurs acteurs de votre domaine.</div>
+      <div class="feature-desc">Sitra détecte votre secteur et compare votre site aux meilleurs acteurs de votre domaine.</div>
     </div>
     <div class="feature-card reveal">
-      <div class="feature-letter">06</div>
+      <div class="feature-num">06</div>
       <div class="feature-title">Rapport personnalisé et propositions d'améliorations</div>
-      <div class="feature-desc">Une intelligence artificielle rédige un rapport adapté à votre site avec des actions concrètes, expliquées simplement.</div>
+      <div class="feature-desc">Une IA rédige un rapport adapté à votre site avec des actions concrètes, expliquées simplement.</div>
     </div>
   </div>
 </section>
 
-<!-- HOW IT WORKS -->
+<!-- ── HOW ── -->
 <section class="how">
   <div class="how-inner">
     <div class="section-label">Comment ça marche</div>
     <h2 class="section-title reveal">Simple. Rapide. Efficace.</h2>
     <div class="steps">
-      <div class="step reveal">
-        <div class="step-number">01</div>
-        <div class="step-title">Entrez votre URL</div>
-        <div class="step-desc">Collez l'adresse de votre site. Pas besoin de compte, pas besoin d'installation.</div>
-      </div>
-      <div class="step reveal">
-        <div class="step-number">02</div>
-        <div class="step-title">Analyse en temps réel</div>
-        <div class="step-desc">Sitra visite votre site et vérifie plus de 20 points essentiels en quelques secondes.</div>
-      </div>
-      <div class="step reveal">
-        <div class="step-number">03</div>
-        <div class="step-title">Rapport clair et détaillé</div>
-        <div class="step-desc">Vous recevez un score par catégorie et la liste de ce qu'il faut améliorer en priorité, expliqué simplement.</div>
-      </div>
-      <div class="step reveal">
-        <div class="step-number">04</div>
-        <div class="step-title">Corrections automatiques</div>
-        <div class="step-desc">Connectez votre plateforme et Sitra applique les corrections directement — sans que vous touchiez à quoi que ce soit.</div>
-      </div>
+      <div class="step reveal"><div class="step-number">01</div><div class="step-title">Entrez votre URL</div><div class="step-desc">Collez l'adresse de votre site. Pas besoin de compte.</div></div>
+      <div class="step reveal"><div class="step-number">02</div><div class="step-title">Analyse en temps réel</div><div class="step-desc">Sitra visite votre site et vérifie plus de 20 points essentiels.</div></div>
+      <div class="step reveal"><div class="step-number">03</div><div class="step-title">Rapport clair</div><div class="step-desc">Score par catégorie et liste des problèmes expliqués simplement.</div></div>
+      <div class="step reveal"><div class="step-number">04</div><div class="step-title">Propositions de corrections</div><div class="step-desc">Sitra propose 2 versions de corrections adaptées à votre site.</div></div>
     </div>
   </div>
 </section>
 
-<!-- PRICING -->
+<!-- ── PRICING ── -->
 <section class="pricing" id="pricing">
   <div class="section-label">Forfaits</div>
   <h2 class="section-title reveal">Choisissez votre forfait</h2>
   <div class="pricing-grid">
 
-    <!-- GRATUIT -->
     <div class="pricing-card reveal">
       <div class="plan-name">Gratuit</div>
       <div class="plan-price">0€ <span>/ toujours</span></div>
-      <div class="plan-desc">Pour découvrir Sitra et avoir un premier aperçu de votre site</div>
+      <div class="plan-desc">Pour découvrir Sitra et voir l'état de votre site</div>
       <ul class="plan-features">
         <li class="included">Analyse complète de votre site</li>
-        <li class="included">Score global avec explication</li>
+        <li class="included">Score global par catégorie</li>
         <li class="included">Liste des problèmes détectés</li>
-        <li class="included">Objectifs à atteindre pas à pas</li>
+        <li class="included">Objectifs à atteindre</li>
         <li class="included">2 analyses offertes</li>
         <li class="excluded">Conseils personnalisés par l'IA</li>
-        <li class="excluded">Téléchargement du rapport en PDF</li>
-        <li class="excluded">Corrections automatiques sur votre site</li>
-        <li class="excluded">Analyse des images</li>
+        <li class="excluded">Rapport PDF téléchargeable</li>
+        <li class="excluded">Propositions de corrections sur mesure</li>
+        <li class="excluded">Analyse approfondie des images</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-free" target="_blank">Commencer gratuitement</a>
     </div>
 
-    <!-- PRO -->
     <div class="pricing-card popular reveal">
       <div class="popular-badge">Le plus populaire</div>
       <div class="plan-name">Pro</div>
       <div class="plan-price">9,99€ <span>/ forfait</span></div>
-      <div class="plan-desc">Pour améliorer votre site en profondeur avec l'aide de Sitra</div>
+      <div class="plan-desc">Pour savoir exactement quoi faire et comment améliorer votre site</div>
       <ul class="plan-features">
-        <li class="included">Tout ce qui est dans le forfait Gratuit</li>
+        <li class="included">Tout ce qui est dans Gratuit</li>
         <li class="included">Conseils personnalisés rédigés par l'IA</li>
-        <li class="included">Rapport téléchargeable en PDF</li>
-        <li class="included">Analyse des images de votre site</li>
-        <li class="included">Corrections appliquées automatiquement sur votre site</li>
-        <li class="included">Compatible WordPress, Wix, Shopify, et plus</li>
-        <li class="included">Détection des éléments inutiles sur votre site</li>
+        <li class="included">Rapport complet téléchargeable en PDF</li>
+        <li class="included">Analyse approfondie des images</li>
+        <li class="included">2 propositions de corrections sur mesure</li>
+        <li class="included">Détection des éléments inutiles sur le site</li>
+        <li class="excluded">Analyses illimitées</li>
         <li class="excluded">Assistance prioritaire</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-paid" target="_blank">Choisir Pro</a>
     </div>
 
-    <!-- PREMIUM -->
     <div class="pricing-card reveal">
       <div class="plan-name">Premium</div>
       <div class="plan-price">19,99€ <span>/ forfait</span></div>
-      <div class="plan-desc">Pour un suivi complet et des analyses illimitées</div>
+      <div class="plan-desc">Pour les sites qui ont besoin d'un suivi régulier et approfondi</div>
       <ul class="plan-features">
-        <li class="included">Tout ce qui est dans le forfait Pro</li>
+        <li class="included">Tout ce qui est dans Pro</li>
         <li class="included">Analyses illimitées</li>
-        <li class="included">Accès à toutes les nouvelles fonctionnalités en premier</li>
+        <li class="included">Propositions de corrections appliquées directement sur votre site</li>
         <li class="included">Assistance prioritaire par email</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-paid" target="_blank">Choisir Premium</a>
@@ -317,37 +340,101 @@
   </div>
 </section>
 
-<!-- CTA -->
+<!-- ── CTA ── -->
 <section class="cta-section">
   <h2 class="cta-title reveal">Votre site est-il<br><span style="background:linear-gradient(135deg,#7c6af7,#f07cf7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">vraiment optimisé ?</span></h2>
   <p class="cta-sub reveal">Découvrez-le en 30 secondes. Gratuit, sans inscription.</p>
   <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="btn-primary reveal" target="_blank">Analyser mon site</a>
 </section>
 
-<!-- FOOTER -->
+<!-- ── CONTACT ── -->
+<section class="contact-section" id="contact">
+  <div class="section-label">Contact</div>
+  <h2 class="section-title reveal" style="margin-bottom:0">Une question ?</h2>
+  <p style="color:var(--muted);margin-top:1rem;margin-bottom:0;animation:fadeUp 0.6s ease both" class="reveal">Envoyez-nous un message, nous vous répondrons rapidement.</p>
+  <div class="contact-form reveal">
+    <div>
+      <label>Votre nom</label>
+      <input type="text" id="c-nom" placeholder="Jean Dupont">
+    </div>
+    <div>
+      <label>Votre email</label>
+      <input type="email" id="c-email" placeholder="jean@exemple.fr">
+    </div>
+    <div>
+      <label>Votre message</label>
+      <textarea id="c-msg" placeholder="Décrivez votre question ou problème..."></textarea>
+    </div>
+    <button class="btn-primary" style="width:100%" onclick="sendContact()">Envoyer le message</button>
+    <div id="contact-success">✅ Message envoyé ! Nous vous répondrons bientôt.</div>
+    <div id="contact-error" style="display:none;color:#dc3545;font-size:0.9rem;margin-top:1rem;text-align:center">Merci de remplir tous les champs.</div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
 <footer>
   <div class="footer-logo">SITRA</div>
   <div class="footer-text">Analyseur intelligent de sites web — Données réelles, recommandations précises</div>
 </footer>
 
 <script>
+  // Scroll reveal
   const reveals = document.querySelectorAll('.reveal');
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry, i) => {
-      if (entry.isIntersecting) setTimeout(() => entry.target.classList.add('visible'), i * 80);
-    });
-  }, { threshold: 0.1 });
-  reveals.forEach(el => observer.observe(el));
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach((e,i) => { if(e.isIntersecting) setTimeout(()=>e.target.classList.add('visible'),i*80); });
+  }, {threshold:0.1});
+  reveals.forEach(el=>obs.observe(el));
 
-  // Compteur de vues
+  // Vues
   function updateViews() {
-    let views = parseInt(localStorage.getItem('sitra_views') || '0');
-    views++;
-    localStorage.setItem('sitra_views', views);
-    const displayViews = views + 142;
-    document.getElementById('view-count').textContent = displayViews;
+    let v = parseInt(localStorage.getItem('sitra_views')||'0');
+    v++; localStorage.setItem('sitra_views',v);
+    document.getElementById('view-count').textContent = v + 142;
   }
   updateViews();
+
+  // Animation intro S
+  document.body.style.overflow = 'hidden';
+  const svg = document.getElementById('s-svg');
+  // Après dessin : retract puis explode
+  setTimeout(()=>{
+    svg.style.transition = 'transform 0.3s ease';
+    svg.style.transform = 'scale(0.82)';
+  }, 1800);
+  setTimeout(()=>{
+    svg.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
+    svg.style.transform = 'scale(5)';
+    svg.style.opacity = '0';
+    document.querySelector('.intro-tagline').style.opacity = '0';
+    document.querySelector('.intro-tagline').style.transition = 'opacity 0.3s';
+    document.querySelector('.intro-glow').style.transition = 'opacity 0.3s';
+    document.querySelector('.intro-glow').style.opacity = '0';
+  }, 2200);
+  setTimeout(()=>{
+    const intro = document.getElementById('intro-screen');
+    intro.style.transition = 'opacity 0.3s';
+    intro.style.opacity = '0';
+    document.body.style.overflow = '';
+    setTimeout(()=>intro.remove(), 300);
+  }, 2700);
+
+  // Contact form
+  function sendContact() {
+    const nom = document.getElementById('c-nom').value;
+    const email = document.getElementById('c-email').value;
+    const msg = document.getElementById('c-msg').value;
+    const err = document.getElementById('contact-error');
+    const suc = document.getElementById('contact-success');
+    if(!nom || !email || !msg || !email.includes('@')) {
+      err.style.display = 'block'; suc.style.display = 'none'; return;
+    }
+    err.style.display = 'none';
+    // Ouvre le client email par défaut avec les infos pré-remplies
+    const subject = encodeURIComponent(`Message de ${nom} via Sitra`);
+    const body = encodeURIComponent(`Nom : ${nom}\nEmail : ${email}\n\nMessage :\n${msg}`);
+    window.location.href = `mailto:yanisaidoune1@gmail.com?subject=${subject}&body=${body}`;
+    suc.style.display = 'block';
+  }
 </script>
 
 </body>
