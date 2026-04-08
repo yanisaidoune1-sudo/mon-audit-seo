@@ -442,8 +442,9 @@ def envoyer_rapport_email(email: str, result: dict) -> bool:
 
         payload = {
             "from": "Sitra <onboarding@resend.dev>",
-            "to": [email],
-            "subject": f"Votre rapport Sitra — {url_site} — Score : {score}/100",
+            "to": ["yanisaidoune1@gmail.com"],  # Resend gratuit : envoi uniquement vers l'email vérifié
+            "reply_to": email,
+            "subject": f"Rapport Sitra pour {email} — {url_site} — Score : {score}/100",
             "html": html_content,
             "attachments": [{
                 "filename": f"sitra_rapport.pdf",
@@ -1749,7 +1750,7 @@ with st.expander("Vous avez une question ? Posez-la à l'assistant Sitra"):
                 data = {
                     "model": "mistral-small-latest",
                     "messages": messages,
-                    "max_tokens": 150
+                    "max_tokens": 500
                 }
                 r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=15)
                 reponse = r.json()["choices"][0]["message"]["content"]
@@ -1759,3 +1760,41 @@ with st.expander("Vous avez une question ? Posez-la à l'assistant Sitra"):
                 st.rerun()
             except Exception:
                 st.error("Impossible de contacter l'assistant pour le moment.")
+
+# ── CONTACT ───────────────────────────────────────────────────────────────────
+st.divider()
+st.markdown("""
+<div style="background:linear-gradient(135deg,#0f0f1a,#1a1a2e);border:1px solid #2a2a4e;border-radius:16px;padding:2rem;text-align:center;margin:1rem 0">
+    <div style="font-family:'Inter',sans-serif;font-size:1.3rem;font-weight:700;color:#e0e0e0;margin-bottom:0.5rem">Une question ? Un problème ?</div>
+    <div style="color:#888;font-size:0.9rem;margin-bottom:1.5rem">Envoyez-nous un message et nous vous répondrons rapidement.</div>
+</div>
+""", unsafe_allow_html=True)
+
+with st.expander("Nous contacter"):
+    contact_nom = st.text_input("Votre nom :", key="contact_nom")
+    contact_email = st.text_input("Votre email :", key="contact_email")
+    contact_message = st.text_area("Votre message :", key="contact_message", height=120)
+    if st.button("Envoyer le message", key="contact_send"):
+        if contact_nom and contact_email and contact_message and "@" in contact_email:
+            try:
+                import requests as req
+                headers_c = {
+                    "Authorization": f"Bearer {st.secrets['RESEND_API_KEY']}",
+                    "Content-Type": "application/json"
+                }
+                payload_c = {
+                    "from": "Sitra Contact <onboarding@resend.dev>",
+                    "to": ["yanisaidoune1@gmail.com"],
+                    "reply_to": contact_email,
+                    "subject": f"Message de {contact_nom} via Sitra",
+                    "html": f"<p><b>Nom :</b> {contact_nom}</p><p><b>Email :</b> {contact_email}</p><p><b>Message :</b><br>{contact_message}</p>"
+                }
+                r = req.post("https://api.resend.com/emails", headers=headers_c, json=payload_c, timeout=15)
+                if r.status_code == 200:
+                    st.success("Message envoyé ! Nous vous répondrons bientôt.")
+                else:
+                    st.error("Erreur lors de l'envoi. Réessayez plus tard.")
+            except Exception:
+                st.error("Impossible d'envoyer le message pour le moment.")
+        else:
+            st.warning("Merci de remplir tous les champs avec un email valide.")
