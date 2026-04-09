@@ -27,27 +27,18 @@
     border-radius:50%; animation:pulse-glow 2s ease-in-out infinite alternate;
   }
   @keyframes pulse-glow { from{transform:scale(0.9);opacity:0.4} to{transform:scale(1.1);opacity:0.9} }
-  #s-svg { width:200px; height:260px; position:relative; z-index:3; }
+  #s-svg { width:220px; height:286px; position:relative; z-index:3; }
   .s-path {
-    fill:none; stroke:url(#grad-s); stroke-width:14; stroke-linecap:round; stroke-linejoin:round;
-    stroke-dasharray:700; stroke-dashoffset:700;
-    animation:draw-s 1.5s cubic-bezier(0.4,0,0.2,1) forwards 0.2s;
-  }
-  .s-path-inner {
-    fill:none; stroke:url(#grad-s); stroke-width:10; stroke-linecap:round;
-    stroke-dasharray:200; stroke-dashoffset:200;
-    animation:draw-s 0.5s cubic-bezier(0.4,0,0.2,1) forwards 1.0s;
-  }
-  .s-path-inner2 {
-    fill:none; stroke:url(#grad-s); stroke-width:10; stroke-linecap:round;
-    stroke-dasharray:200; stroke-dashoffset:200;
-    animation:draw-s 0.5s cubic-bezier(0.4,0,0.2,1) forwards 1.3s;
+    fill:none; stroke:url(#grad-s); stroke-width:18; stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:900; stroke-dashoffset:900;
+    animation:draw-s 1.8s cubic-bezier(0.4,0,0.2,1) forwards 0.2s;
+    filter: drop-shadow(0 0 12px rgba(124,106,247,0.6));
   }
   @keyframes draw-s { to{stroke-dashoffset:0} }
   .intro-tagline {
     font-family:'Syne',sans-serif; font-size:1.1rem; letter-spacing:8px; text-transform:uppercase;
     background:linear-gradient(135deg,#7c6af7,#f07cf7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-    opacity:0; animation:fade-tag 0.4s ease forwards 1.9s; position:relative; z-index:3;
+    opacity:0; animation:fade-tag 0.4s ease forwards 2.1s; position:relative; z-index:3;
   }
   @keyframes fade-tag { to{opacity:1} }
   #intro-screen.fade-out { animation:fade-screen 0.4s ease forwards; }
@@ -171,40 +162,21 @@
 <div id="intro-screen">
   <div class="intro-glow"></div>
   <canvas id="particle-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;display:none"></canvas>
-  <svg id="s-svg" viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:3;width:200px;height:260px">
+  <svg id="s-svg" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:3;width:220px;height:286px">
     <defs>
       <linearGradient id="grad-s" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" style="stop-color:#7c6af7"/>
         <stop offset="100%" style="stop-color:#f07cf7"/>
       </linearGradient>
-      <linearGradient id="grad-s-fill" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#7c6af7;stop-opacity:0.15"/>
-        <stop offset="100%" style="stop-color:#f07cf7;stop-opacity:0.15"/>
-      </linearGradient>
     </defs>
-    <!-- Contour extérieur du S -->
     <path class="s-path" d="
-      M 95 30
-      C 95 14 78 6 60 6
-      C 36 6 18 20 18 40
-      C 18 62 42 72 64 78
-      C 86 84 104 96 104 116
-      C 104 138 84 154 58 154
-      C 36 154 14 140 14 120
-    "/>
-    <!-- Contour intérieur haut du S -->
-    <path class="s-path-inner" d="
-      M 82 32
-      C 82 22 72 16 60 16
-      C 44 16 30 26 30 40
-      C 30 56 50 64 66 70
-    "/>
-    <!-- Contour intérieur bas du S -->
-    <path class="s-path-inner2" d="
-      M 56 88
-      C 72 94 92 104 92 116
-      C 92 132 76 144 58 144
-      C 44 144 26 136 26 120
+      M 158 56
+      C 155 32 136 18 108 18
+      C 76 18 46 36 46 64
+      C 46 92 72 106 100 118
+      C 130 131 162 146 162 178
+      C 162 210 134 242 96 242
+      C 64 242 38 224 38 200
     "/>
   </svg>
   <div class="intro-tagline">SITRA</div>
@@ -339,13 +311,12 @@
       <div class="plan-desc">Pour savoir exactement quoi faire et comment améliorer votre site</div>
       <ul class="plan-features">
         <li class="included">Tout ce qui est dans Gratuit</li>
+        <li class="included">Analyses illimitées</li>
         <li class="included">Conseils personnalisés rédigés par l'IA</li>
         <li class="included">Rapport complet téléchargeable en PDF</li>
         <li class="included">Analyse approfondie des images</li>
-        <li class="included">2 propositions de corrections sur mesure</li>
+        <li class="included">2 propositions de corrections à choisir</li>
         <li class="included">Détection des éléments inutiles sur le site</li>
-        <li class="excluded">Analyses illimitées</li>
-        <li class="excluded">Assistance prioritaire</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-paid" target="_blank">Choisir Pro</a>
     </div>
@@ -356,8 +327,8 @@
       <div class="plan-desc">Pour les sites qui ont besoin d'un suivi régulier et approfondi</div>
       <ul class="plan-features">
         <li class="included">Tout ce qui est dans Pro</li>
-        <li class="included">Analyses illimitées</li>
-        <li class="included">Propositions d'amélioration de votre site</li>
+        <li class="included">Sitra améliore directement votre site après votre validation</li>
+        <li class="included">Accès en avant-première aux nouvelles fonctionnalités</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-paid" target="_blank">Choisir Premium</a>
     </div>
@@ -444,7 +415,7 @@
     }
     update() {
       this.x += this.vx; this.y += this.vy;
-      this.vy += 0.35; this.vx *= 0.97;
+      this.vx *= 0.97; this.vy *= 0.97;
       this.alpha -= this.decay;
     }
     draw() {
@@ -491,7 +462,7 @@
   setTimeout(() => {
     svg.style.transition = 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1)';
     svg.style.transform = 'scale(0.78)';
-  }, 2100);
+  }, 2400);
   setTimeout(() => {
     canvas.style.display = 'block';
     spawnParticles();
@@ -503,14 +474,14 @@
     document.querySelector('.intro-tagline').style.opacity = '0';
     document.querySelector('.intro-glow').style.transition = 'opacity 0.3s';
     document.querySelector('.intro-glow').style.opacity = '0';
-  }, 2550);
+  }, 2850);
   setTimeout(() => {
     const intro = document.getElementById('intro-screen');
     intro.style.transition = 'opacity 0.4s';
     intro.style.opacity = '0';
     document.body.style.overflow = '';
     setTimeout(() => intro.remove(), 400);
-  }, 3200);
+  }, 3500);
 
   // Contact form
   function sendContact() {
