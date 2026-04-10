@@ -793,6 +793,58 @@ def render_result(result, idx=0):
             else:
                 st.warning("Merci d'entrer un email valide.")
 
+        st.divider()
+        st.markdown("### Textes corrigés prêts à copier-coller")
+        st.caption("Sitra rédige pour vous les textes manquants ou à améliorer — copiez-les directement sur votre site.")
+        if st.button("Générer mes textes corrigés", key=f"gen_textes_{idx}"):
+            with st.spinner("Rédaction en cours..."):
+                try:
+                    import requests as req
+                    headers_t = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
+                    prompt = f"""Tu es un expert en rédaction web. Pour ce site {result['final_url']}, rédige les textes manquants ou à améliorer.
+
+Titre actuel : {result['seo']['title'] or 'Manquant'}
+Meta description actuelle : {result['seo']['meta_description'] or 'Manquante'}
+Nombre de mots sur le site : {result['content']['word_count']}
+Problèmes détectés : {', '.join([i['message'] for i in result['all_issues'][:5]])}
+
+Rédige exactement ces éléments en français, de façon professionnelle et claire :
+
+TITRE DE LA PAGE (50-60 caractères) :
+[rédige ici]
+
+DESCRIPTION GOOGLE (120-160 caractères) :
+[rédige ici]
+
+TEXTE D'INTRODUCTION POUR LA PAGE D'ACCUEIL (80-100 mots) :
+[rédige ici]
+
+TITRE PRINCIPAL DE LA PAGE (H1) :
+[rédige ici]
+
+Adapte les textes au secteur d'activité du site."""
+
+                    data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 500}
+                    r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers_t, json=data, timeout=30)
+                    textes = r.json()["choices"][0]["message"]["content"]
+                    st.session_state[f"textes_{idx}"] = textes
+                except Exception:
+                    st.error("Impossible de générer les textes pour le moment.")
+
+        if f"textes_{idx}" in st.session_state:
+            textes = st.session_state[f"textes_{idx}"]
+            sections = textes.split("\n\n")
+            for section in sections:
+                if section.strip():
+                    lignes = section.strip().split("\n")
+                    if lignes:
+                        titre = lignes[0].replace(":", "").strip()
+                        contenu = "\n".join(lignes[1:]).strip()
+                        if contenu:
+                            st.markdown(f"**{titre}**")
+                            st.code(contenu, language=None)
+                            st.markdown("")
+
     with tabs[4]:
         st.markdown("### Objectifs à atteindre")
         st.caption("Cochez les objectifs au fur et à mesure que vous les complétez")
