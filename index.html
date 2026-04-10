@@ -35,6 +35,7 @@
     filter: drop-shadow(0 0 12px rgba(124,106,247,0.6));
   }
   @keyframes draw-s { to{stroke-dashoffset:0} }
+  @keyframes fill-s { to{fill-opacity:1} }
   .intro-tagline {
     font-family:'Syne',sans-serif; font-size:1.1rem; letter-spacing:8px; text-transform:uppercase;
     background:linear-gradient(135deg,#7c6af7,#f07cf7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
@@ -169,15 +170,19 @@
         <stop offset="100%" style="stop-color:#f07cf7"/>
       </linearGradient>
     </defs>
-    <path class="s-path" d="
-      M 158 56
-      C 155 32 136 18 108 18
-      C 76 18 46 36 46 64
-      C 46 92 72 106 100 118
-      C 130 131 162 146 162 178
-      C 162 210 134 242 96 242
-      C 64 242 38 224 38 200
-    "/>
+    <text
+      x="100" y="210"
+      font-family="Georgia, 'Times New Roman', serif"
+      font-size="240"
+      font-weight="bold"
+      text-anchor="middle"
+      fill="url(#grad-s)"
+      stroke="url(#grad-s)"
+      stroke-width="6"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      style="filter:drop-shadow(0 0 14px rgba(124,106,247,0.7));stroke-dasharray:1200;stroke-dashoffset:1200;fill-opacity:0;animation:draw-s 1.8s cubic-bezier(0.4,0,0.2,1) forwards 0.2s, fill-s 0.6s ease forwards 2.1s"
+    >S</text>
   </svg>
   <div class="intro-tagline">SITRA</div>
 </div>
@@ -315,7 +320,7 @@
         <li class="included">Conseils personnalisés rédigés par l'IA</li>
         <li class="included">Rapport complet téléchargeable en PDF</li>
         <li class="included">Analyse approfondie des images</li>
-        <li class="included">2 propositions de corrections à choisir</li>
+        <li class="included">Sitra rédige pour vous les textes corrigés de votre site à copier-coller</li>
         <li class="included">Détection des éléments inutiles sur le site</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-paid" target="_blank">Choisir Pro</a>
@@ -327,7 +332,7 @@
       <div class="plan-desc">Pour les sites qui ont besoin d'un suivi régulier et approfondi</div>
       <ul class="plan-features">
         <li class="included">Tout ce qui est dans Pro</li>
-        <li class="included">Sitra améliore directement votre site après votre validation</li>
+        <li class="included">Sitra crée 2 nouveaux designs de site, vous choisissez celui que vous préférez</li>
         <li class="included">Accès en avant-première aux nouvelles fonctionnalités</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-paid" target="_blank">Choisir Premium</a>
@@ -462,7 +467,7 @@
   setTimeout(() => {
     svg.style.transition = 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1)';
     svg.style.transform = 'scale(0.78)';
-  }, 2400);
+  }, 2800);
   setTimeout(() => {
     canvas.style.display = 'block';
     spawnParticles();
@@ -474,14 +479,14 @@
     document.querySelector('.intro-tagline').style.opacity = '0';
     document.querySelector('.intro-glow').style.transition = 'opacity 0.3s';
     document.querySelector('.intro-glow').style.opacity = '0';
-  }, 2850);
+  }, 3150);
   setTimeout(() => {
     const intro = document.getElementById('intro-screen');
     intro.style.transition = 'opacity 0.4s';
     intro.style.opacity = '0';
     document.body.style.overflow = '';
     setTimeout(() => intro.remove(), 400);
-  }, 3500);
+  }, 3800);
 
   // Contact form
   function sendContact() {
