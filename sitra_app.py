@@ -674,6 +674,7 @@ def render_result(result, idx=0):
         "Détails du site",
         "Analyse approfondie",
         "Résumé",
+        "Textes corrigés",
         "Objectifs à atteindre",
         "Partager",
     ]
@@ -793,7 +794,7 @@ def render_result(result, idx=0):
             else:
                 st.warning("Merci d'entrer un email valide.")
 
-        st.divider()
+    with tabs[4]:
         st.markdown("### Textes corrigés prêts à copier-coller")
         st.caption("Sitra rédige pour vous les textes manquants ou à améliorer — copiez-les directement sur votre site.")
         if st.button("Générer mes textes corrigés", key=f"gen_textes_{idx}"):
@@ -845,7 +846,7 @@ Adapte les textes au secteur d'activité du site."""
                             st.code(contenu, language=None)
                             st.markdown("")
 
-    with tabs[4]:
+    with tabs[5]:
         st.markdown("### Objectifs à atteindre")
         st.caption("Cochez les objectifs au fur et à mesure que vous les complétez")
         seo = result["seo"]
@@ -937,7 +938,7 @@ Adapte les textes au secteur d'activité du site."""
                 st.success("✅ Toutes vos images ont une description !")
             st.markdown("\n**Conseils :**\n- Photos compressées (moins de 200 KB)\n- Format WebP ou JPEG\n- Pas d'images floues ou pixelisées")
 
-    with tabs[5]:
+    with tabs[6]:
         st.markdown("### Partager mes résultats")
         score = result["global_score"]
         url_site = result["final_url"]
