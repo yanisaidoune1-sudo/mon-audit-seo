@@ -674,7 +674,6 @@ def render_result(result, idx=0):
         "Détails du site",
         "Analyse approfondie",
         "Résumé",
-        "Textes corrigés",
         "Objectifs à atteindre",
         "Partager",
     ]
@@ -795,58 +794,6 @@ def render_result(result, idx=0):
                 st.warning("Merci d'entrer un email valide.")
 
     with tabs[4]:
-        st.markdown("### Textes corrigés prêts à copier-coller")
-        st.caption("Sitra rédige pour vous les textes manquants ou à améliorer — copiez-les directement sur votre site.")
-        if st.button("Générer mes textes corrigés", key=f"gen_textes_{idx}"):
-            with st.spinner("Rédaction en cours..."):
-                try:
-                    import requests as req
-                    headers_t = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
-                    prompt = f"""Tu es un expert en rédaction web. Pour ce site {result['final_url']}, rédige les textes manquants ou à améliorer.
-
-Titre actuel : {result['seo']['title'] or 'Manquant'}
-Meta description actuelle : {result['seo']['meta_description'] or 'Manquante'}
-Nombre de mots sur le site : {result['content']['word_count']}
-Problèmes détectés : {', '.join([i['message'] for i in result['all_issues'][:5]])}
-
-Rédige exactement ces éléments en français, de façon professionnelle et claire :
-
-TITRE DE LA PAGE (50-60 caractères) :
-[rédige ici]
-
-DESCRIPTION GOOGLE (120-160 caractères) :
-[rédige ici]
-
-TEXTE D'INTRODUCTION POUR LA PAGE D'ACCUEIL (80-100 mots) :
-[rédige ici]
-
-TITRE PRINCIPAL DE LA PAGE (H1) :
-[rédige ici]
-
-Adapte les textes au secteur d'activité du site."""
-
-                    data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 500}
-                    r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers_t, json=data, timeout=30)
-                    textes = r.json()["choices"][0]["message"]["content"]
-                    st.session_state[f"textes_{idx}"] = textes
-                except Exception:
-                    st.error("Impossible de générer les textes pour le moment.")
-
-        if f"textes_{idx}" in st.session_state:
-            textes = st.session_state[f"textes_{idx}"]
-            sections = textes.split("\n\n")
-            for section in sections:
-                if section.strip():
-                    lignes = section.strip().split("\n")
-                    if lignes:
-                        titre = lignes[0].replace(":", "").strip()
-                        contenu = "\n".join(lignes[1:]).strip()
-                        if contenu:
-                            st.markdown(f"**{titre}**")
-                            st.code(contenu, language=None)
-                            st.markdown("")
-
-    with tabs[5]:
         st.markdown("### Objectifs à atteindre")
         st.caption("Cochez les objectifs au fur et à mesure que vous les complétez")
         seo = result["seo"]
@@ -938,7 +885,7 @@ Adapte les textes au secteur d'activité du site."""
                 st.success("✅ Toutes vos images ont une description !")
             st.markdown("\n**Conseils :**\n- Photos compressées (moins de 200 KB)\n- Format WebP ou JPEG\n- Pas d'images floues ou pixelisées")
 
-    with tabs[6]:
+    with tabs[5]:
         st.markdown("### Partager mes résultats")
         score = result["global_score"]
         url_site = result["final_url"]
@@ -961,7 +908,7 @@ Adapte les textes au secteur d'activité du site."""
         st.markdown("**Pour Instagram et TikTok** — copiez ce texte :")
         st.code(texte_partage, language=None)
 
-    if show_corriger and len(tabs) > 6:
+    if show_corriger and len(tabs) > 5:
         with tabs[6]:
             st.markdown("### Corriger mon site automatiquement")
             st.caption("Sitra va vous proposer 2 versions de corrections. Vous choisissez celle que vous préférez avant de l'appliquer.")
@@ -1692,6 +1639,8 @@ with st.sidebar:
     st.divider()
     show_corriger = st.checkbox("Corriger mon site automatiquement", key="show_corriger", help="Connectez votre plateforme pour appliquer les corrections automatiquement")
     st.divider()
+    show_textes = st.checkbox("Textes corrigés prêts à copier", key="show_textes", help="Sitra rédige pour vous les textes manquants ou à améliorer")
+    st.divider()
     st.markdown('<div style="color:#666;font-size:0.75rem;text-align:center">Sitra Engine v1.0<br>Analyse en temps réel</div>', unsafe_allow_html=True)
 
 
@@ -1757,6 +1706,55 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
+
+# ── TEXTES CORRIGÉS ───────────────────────────────────────────────────────────
+if st.session_state.get("show_textes") and "results" in st.session_state:
+    result_t = st.session_state["results"][0]
+    st.divider()
+    st.markdown("### Textes corrigés prêts à copier-coller")
+    st.caption("Sitra rédige pour vous les textes manquants ou à améliorer — copiez-les directement sur votre site.")
+    if st.button("Générer mes textes corrigés", key="gen_textes_sidebar"):
+        with st.spinner("Rédaction en cours..."):
+            try:
+                import requests as req
+                headers_t = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
+                prompt = f"""Tu es un expert en rédaction web. Pour ce site {result_t['final_url']}, rédige les textes manquants ou à améliorer.
+
+Titre actuel : {result_t['seo']['title'] or 'Manquant'}
+Meta description actuelle : {result_t['seo']['meta_description'] or 'Manquante'}
+Nombre de mots sur le site : {result_t['content']['word_count']}
+Problèmes détectés : {', '.join([i['message'] for i in result_t['all_issues'][:5]])}
+
+Rédige exactement ces éléments en français, de façon professionnelle et claire :
+
+TITRE DE LA PAGE (50-60 caractères) :
+[rédige ici]
+
+DESCRIPTION GOOGLE (120-160 caractères) :
+[rédige ici]
+
+TEXTE D'INTRODUCTION POUR LA PAGE D'ACCUEIL (80-100 mots) :
+[rédige ici]
+
+TITRE PRINCIPAL DE LA PAGE (H1) :
+[rédige ici]
+
+Adapte les textes au secteur d'activité du site."""
+                data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 500}
+                r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers_t, json=data, timeout=30)
+                st.session_state["textes_sidebar"] = r.json()["choices"][0]["message"]["content"]
+            except Exception:
+                st.error("Impossible de générer les textes pour le moment.")
+
+    if "textes_sidebar" in st.session_state:
+        for section in st.session_state["textes_sidebar"].split("\n\n"):
+            if section.strip():
+                lignes = section.strip().split("\n")
+                titre = lignes[0].replace(":", "").strip()
+                contenu = "\n".join(lignes[1:]).strip()
+                if contenu:
+                    st.markdown(f"**{titre}**")
+                    st.code(contenu, language=None)
 
 # ── ASSISTANT IA ──────────────────────────────────────────────────────────────
 st.divider()
