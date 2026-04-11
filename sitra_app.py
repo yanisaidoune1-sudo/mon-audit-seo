@@ -91,6 +91,7 @@ def shopify_fix_seo(shop_url, access_token, result):
 
     return corrections, erreurs
 
+# ── WIX AUTO-FIX ──────────────────────────────────────────────────────────────
 def wix_fix_seo(wix_account_id, wix_site_id, wix_api_key, result):
     """Applique TOUTES les corrections détectées par SITRA sur Wix"""
     import requests as req
@@ -170,21 +171,6 @@ def wix_fix_seo(wix_account_id, wix_site_id, wix_api_key, result):
         erreurs.append(str(e))
 
     return corrections, erreurs
-
-def wordpress_get_posts(wp_url, wp_user, wp_password):
-    """Récupère les pages et articles WordPress"""
-    import requests as req
-    from requests.auth import HTTPBasicAuth
-    auth = HTTPBasicAuth(wp_user, wp_password)
-    base = wp_url.rstrip("/")
-    try:
-        r = req.get(f"{base}/wp-json/wp/v2/pages?per_page=10", auth=auth, timeout=10)
-        pages = r.json() if r.status_code == 200 else []
-        r2 = req.get(f"{base}/wp-json/wp/v2/posts?per_page=10", auth=auth, timeout=10)
-        posts = r2.json() if r2.status_code == 200 else []
-        return pages + posts, None
-    except Exception as e:
-        return [], str(e)
 
 # ── WORDPRESS AUTO-FIX ────────────────────────────────────────────────────────
 def wordpress_fix_seo(wp_url, wp_user, wp_password, result):
@@ -413,7 +399,7 @@ def envoyer_rapport_email(email: str, result: dict) -> bool:
 
         payload = {
             "from": "SITRA <onboarding@resend.dev>",
-            "to": ["yanisaidoune1@gmail.com"],  # Resend gratuit : envoi uniquement vers l'email vérifié
+            "to": ["yanisaidoune1@gmail.com"],
             "reply_to": email,
             "subject": f"Rapport SITRA pour {email} — {url_site} — Score : {score}/100",
             "html": html_content,
@@ -791,7 +777,6 @@ def render_result(result, idx=0):
             challenge_items.append(generals.pop(0))
         total = len(challenge_items)
 
-        # Stocker les items dans session_state pour le fragment
         st.session_state[f"challenge_items_{idx}"] = challenge_items
 
         completed = sum(1 for i in range(total) if st.session_state.get(f"ch_{idx}_{i}", False))
@@ -1191,23 +1176,24 @@ def render_result(result, idx=0):
 with st.sidebar:
     st.markdown("### Menu")
     st.divider()
-    # Menu déroulant pour les options
-    menu_choix = st.selectbox(
-        "Options",
+
+    # Boutons radio verticaux (remplace le menu déroulant)
+    menu_choix = st.radio(
+        "Options :",
         [
             "Aucune option",
             "Mode comparatif",
             "Corriger mon site automatiquement",
             "Textes corrigés prêts à copier"
         ],
-        key="menu_choix"
+        key="menu_choix",
+        label_visibility="collapsed"  # Cache le label pour un rendu plus propre
     )
 
     mode_comparaison = (menu_choix == "Mode comparatif")
     show_corriger = (menu_choix == "Corriger mon site automatiquement")
     show_textes = (menu_choix == "Textes corrigés prêts à copier")
 
-    # Synchronisation pour le reste du code
     st.session_state["compare_mode"] = mode_comparaison
     st.session_state["show_corriger"] = show_corriger
     st.session_state["show_textes"] = show_textes
@@ -1358,7 +1344,6 @@ with st.expander("Vous avez une question ? Posez-la à l'assistant SITRA"):
                     r = st.session_state["results"][0]
                     contexte = f"Le site analysé est {r['final_url']} avec un score de {r['global_score']}/100. SEO: {r['seo']['score']}/100, UX: {r['ux']['score']}/100, Performance: {r['performance']['score']}/100."
 
-                # Construit l'historique complet de la conversation
                 messages = [
                     {"role": "system", "content": f"""Tu es l'assistant de SITRA, un outil d'analyse de sites web. Tu réponds aux questions en langage simple et accessible, sans jargon technique. Tu expliques les termes avec des exemples concrets. Tu gardes le contexte de la conversation.
 {f'Contexte du site analysé : {contexte}' if contexte else ''}"""}
@@ -1374,7 +1359,6 @@ with st.expander("Vous avez une question ? Posez-la à l'assistant SITRA"):
                 r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=15)
                 reponse = r.json()["choices"][0]["message"]["content"]
                 st.session_state["chat_messages"].append({"role": "assistant", "content": reponse})
-                # Efface la barre de question en changeant la clé
                 st.session_state["chat_input_key"] += 1
                 st.rerun()
             except Exception:
@@ -1393,7 +1377,6 @@ def webflow_fix_seo(api_key, site_id, result):
     }
 
     try:
-        # Vérifie la connexion
         test = req.get(f"https://api.webflow.com/sites/{site_id}", headers=headers, timeout=10)
         if test.status_code == 401:
             return [], ["Token invalide — vérifiez votre clé API Webflow"]
@@ -1402,7 +1385,6 @@ def webflow_fix_seo(api_key, site_id, result):
 
         site_data = test.json()
 
-        # 1. GÉNÈRE META DESCRIPTION
         if not result["seo"]["meta_description"]:
             try:
                 import requests as req2
@@ -1412,7 +1394,6 @@ def webflow_fix_seo(api_key, site_id, result):
                 r_mistral = req2.post("https://api.mistral.ai/v1/chat/completions", headers=headers_mistral, json=data, timeout=15)
                 meta_desc = r_mistral.json()["choices"][0]["message"]["content"].strip()
 
-                # Met à jour les SEO settings du site
                 update = req.patch(
                     f"https://api.webflow.com/sites/{site_id}",
                     headers=headers,
@@ -1426,7 +1407,6 @@ def webflow_fix_seo(api_key, site_id, result):
             except Exception:
                 erreurs.append("Erreur lors de la génération de la meta description")
 
-        # 2. PAGES ET SEO
         pages = req.get(f"https://api.webflow.com/sites/{site_id}/pages", headers=headers, timeout=10)
         if pages.status_code == 200:
             pages_data = pages.json().get("pages", [])
@@ -1444,7 +1424,6 @@ def webflow_fix_seo(api_key, site_id, result):
             if fixed > 0:
                 corrections.append(f"{fixed} page(s) — meta description SEO mise à jour")
 
-        # 3. OPEN GRAPH
         if not result["design"]["has_og_tags"]:
             og_update = req.patch(
                 f"https://api.webflow.com/sites/{site_id}",
@@ -1457,11 +1436,9 @@ def webflow_fix_seo(api_key, site_id, result):
             else:
                 erreurs.append("Impossible de configurer les balises Open Graph sur Webflow")
 
-        # 4. HTTPS
         if not result["performance"]["is_https"]:
             erreurs.append("HTTPS non activé — activez SSL depuis Project Settings → Hosting sur Webflow")
 
-        # 5. CONTENU TROP COURT
         if result["content"]["word_count"] < 300:
             erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez le contenu dans l'éditeur Webflow")
 
@@ -1479,7 +1456,6 @@ def prestashop_fix_seo(shop_url, api_key, result):
     erreurs = []
 
     base = shop_url.rstrip("/")
-    # Prestashop utilise l'authentification Basic avec la clé API
     credentials = base64.b64encode(f"{api_key}:".encode()).decode()
     headers = {
         "Authorization": f"Basic {credentials}",
@@ -1487,14 +1463,12 @@ def prestashop_fix_seo(shop_url, api_key, result):
     }
 
     try:
-        # Vérifie la connexion
         test = req.get(f"{base}/api/", headers=headers, timeout=10)
         if test.status_code == 401:
             return [], ["Clé API invalide — vérifiez votre clé Prestashop"]
         if test.status_code != 200:
             return [], [f"Impossible de se connecter à Prestashop (code {test.status_code})"]
 
-        # 1. GÉNÈRE META DESCRIPTION
         if not result["seo"]["meta_description"]:
             try:
                 import requests as req2
@@ -1507,25 +1481,20 @@ def prestashop_fix_seo(shop_url, api_key, result):
             except Exception:
                 erreurs.append("Erreur lors de la génération de la meta description")
 
-        # 2. IMAGES SANS ALT
         if result["seo"]["images_no_alt"] > 0:
             products = req.get(f"{base}/api/products?limit=50&display=[id,name]", headers=headers, timeout=10)
             if products.status_code == 200:
                 corrections.append(f"{result['seo']['images_no_alt']} image(s) sans alt — correction appliquée sur les produits")
 
-        # 3. HTTPS
         if not result["performance"]["is_https"]:
             erreurs.append("HTTPS non activé — activez SSL depuis Paramètres → Général dans Prestashop")
 
-        # 4. CONTENU TROP COURT
         if result["content"]["word_count"] < 300:
             erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez les descriptions de vos produits")
 
-        # 5. MENTIONS LÉGALES
         if not result["ux"]["has_footer"]:
             corrections.append("Mentions légales — créez une page CMS 'Mentions légales' dans Prestashop → Contenu")
 
-        # 6. OPEN GRAPH
         if not result["design"]["has_og_tags"]:
             corrections.append("Open Graph — installez le module 'Social Sharing' depuis la marketplace Prestashop")
 
@@ -1544,7 +1513,6 @@ def drupal_fix_seo(drupal_url, username, password, result):
     base = drupal_url.rstrip("/")
 
     try:
-        # Authentification via JSON API
         login = req.post(
             f"{base}/user/login?_format=json",
             json={"name": username, "pass": password},
@@ -1561,7 +1529,6 @@ def drupal_fix_seo(drupal_url, username, password, result):
             "X-CSRF-Token": token
         }
 
-        # 1. GÉNÈRE META DESCRIPTION
         if not result["seo"]["meta_description"]:
             try:
                 import requests as req2
@@ -1574,29 +1541,23 @@ def drupal_fix_seo(drupal_url, username, password, result):
             except Exception:
                 erreurs.append("Erreur lors de la génération de la meta description")
 
-        # 2. PAGES
         nodes = req.get(f"{base}/jsonapi/node/page?page[limit]=10", headers=headers, cookies=cookies, timeout=10)
         if nodes.status_code == 200:
             pages_count = len(nodes.json().get("data", []))
             corrections.append(f"{pages_count} page(s) Drupal détectées et vérifiées")
 
-        # 3. HTTPS
         if not result["performance"]["is_https"]:
             erreurs.append("HTTPS non activé — activez SSL depuis la configuration de votre hébergeur")
 
-        # 4. CONTENU TROP COURT
         if result["content"]["word_count"] < 300:
             erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez le contenu de vos pages")
 
-        # 5. MENTIONS LÉGALES
         if not result["ux"]["has_footer"]:
             corrections.append("Mentions légales — créez une page basique dans Contenu → Ajouter du contenu → Page basique")
 
-        # 6. IMAGES SANS ALT
         if result["seo"]["images_no_alt"] > 0:
             erreurs.append(f"{result['seo']['images_no_alt']} image(s) sans alt — installez le module 'Alt Text' depuis admin/modules")
 
-        # 7. OPEN GRAPH
         if not result["design"]["has_og_tags"]:
             corrections.append("Open Graph — installez le module 'Metatag' depuis admin/modules pour gérer les balises Open Graph")
 
@@ -1619,12 +1580,10 @@ def squarespace_fix_seo(api_key, result):
     }
 
     try:
-        # Vérifie la connexion
         test = req.get("https://api.squarespace.com/1.0/commerce/inventory", headers=headers, timeout=10)
         if test.status_code == 401:
             return [], ["Clé API invalide — vérifiez votre clé Squarespace"]
 
-        # 1. GÉNÈRE META DESCRIPTION
         if not result["seo"]["meta_description"]:
             try:
                 import requests as req2
@@ -1637,29 +1596,23 @@ def squarespace_fix_seo(api_key, result):
             except Exception:
                 erreurs.append("Erreur lors de la génération de la meta description")
 
-        # 2. PAGES
         pages = req.get("https://api.squarespace.com/1.0/pages", headers=headers, timeout=10)
         if pages.status_code == 200:
             pages_data = pages.json().get("pages", [])
             corrections.append(f"{len(pages_data)} page(s) détectées — SEO vérifié")
 
-        # 3. HTTPS
         if not result["performance"]["is_https"]:
             erreurs.append("HTTPS non activé — activez SSL depuis Paramètres → Avancé → SSL sur Squarespace")
 
-        # 4. CONTENU TROP COURT
         if result["content"]["word_count"] < 300:
             erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez le contenu de vos pages")
 
-        # 5. OPEN GRAPH
         if not result["design"]["has_og_tags"]:
             corrections.append("Open Graph — activez dans Paramètres → Réseaux sociaux sur Squarespace")
 
-        # 6. MENTIONS LÉGALES
         if not result["ux"]["has_footer"]:
             erreurs.append("Mentions légales manquantes — créez une page Mentions légales dans l'éditeur Squarespace")
 
-        # 7. IMAGES SANS ALT
         if result["seo"]["images_no_alt"] > 0:
             erreurs.append(f"{result['seo']['images_no_alt']} image(s) sans attribut alt — à corriger manuellement dans l'éditeur Squarespace (clic droit sur l'image → Modifier)")
 
