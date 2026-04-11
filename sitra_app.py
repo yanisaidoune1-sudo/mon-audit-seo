@@ -1,6 +1,3 @@
-Voici le code modifié. Comme promis, **strictement rien d'autre n'a été touché** : j'ai uniquement remplacé les cases à cocher du menu par un menu déroulant (`st.selectbox`) et j'ai mis le mot "SITRA" en majuscules absolument partout (dans le texte, les commentaires, les noms de fichiers et les classes CSS).
-
-```python
 import streamlit as st
 import time
 from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages, detect_secteur_et_concurrents
@@ -602,12 +599,12 @@ def render_score_bar(label, score, tooltip=""):
     label_txt, _, color = get_score_label(score)
     tip_html = ""
     if tooltip:
-        tip_html = f'''<span class="SITRA-tooltip">(?)<span class="SITRA-tooltiptext">{tooltip}</span></span>'''
+        tip_html = f'''<span class="sitra-tooltip">(?)<span class="sitra-tooltiptext">{tooltip}</span></span>'''
     st.markdown(f"""
     <style>
-    .SITRA-tooltip {{ position: relative; display: inline-block; cursor: help; color: #667eea; font-size: 0.8rem; margin-left: 4px; vertical-align: middle; }}
-    .SITRA-tooltip .SITRA-tooltiptext {{ visibility: hidden; background: #1a1a2e; color: #fff; border: 1px solid #667eea; border-radius: 6px; padding: 5px 10px; position: absolute; z-index: 999; bottom: 125%; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 0.78rem; opacity: 0; transition: opacity 0.1s; }}
-    .SITRA-tooltip:hover .SITRA-tooltiptext {{ visibility: visible; opacity: 1; }}
+    .sitra-tooltip {{ position: relative; display: inline-block; cursor: help; color: #667eea; font-size: 0.8rem; margin-left: 4px; vertical-align: middle; }}
+    .sitra-tooltip .sitra-tooltiptext {{ visibility: hidden; background: #1a1a2e; color: #fff; border: 1px solid #667eea; border-radius: 6px; padding: 5px 10px; position: absolute; z-index: 999; bottom: 125%; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 0.78rem; opacity: 0; transition: opacity 0.1s; }}
+    .sitra-tooltip:hover .sitra-tooltiptext {{ visibility: visible; opacity: 1; }}
     </style>
     <div class="score-bar-container">
         <div class="score-bar-label">
@@ -1645,12 +1642,18 @@ with st.sidebar:
             "Mode comparatif",
             "Corriger mon site automatiquement",
             "Textes corrigés prêts à copier"
-        ]
+        ],
+        key="menu_choix"
     )
     
     mode_comparaison = (menu_choix == "Mode comparatif")
     show_corriger = (menu_choix == "Corriger mon site automatiquement")
     show_textes = (menu_choix == "Textes corrigés prêts à copier")
+    
+    # Synchronisation pour le reste du code qui utilise st.session_state
+    st.session_state["compare_mode"] = mode_comparaison
+    st.session_state["show_corriger"] = show_corriger
+    st.session_state["show_textes"] = show_textes
     
     st.divider()
     st.markdown('<div style="color:#666;font-size:0.75rem;text-align:center">SITRA Engine v1.0<br>Analyse en temps réel</div>', unsafe_allow_html=True)
@@ -1823,4 +1826,3 @@ with st.expander("Vous avez une question ? Posez-la à l'assistant SITRA"):
                 st.rerun()
             except Exception:
                 st.error("Impossible de contacter l'assistant pour le moment.")
-```
