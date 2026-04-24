@@ -356,8 +356,22 @@ Sois concret, percutant et prêt à publier directement."""
             "Post LinkedIn": f"{prompt}\n\nRédige 2 posts LinkedIn professionnels (200-300 mots chacun). Format : POST 1 / POST 2",
             "Post Facebook": f"{prompt}\n\nRédige 3 posts Facebook engageants (100-150 mots chacun). Format : POST 1 / POST 2 / POST 3",
             "Email marketing": f"{prompt}\n\nRédige un email marketing complet avec : Objet accrocheur, Préheader, Corps de l'email (200-300 mots), CTA fort.",
-            "Texte publicitaire": f"{prompt}\n\nRédige 3 accroches publicitaires courtes (max 30 mots chacune) + 1 texte de description (50-80 mots). Format : ACCROCHE 1 / ACCROCHE 2 / ACCROCHE 3 / DESCRIPTION",
-            "Description Google Ads": f"{prompt}\n\nRédige 3 annonces Google Ads complètes avec : Titre 1 (max 30 car.) / Titre 2 (max 30 car.) / Description (max 90 car.). Format : ANNONCE 1 / ANNONCE 2 / ANNONCE 3",
+            "Texte publicitaire Google Ads": f"{prompt}\n\nRédige 3 annonces Google Ads complètes avec : Titre 1 (max 30 car.) / Titre 2 (max 30 car.) / Description (max 90 car.). Format : ANNONCE 1 / ANNONCE 2 / ANNONCE 3",
+            "Animation publicitaire HTML": f"""Tu es un expert en motion design web. Crée une animation publicitaire HTML/CSS/JS pour ce site.
+
+Site : {result['final_url']}
+Titre : {result['seo']['title'] or 'SITRA'}
+Objectif : {objectif}
+
+Génère une animation publicitaire complète de 300x250px (format standard) en HTML autonome.
+L'animation doit :
+- Avoir un fond sombre avec dégradé violet/rose (#7c6af7 → #f07cf7)
+- Afficher le nom du site et un message accrocheur en animation CSS
+- Inclure un bouton CTA animé
+- Durer 5-6 secondes en boucle
+- Être 100% CSS/JS, sans images externes
+
+Retourne UNIQUEMENT le code HTML entre balises ```html et ```, rien d'autre.""",
         }
 
         prompt_final = types_prompts.get(type_contenu, prompt)
@@ -529,6 +543,35 @@ def show_paywall():
 
 st.set_page_config(page_title="SITRA | Analyseur de Sites Web", page_icon="https://yanisaidoune1-sudo.github.io/mon-audit-seo/favicon.svg", layout="wide", initial_sidebar_state="expanded")
 
+# ── SIDEBAR — en premier pour que les variables existent partout ──────────────
+with st.sidebar:
+    st.markdown("### Menu")
+    st.divider()
+
+    if "menu_choix" not in st.session_state:
+        st.session_state["menu_choix"] = "Aucune option"
+
+    menu_choix = st.selectbox(
+        "Options :",
+        [
+            "Aucune option",
+            "Mode comparatif",
+            "Corriger mon site automatiquement",
+            "Textes corrigés prêts à copier",
+            "Génération de contenu pour votre marque",
+        ],
+        key="menu_choix",
+        label_visibility="collapsed"
+    )
+
+    st.divider()
+    st.markdown('<div style="color:#666;font-size:0.75rem;text-align:center">SITRA Engine v1.0<br>Analyse en temps réel</div>', unsafe_allow_html=True)
+
+mode_comparaison     = (st.session_state.get("menu_choix") == "Mode comparatif")
+show_corriger        = (st.session_state.get("menu_choix") == "Corriger mon site automatiquement")
+show_textes          = (st.session_state.get("menu_choix") == "Textes corrigés prêts à copier")
+show_contenu_marque  = (st.session_state.get("menu_choix") == "Génération de contenu pour votre marque")
+
 st.markdown("""
 <head>
 <meta property="og:title" content="SITRA — Analyseur Intelligent de Sites Web" />
@@ -651,7 +694,7 @@ def render_result(result, idx=0):
     if show_corriger:
         tabs_list.append("Corriger mon site automatiquement")
     if show_contenu_marque:
-        tabs_list.append("Contenu de marque")
+        tabs_list.append("Génération de contenu pour votre marque")
 
     tabs = st.tabs(tabs_list)
 
@@ -996,13 +1039,18 @@ def render_result(result, idx=0):
     contenu_tab_idx = tab_offset if show_corriger else tab_offset - 1
     if show_contenu_marque and len(tabs) > contenu_tab_idx - 1:
         with tabs[-1]:
-            st.markdown("### Contenu de marque SITRA")
-            st.caption("SITRA analyse l'identité de votre site et génère du contenu marketing prêt à publier — posts, emails, publicités.")
+            st.markdown("### Génération de contenu pour votre marque")
+            st.caption("SITRA a analysé votre site. Il connaît votre secteur et votre style. Choisissez ce que vous voulez créer — le contenu est généré en quelques secondes, prêt à publier.")
 
             st.markdown("""
             <div style="background:linear-gradient(135deg,rgba(102,126,234,0.15),rgba(240,124,247,0.1));border:1px solid rgba(102,126,234,0.4);border-radius:12px;padding:1.2rem 1.5rem;margin-bottom:1.5rem">
-                <div style="font-weight:700;color:#667eea;margin-bottom:0.4rem">Comment ça marche ?</div>
-                <div style="color:#ccc;font-size:0.9rem">SITRA a déjà analysé votre site. Il connaît votre secteur, votre contenu et votre style. Choisissez le type de contenu et décrivez votre objectif — SITRA rédige pour vous.</div>
+                <div style="font-weight:700;color:#a090f7;margin-bottom:0.8rem;">Comment utiliser ce contenu ?</div>
+                <div style="color:#ccc;font-size:0.88rem;line-height:1.7">
+                • <b>Posts Instagram / Facebook / LinkedIn</b> : copiez le texte généré, ajoutez une photo de votre choix ou utilisez l'animation HTML fournie directement dans votre story ou publicité.<br>
+                • <b>Animations publicitaires</b> : SITRA génère une animation HTML prête à l'emploi. Téléchargez-la et importez-la dans Canva, Meta Ads ou votre site.<br>
+                • <b>Email marketing</b> : copiez le contenu dans votre outil d'emailing (Mailchimp, Brevo…).<br>
+                • <b>Publicités Google / Meta</b> : les textes sont déjà calibrés aux limites de caractères publicitaires.
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -1010,7 +1058,7 @@ def render_result(result, idx=0):
             with col_cm1:
                 type_contenu = st.selectbox(
                     "Type de contenu :",
-                    ["Post Instagram", "Post LinkedIn", "Post Facebook", "Email marketing", "Texte publicitaire", "Description Google Ads"],
+                    ["Post Instagram", "Post LinkedIn", "Post Facebook", "Email marketing", "Texte publicitaire Google Ads", "Animation publicitaire HTML"],
                     key=f"type_contenu_{idx}"
                 )
             with col_cm2:
@@ -1020,12 +1068,13 @@ def render_result(result, idx=0):
                     key=f"objectif_cm_{idx}"
                 )
 
-            if st.button("Générer mon contenu de marque", key=f"gen_cm_{idx}"):
+            if st.button("Générer le contenu", key=f"gen_cm_{idx}"):
                 if objectif.strip():
                     with st.spinner("SITRA génère votre contenu..."):
                         contenu = generer_contenu_marque(result, type_contenu, objectif)
                     if contenu:
                         st.session_state[f"contenu_marque_{idx}"] = contenu
+                        st.session_state[f"type_cm_{idx}"] = type_contenu
                     else:
                         st.error("Impossible de générer le contenu pour le moment.")
                 else:
@@ -1033,51 +1082,35 @@ def render_result(result, idx=0):
 
             if f"contenu_marque_{idx}" in st.session_state:
                 st.divider()
-                st.markdown("**Contenu généré — copiez et publiez directement :**")
-                sections = st.session_state[f"contenu_marque_{idx}"].split("\n\n")
-                for section in sections:
-                    if section.strip():
-                        lignes = section.strip().split("\n")
-                        if len(lignes) > 1 and any(kw in lignes[0].upper() for kw in ["POST", "ACCROCHE", "ANNONCE", "OBJET", "EMAIL"]):
-                            st.markdown(f"**{lignes[0]}**")
-                            st.code("\n".join(lignes[1:]), language=None)
-                        else:
-                            st.code(section.strip(), language=None)
+                type_gen = st.session_state.get(f"type_cm_{idx}", "")
+                contenu_gen = st.session_state[f"contenu_marque_{idx}"]
+
+                if type_gen == "Animation publicitaire HTML":
+                    st.markdown("**Animation générée — prévisualisez puis téléchargez :**")
+                    # Extract HTML from the response
+                    import re
+                    html_match = re.search(r'```html\n(.*?)```', contenu_gen, re.DOTALL)
+                    if html_match:
+                        html_code = html_match.group(1)
+                        st.components.v1.html(html_code, height=300)
+                        st.download_button("Télécharger l'animation HTML", html_code, file_name="animation_sitra.html", mime="text/html", key=f"dl_anim_{idx}")
+                    else:
+                        st.code(contenu_gen, language="html")
+                else:
+                    st.markdown("**Contenu généré — copiez et publiez directement :**")
+                    sections = contenu_gen.split("\n\n")
+                    for section in sections:
+                        if section.strip():
+                            lignes = section.strip().split("\n")
+                            if len(lignes) > 1 and any(kw in lignes[0].upper() for kw in ["POST", "ACCROCHE", "ANNONCE", "OBJET", "EMAIL", "VERSION"]):
+                                st.markdown(f"**{lignes[0]}**")
+                                st.code("\n".join(lignes[1:]), language=None)
+                            else:
+                                st.code(section.strip(), language=None)
 
                 if st.button("Générer une nouvelle version", key=f"regen_cm_{idx}"):
                     del st.session_state[f"contenu_marque_{idx}"]
                     st.rerun()
-
-# ── SIDEBAR ───────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("### Menu")
-    st.divider()
-
-    # Initialise la valeur par défaut si absente
-    if "menu_choix" not in st.session_state:
-        st.session_state["menu_choix"] = "Aucune option"
-
-    menu_choix = st.selectbox(
-        "Options :",
-        [
-            "Aucune option",
-            "Mode comparatif",
-            "Corriger mon site automatiquement",
-            "Textes corrigés prêts à copier",
-            "Contenu de marque SITRA",
-        ],
-        key="menu_choix",
-        label_visibility="collapsed"
-    )
-
-    st.divider()
-    st.markdown('<div style="color:#666;font-size:0.75rem;text-align:center">SITRA Engine v1.0<br>Analyse en temps réel</div>', unsafe_allow_html=True)
-
-# Variables globales issues du menu — lues depuis session_state pour être dispo partout
-mode_comparaison = (st.session_state.get("menu_choix") == "Mode comparatif")
-show_corriger = (st.session_state.get("menu_choix") == "Corriger mon site automatiquement")
-show_textes = (st.session_state.get("menu_choix") == "Textes corrigés prêts à copier")
-show_contenu_marque = (st.session_state.get("menu_choix") == "Contenu de marque SITRA")
 
 # ── HERO ─────────────────────────────────────────────────────────────────────
 st.markdown("""
