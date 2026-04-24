@@ -1053,6 +1053,10 @@ with st.sidebar:
     st.markdown("### Menu")
     st.divider()
 
+    # Initialise la valeur par défaut si absente
+    if "menu_choix" not in st.session_state:
+        st.session_state["menu_choix"] = "Aucune option"
+
     menu_choix = st.selectbox(
         "Options :",
         [
@@ -1066,18 +1070,14 @@ with st.sidebar:
         label_visibility="collapsed"
     )
 
-    mode_comparaison = (menu_choix == "Mode comparatif")
-    show_corriger = (menu_choix == "Corriger mon site automatiquement")
-    show_textes = (menu_choix == "Textes corrigés prêts à copier")
-    show_contenu_marque = (menu_choix == "Contenu de marque SITRA")
-
-    st.session_state["compare_mode"] = mode_comparaison
-    st.session_state["show_corriger"] = show_corriger
-    st.session_state["show_textes"] = show_textes
-    st.session_state["show_contenu_marque"] = show_contenu_marque
-
     st.divider()
     st.markdown('<div style="color:#666;font-size:0.75rem;text-align:center">SITRA Engine v1.0<br>Analyse en temps réel</div>', unsafe_allow_html=True)
+
+# Variables globales issues du menu — lues depuis session_state pour être dispo partout
+mode_comparaison = (st.session_state.get("menu_choix") == "Mode comparatif")
+show_corriger = (st.session_state.get("menu_choix") == "Corriger mon site automatiquement")
+show_textes = (st.session_state.get("menu_choix") == "Textes corrigés prêts à copier")
+show_contenu_marque = (st.session_state.get("menu_choix") == "Contenu de marque SITRA")
 
 # ── HERO ─────────────────────────────────────────────────────────────────────
 st.markdown("""
