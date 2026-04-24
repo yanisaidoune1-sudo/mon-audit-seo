@@ -16,7 +16,6 @@ def shopify_fix_seo(shop_url, access_token, result):
     }
 
     try:
-        # Vérifie la connexion
         test = req.get(f"https://{shop}/admin/api/2024-01/shop.json", headers=headers, timeout=10)
         if test.status_code == 401:
             return [], ["Token invalide — vérifiez votre clé API Shopify"]
@@ -25,7 +24,6 @@ def shopify_fix_seo(shop_url, access_token, result):
 
         shop_data = test.json().get("shop", {})
 
-        # 1. GÉNÈRE ET MET À JOUR LA META DESCRIPTION
         if not result["seo"]["meta_description"]:
             try:
                 import requests as req2
@@ -38,7 +36,6 @@ def shopify_fix_seo(shop_url, access_token, result):
             except Exception:
                 erreurs.append("Erreur lors de la génération de la meta description")
 
-        # 2. CORRIGE LES IMAGES PRODUITS SANS ALT
         if result["seo"]["images_no_alt"] > 0:
             products = req.get(f"https://{shop}/admin/api/2024-01/products.json?limit=50", headers=headers, timeout=10)
             if products.status_code == 200:
@@ -56,7 +53,6 @@ def shopify_fix_seo(shop_url, access_token, result):
                 if fixed > 0:
                     corrections.append(f"{fixed} image(s) produit — attribut alt ajouté automatiquement")
 
-        # 3. CRÉE UNE PAGE MENTIONS LÉGALES SI MANQUANTE
         pages = req.get(f"https://{shop}/admin/api/2024-01/pages.json", headers=headers, timeout=10)
         if pages.status_code == 200:
             existing_slugs = [p.get("handle", "") for p in pages.json().get("pages", [])]
@@ -74,15 +70,12 @@ def shopify_fix_seo(shop_url, access_token, result):
                 if new_page.status_code == 201:
                     corrections.append("Page Mentions légales créée et publiée automatiquement")
 
-        # 4. HTTPS
         if not result["performance"]["is_https"]:
             erreurs.append("HTTPS non activé — activez SSL depuis Paramètres → Domaines dans Shopify")
 
-        # 5. CONTENU TROP COURT
         if result["content"]["word_count"] < 300:
             erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez la description de votre boutique")
 
-        # 6. OPEN GRAPH
         if not result["design"]["has_og_tags"]:
             corrections.append("Open Graph — activez le partage social dans Shopify → Préférences en ligne → Réseaux sociaux")
 
@@ -106,14 +99,12 @@ def wix_fix_seo(wix_account_id, wix_site_id, wix_api_key, result):
     }
 
     try:
-        # Vérifie la connexion
         test = req.get("https://www.wixapis.com/site-properties/v4/properties", headers=headers, timeout=10)
         if test.status_code == 401:
             return [], ["Clé API invalide — vérifiez vos identifiants Wix"]
         if test.status_code != 200:
             return [], [f"Impossible de se connecter à Wix (code {test.status_code})"]
 
-        # 1. GÉNÈRE ET MET À JOUR LA META DESCRIPTION
         if not result["seo"]["meta_description"]:
             try:
                 import requests as req2
@@ -130,7 +121,6 @@ def wix_fix_seo(wix_account_id, wix_site_id, wix_api_key, result):
             except Exception:
                 erreurs.append("Erreur lors de la génération de la meta description")
 
-        # 2. MET À JOUR LES BALISES SEO DES PAGES
         pages = req.get("https://www.wixapis.com/site-pages/v2/pages", headers=headers, timeout=10)
         if pages.status_code == 200:
             pages_data = pages.json().get("pages", [])
@@ -149,15 +139,12 @@ def wix_fix_seo(wix_account_id, wix_site_id, wix_api_key, result):
             if fixed_pages > 0:
                 corrections.append(f"{fixed_pages} page(s) — balises SEO optimisées")
 
-        # 3. HTTPS
         if not result["performance"]["is_https"]:
             erreurs.append("HTTPS non activé — activez-le depuis les paramètres de votre site Wix (SSL gratuit inclus)")
 
-        # 4. CONTENU TROP COURT
         if result["content"]["word_count"] < 300:
             erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — ajoutez du contenu dans l'éditeur Wix")
 
-        # 5. OPEN GRAPH
         if not result["design"]["has_og_tags"]:
             og_update = req.patch(
                 "https://www.wixapis.com/site-properties/v4/properties",
@@ -184,14 +171,12 @@ def wordpress_fix_seo(wp_url, wp_user, wp_password, result):
     erreurs = []
 
     try:
-        # Vérifie la connexion
         test = req.get(f"{base}/wp-json/wp/v2/", auth=auth, timeout=10)
         if test.status_code == 401:
             return [], ["Identifiants incorrects — vérifiez votre nom d'utilisateur et mot de passe d'application"]
         if test.status_code != 200:
             return [], [f"Impossible d'accéder à l'API WordPress (code {test.status_code})"]
 
-        # 1. GÉNÈRE ET MET À JOUR LA META DESCRIPTION
         if not result["seo"]["meta_description"]:
             try:
                 import requests as req2
@@ -211,7 +196,6 @@ def wordpress_fix_seo(wp_url, wp_user, wp_password, result):
             except Exception:
                 erreurs.append("Erreur lors de la génération de la meta description")
 
-        # 2. CORRIGE LES IMAGES SANS ALT
         if result["seo"]["images_no_alt"] > 0:
             media = req.get(f"{base}/wp-json/wp/v2/media?per_page=100", auth=auth, timeout=10)
             if media.status_code == 200:
@@ -231,13 +215,11 @@ def wordpress_fix_seo(wp_url, wp_user, wp_password, result):
                 if fixed > 0:
                     corrections.append(f"{fixed} image(s) — attribut alt ajouté automatiquement")
 
-        # 3. CORRIGE LE TITRE H1 SI MANQUANT OU MULTIPLE
         if result["seo"]["h1_count"] != 1:
             pages = req.get(f"{base}/wp-json/wp/v2/pages?per_page=5", auth=auth, timeout=10)
             if pages.status_code == 200:
                 corrections.append(f"H1 vérifié sur les pages principales ({result['seo']['h1_count']} détecté — correction manuelle recommandée dans l'éditeur)")
 
-        # 4. AJOUTE LES BALISES OPEN GRAPH via Yoast SEO si disponible
         if not result["design"]["has_og_tags"]:
             yoast = req.get(f"{base}/wp-json/yoast/v1/get_head?url={result['final_url']}", auth=auth, timeout=10)
             if yoast.status_code == 200:
@@ -245,7 +227,6 @@ def wordpress_fix_seo(wp_url, wp_user, wp_password, result):
             else:
                 erreurs.append("Yoast SEO non détecté — installez le plugin Yoast SEO pour gérer les balises Open Graph")
 
-        # 5. CRÉE UNE PAGE MENTIONS LÉGALES SI MANQUANTE
         if not result["ux"]["has_footer"]:
             pages = req.get(f"{base}/wp-json/wp/v2/pages", auth=auth, timeout=10)
             if pages.status_code == 200:
@@ -274,11 +255,9 @@ def wordpress_fix_seo(wp_url, wp_user, wp_password, result):
                     else:
                         erreurs.append("Impossible de créer la page Mentions légales")
 
-        # 6. CORRIGE LE CONTENU TROP COURT
         if result["content"]["word_count"] < 300:
             erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — ajoutez du contenu manuellement dans l'éditeur WordPress")
 
-        # 7. HTTPS
         if not result["performance"]["is_https"]:
             erreurs.append("HTTPS non activé — activez-le depuis votre hébergeur (certificat SSL gratuit avec Let's Encrypt)")
 
@@ -312,7 +291,6 @@ Pas de termes techniques — utilise des mots du quotidien."""
         return None
 
 def generer_deux_corrections(plateforme, result):
-    """Génère 2 propositions de corrections que l'utilisateur peut choisir"""
     try:
         import requests as req
         headers_m = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
@@ -348,6 +326,47 @@ VERSION 2 - Corrections complètes
     except Exception:
         return None
 
+# ── CONTENU DE MARQUE IA (inspiré Pomelli) ───────────────────────────────────
+def generer_contenu_marque(result, type_contenu, objectif):
+    """Génère du contenu marketing on-brand basé sur l'analyse du site"""
+    try:
+        import requests as req
+        headers = {
+            "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
+            "Content-Type": "application/json"
+        }
+
+        prompt = f"""Tu es un expert en marketing digital et copywriting. Génère du contenu marketing professionnel et percutant pour ce site.
+
+Site analysé : {result['final_url']}
+Titre du site : {result['seo']['title'] or 'Non défini'}
+Description actuelle : {result['seo']['meta_description'] or 'Non définie'}
+Score global SITRA : {result['global_score']}/100
+Nombre de mots sur le site : {result['content']['word_count']}
+
+Type de contenu à générer : {type_contenu}
+Objectif de la campagne : {objectif}
+
+Génère du contenu adapté, professionnel, en français, qui respecte l'identité de marque du site.
+Adapte le ton au secteur d'activité détecté.
+Sois concret, percutant et prêt à publier directement."""
+
+        types_prompts = {
+            "Post Instagram": f"{prompt}\n\nRédige 3 posts Instagram différents (150-200 caractères chacun + 5 hashtags pertinents). Format : POST 1 / POST 2 / POST 3",
+            "Post LinkedIn": f"{prompt}\n\nRédige 2 posts LinkedIn professionnels (200-300 mots chacun). Format : POST 1 / POST 2",
+            "Post Facebook": f"{prompt}\n\nRédige 3 posts Facebook engageants (100-150 mots chacun). Format : POST 1 / POST 2 / POST 3",
+            "Email marketing": f"{prompt}\n\nRédige un email marketing complet avec : Objet accrocheur, Préheader, Corps de l'email (200-300 mots), CTA fort.",
+            "Texte publicitaire": f"{prompt}\n\nRédige 3 accroches publicitaires courtes (max 30 mots chacune) + 1 texte de description (50-80 mots). Format : ACCROCHE 1 / ACCROCHE 2 / ACCROCHE 3 / DESCRIPTION",
+            "Description Google Ads": f"{prompt}\n\nRédige 3 annonces Google Ads complètes avec : Titre 1 (max 30 car.) / Titre 2 (max 30 car.) / Description (max 90 car.). Format : ANNONCE 1 / ANNONCE 2 / ANNONCE 3",
+        }
+
+        prompt_final = types_prompts.get(type_contenu, prompt)
+        data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt_final}], "max_tokens": 800}
+        r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=30)
+        return r.json()["choices"][0]["message"]["content"]
+    except Exception:
+        return None
+
 # ── PDF ───────────────────────────────────────────────────────────────────────
 def envoyer_rapport_email(email: str, result: dict) -> bool:
     """Envoie le rapport PDF par email via Resend"""
@@ -355,11 +374,9 @@ def envoyer_rapport_email(email: str, result: dict) -> bool:
         import requests as req
         import base64
 
-        # Génère le PDF
         pdf_data = generer_pdf(result)
         pdf_b64 = base64.b64encode(pdf_data).decode("utf-8")
 
-        # Contenu de l'email
         score = result["global_score"]
         label_txt, _, _ = get_score_label(score)
         url_site = result["final_url"]
@@ -633,6 +650,8 @@ def render_result(result, idx=0):
     ]
     if show_corriger:
         tabs_list.append("Corriger mon site automatiquement")
+    if show_contenu_marque:
+        tabs_list.append("Contenu de marque")
 
     tabs = st.tabs(tabs_list)
 
@@ -860,8 +879,10 @@ def render_result(result, idx=0):
         st.markdown("**Pour Instagram et TikTok** — copiez ce texte :")
         st.code(texte_partage, language=None)
 
-    if show_corriger and len(tabs) > 5:
-        with tabs[6]:
+    # ── ONGLET CORRIGER ──
+    tab_offset = 6
+    if show_corriger and len(tabs) > tab_offset - 1:
+        with tabs[tab_offset - 1]:
             st.markdown("### Corriger mon site automatiquement")
             st.caption("SITRA va vous proposer 2 versions de corrections. Vous choisissez celle que vous préférez avant de l'appliquer.")
 
@@ -883,7 +904,6 @@ def render_result(result, idx=0):
                 if f"propositions_{idx}" in st.session_state:
                     propositions = st.session_state[f"propositions_{idx}"]
 
-                    # Sépare les deux versions
                     lignes = propositions.split("\n")
                     version1_lines = []
                     version2_lines = []
@@ -923,7 +943,6 @@ def render_result(result, idx=0):
                             st.session_state[f"version_choisie_{idx}"] = 2
                             st.info("Version 2 sélectionnée — entrez vos identifiants ci-dessous pour appliquer.")
 
-                    # Affiche les champs d'identifiants si une version est choisie
                     if f"version_choisie_{idx}" in st.session_state:
                         st.divider()
                         st.markdown(f"**Entrez vos identifiants {plateforme} pour appliquer la version choisie :**")
@@ -973,230 +992,89 @@ def render_result(result, idx=0):
                                 else:
                                     st.warning("Merci de remplir tous les champs.")
 
-                        elif plateforme == "Squarespace":
-                            sq_api_key = st.text_input("Clé API :", type="password", key=f"sq_key_{idx}")
-                            if st.button("Appliquer sur mon Squarespace", key=f"sq_fix_{idx}"):
-                                if sq_api_key:
-                                    with st.spinner("Application..."):
-                                        c, e = squarespace_fix_seo(sq_api_key, result)
-                                    show_corrections(c, e)
-                                else:
-                                    st.warning("Merci d'entrer votre clé.")
+    # ── ONGLET CONTENU DE MARQUE ──
+    contenu_tab_idx = tab_offset if show_corriger else tab_offset - 1
+    if show_contenu_marque and len(tabs) > contenu_tab_idx - 1:
+        with tabs[-1]:
+            st.markdown("### Contenu de marque SITRA")
+            st.caption("SITRA analyse l'identité de votre site et génère du contenu marketing prêt à publier — posts, emails, publicités.")
 
-                        elif plateforme == "Webflow":
-                            wf_api_key = st.text_input("Token API :", type="password", key=f"wf_key_{idx}")
-                            wf_site_id = st.text_input("Site ID :", key=f"wf_site_{idx}")
-                            if st.button("Appliquer sur mon Webflow", key=f"wf_fix_{idx}"):
-                                if wf_api_key and wf_site_id:
-                                    with st.spinner("Application..."):
-                                        c, e = webflow_fix_seo(wf_api_key, wf_site_id, result)
-                                    show_corrections(c, e)
-                                else:
-                                    st.warning("Merci de remplir tous les champs.")
+            st.markdown("""
+            <div style="background:linear-gradient(135deg,rgba(102,126,234,0.15),rgba(240,124,247,0.1));border:1px solid rgba(102,126,234,0.4);border-radius:12px;padding:1.2rem 1.5rem;margin-bottom:1.5rem">
+                <div style="font-weight:700;color:#667eea;margin-bottom:0.4rem">Comment ça marche ?</div>
+                <div style="color:#ccc;font-size:0.9rem">SITRA a déjà analysé votre site. Il connaît votre secteur, votre contenu et votre style. Choisissez le type de contenu et décrivez votre objectif — SITRA rédige pour vous.</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-                        elif plateforme == "Prestashop":
-                            ps_url = st.text_input("URL boutique :", key=f"ps_url_{idx}")
-                            ps_key = st.text_input("Clé API :", type="password", key=f"ps_key_{idx}")
-                            if st.button("Appliquer sur ma boutique Prestashop", key=f"ps_fix_{idx}"):
-                                if ps_url and ps_key:
-                                    with st.spinner("Application..."):
-                                        c, e = prestashop_fix_seo(ps_url, ps_key, result)
-                                    show_corrections(c, e)
-                                else:
-                                    st.warning("Merci de remplir tous les champs.")
+            col_cm1, col_cm2 = st.columns(2)
+            with col_cm1:
+                type_contenu = st.selectbox(
+                    "Type de contenu :",
+                    ["Post Instagram", "Post LinkedIn", "Post Facebook", "Email marketing", "Texte publicitaire", "Description Google Ads"],
+                    key=f"type_contenu_{idx}"
+                )
+            with col_cm2:
+                objectif = st.text_input(
+                    "Objectif de la campagne :",
+                    placeholder="Ex : Promouvoir ma nouvelle offre, Attirer des clients locaux...",
+                    key=f"objectif_cm_{idx}"
+                )
 
-                        elif plateforme == "Drupal":
-                            dr_url = st.text_input("URL site :", key=f"dr_url_{idx}")
-                            dr_user = st.text_input("Nom d'utilisateur :", key=f"dr_user_{idx}")
-                            dr_pass = st.text_input("Mot de passe :", type="password", key=f"dr_pass_{idx}")
-                            if st.button("Appliquer sur mon Drupal", key=f"dr_fix_{idx}"):
-                                if dr_url and dr_user and dr_pass:
-                                    with st.spinner("Application..."):
-                                        c, e = drupal_fix_seo(dr_url, dr_user, dr_pass, result)
-                                    show_corrections(c, e)
-                                else:
-                                    st.warning("Merci de remplir tous les champs.")
-
-                        elif plateforme == "Magento":
-                            mg_url = st.text_input("URL boutique :", key=f"mg_url_{idx}")
-                            mg_token = st.text_input("Token d'accès :", type="password", key=f"mg_token_{idx}")
-                            if st.button("Appliquer sur ma boutique Magento", key=f"mg_fix_{idx}"):
-                                if mg_url and mg_token:
-                                    with st.spinner("Application..."):
-                                        c, e = magento_fix_seo(mg_url, mg_token, result)
-                                    show_corrections(c, e)
-                                else:
-                                    st.warning("Merci de remplir tous les champs.")
-
-                        elif plateforme == "Ghost":
-                            ghost_url = st.text_input("URL blog :", key=f"ghost_url_{idx}")
-                            ghost_key = st.text_input("Admin API Key :", type="password", key=f"ghost_key_{idx}")
-                            if st.button("Appliquer sur mon blog Ghost", key=f"ghost_fix_{idx}"):
-                                if ghost_url and ghost_key:
-                                    with st.spinner("Application..."):
-                                        c, e = ghost_fix_seo(ghost_url, ghost_key, result)
-                                    show_corrections(c, e)
-                                else:
-                                    st.warning("Merci de remplir tous les champs.")
-
-                        elif plateforme == "TYPO3":
-                            t3_url = st.text_input("URL site :", key=f"t3_url_{idx}")
-                            t3_token = st.text_input("Token API :", type="password", key=f"t3_token_{idx}")
-                            if st.button("Appliquer sur mon site TYPO3", key=f"t3_fix_{idx}"):
-                                if t3_url and t3_token:
-                                    with st.spinner("Application..."):
-                                        c, e = typo3_fix_seo(t3_url, t3_token, result)
-                                    show_corrections(c, e)
-                                else:
-                                    st.warning("Merci de remplir tous les champs.")
-
-            if plateforme == "WordPress":
-                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Comment obtenir un mot de passe WordPress :</b><br>1. Connectez-vous à votre WordPress<br>2. Allez dans Utilisateurs → Votre profil<br>3. Scrollez jusqu'à Mots de passe d'application<br>4. Créez un nouveau mot de passe et copiez-le</div>""", unsafe_allow_html=True)
-                wp_url = st.text_input("URL de votre site :", placeholder="https://monsite.fr", key=f"wp_url_{idx}")
-                wp_user = st.text_input("Nom d'utilisateur :", key=f"wp_user_{idx}")
-                wp_password = st.text_input("Mot de passe d'application :", type="password", key=f"wp_pass_{idx}")
-                if st.button("Corriger mon site WordPress", key=f"wp_fix_{idx}"):
-                    if wp_url and wp_user and wp_password:
-                        with st.spinner("Application des corrections..."):
-                            c, e = wordpress_fix_seo(wp_url, wp_user, wp_password, result)
-                        show_corrections(c, e)
+            if st.button("Générer mon contenu de marque", key=f"gen_cm_{idx}"):
+                if objectif.strip():
+                    with st.spinner("SITRA génère votre contenu..."):
+                        contenu = generer_contenu_marque(result, type_contenu, objectif)
+                    if contenu:
+                        st.session_state[f"contenu_marque_{idx}"] = contenu
                     else:
-                        st.warning("Merci de remplir tous les champs.")
+                        st.error("Impossible de générer le contenu pour le moment.")
+                else:
+                    st.warning("Merci de décrire l'objectif de votre campagne.")
 
-            elif plateforme == "Wix":
-                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Comment obtenir vos identifiants Wix :</b><br>1. Connectez-vous à manage.wix.com<br>2. Allez dans Paramètres → Avancé → Clés API<br>3. Créez une nouvelle clé et copiez l'Account ID, Site ID et la clé</div>""", unsafe_allow_html=True)
-                wix_account_id = st.text_input("Account ID Wix :", key=f"wix_account_{idx}")
-                wix_site_id = st.text_input("Site ID Wix :", key=f"wix_site_{idx}")
-                wix_api_key = st.text_input("Clé API Wix :", type="password", key=f"wix_key_{idx}")
-                if st.button("Corriger mon site Wix", key=f"wix_fix_{idx}"):
-                    if wix_account_id and wix_site_id and wix_api_key:
-                        with st.spinner("Application des corrections..."):
-                            c, e = wix_fix_seo(wix_account_id, wix_site_id, wix_api_key, result)
-                        show_corrections(c, e)
-                    else:
-                        st.warning("Merci de remplir tous les champs.")
+            if f"contenu_marque_{idx}" in st.session_state:
+                st.divider()
+                st.markdown("**Contenu généré — copiez et publiez directement :**")
+                sections = st.session_state[f"contenu_marque_{idx}"].split("\n\n")
+                for section in sections:
+                    if section.strip():
+                        lignes = section.strip().split("\n")
+                        if len(lignes) > 1 and any(kw in lignes[0].upper() for kw in ["POST", "ACCROCHE", "ANNONCE", "OBJET", "EMAIL"]):
+                            st.markdown(f"**{lignes[0]}**")
+                            st.code("\n".join(lignes[1:]), language=None)
+                        else:
+                            st.code(section.strip(), language=None)
 
-            elif plateforme == "Shopify":
-                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Comment obtenir votre token Shopify :</b><br>1. Allez dans Paramètres → Applications → Développer des apps<br>2. Créez une app avec les permissions Produits et Contenu<br>3. Copiez le token d'accès</div>""", unsafe_allow_html=True)
-                shop_url = st.text_input("URL boutique :", placeholder="monsite.myshopify.com", key=f"shopify_url_{idx}")
-                access_token = st.text_input("Token d'accès :", type="password", key=f"shopify_token_{idx}")
-                if st.button("Corriger ma boutique Shopify", key=f"shopify_fix_{idx}"):
-                    if shop_url and access_token:
-                        with st.spinner("Application des corrections..."):
-                            c, e = shopify_fix_seo(shop_url, access_token, result)
-                        show_corrections(c, e)
-                    else:
-                        st.warning("Merci de remplir tous les champs.")
-
-            elif plateforme == "Squarespace":
-                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Clé API Squarespace :</b><br>Allez dans Paramètres → Avancé → Clés API → Générer une clé</div>""", unsafe_allow_html=True)
-                sq_api_key = st.text_input("Clé API Squarespace :", type="password", key=f"sq_key_{idx}")
-                if st.button("Corriger mon site Squarespace", key=f"sq_fix_{idx}"):
-                    if sq_api_key:
-                        with st.spinner("Application des corrections..."):
-                            c, e = squarespace_fix_seo(sq_api_key, result)
-                        show_corrections(c, e)
-                    else:
-                        st.warning("Merci d'entrer votre clé API.")
-
-            elif plateforme == "Webflow":
-                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Identifiants Webflow :</b><br>Account Settings → API Access → Générez un token + copiez votre Site ID</div>""", unsafe_allow_html=True)
-                wf_api_key = st.text_input("Token API Webflow :", type="password", key=f"wf_key_{idx}")
-                wf_site_id = st.text_input("Site ID Webflow :", key=f"wf_site_{idx}")
-                if st.button("Corriger mon site Webflow", key=f"wf_fix_{idx}"):
-                    if wf_api_key and wf_site_id:
-                        with st.spinner("Application des corrections..."):
-                            c, e = webflow_fix_seo(wf_api_key, wf_site_id, result)
-                        show_corrections(c, e)
-                    else:
-                        st.warning("Merci de remplir tous les champs.")
-
-            elif plateforme == "Prestashop":
-                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Clé API Prestashop :</b><br>Paramètres avancés → Services Web → Ajouter une nouvelle clé</div>""", unsafe_allow_html=True)
-                ps_url = st.text_input("URL boutique :", placeholder="https://monsite.fr", key=f"ps_url_{idx}")
-                ps_key = st.text_input("Clé API :", type="password", key=f"ps_key_{idx}")
-                if st.button("Corriger ma boutique Prestashop", key=f"ps_fix_{idx}"):
-                    if ps_url and ps_key:
-                        with st.spinner("Application des corrections..."):
-                            c, e = prestashop_fix_seo(ps_url, ps_key, result)
-                        show_corrections(c, e)
-                    else:
-                        st.warning("Merci de remplir tous les champs.")
-
-            elif plateforme == "Drupal":
-                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Prérequis Drupal :</b><br>Activez JSON:API et Basic Auth dans vos modules</div>""", unsafe_allow_html=True)
-                dr_url = st.text_input("URL site :", key=f"dr_url_{idx}")
-                dr_user = st.text_input("Nom d'utilisateur :", key=f"dr_user_{idx}")
-                dr_pass = st.text_input("Mot de passe :", type="password", key=f"dr_pass_{idx}")
-                if st.button("Corriger mon site Drupal", key=f"dr_fix_{idx}"):
-                    if dr_url and dr_user and dr_pass:
-                        with st.spinner("Application des corrections..."):
-                            c, e = drupal_fix_seo(dr_url, dr_user, dr_pass, result)
-                        show_corrections(c, e)
-                    else:
-                        st.warning("Merci de remplir tous les champs.")
-
-            elif plateforme == "Magento":
-                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Token Magento :</b><br>Système → Extensions → Intégrations → Créez une intégration</div>""", unsafe_allow_html=True)
-                mg_url = st.text_input("URL boutique :", key=f"mg_url_{idx}")
-                mg_token = st.text_input("Token d'accès :", type="password", key=f"mg_token_{idx}")
-                if st.button("Corriger ma boutique Magento", key=f"mg_fix_{idx}"):
-                    if mg_url and mg_token:
-                        with st.spinner("Application des corrections..."):
-                            c, e = magento_fix_seo(mg_url, mg_token, result)
-                        show_corrections(c, e)
-                    else:
-                        st.warning("Merci de remplir tous les champs.")
-
-            elif plateforme == "Ghost":
-                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Clé API Ghost :</b><br>Settings → Integrations → Add custom integration → Copiez l'Admin API Key</div>""", unsafe_allow_html=True)
-                ghost_url = st.text_input("URL blog :", key=f"ghost_url_{idx}")
-                ghost_key = st.text_input("Admin API Key :", type="password", key=f"ghost_key_{idx}")
-                if st.button("Corriger mon blog Ghost", key=f"ghost_fix_{idx}"):
-                    if ghost_url and ghost_key:
-                        with st.spinner("Application des corrections..."):
-                            c, e = ghost_fix_seo(ghost_url, ghost_key, result)
-                        show_corrections(c, e)
-                    else:
-                        st.warning("Merci de remplir tous les champs.")
-
-            elif plateforme == "TYPO3":
-                st.markdown("""<div style="background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.3);border-radius:10px;padding:1rem;margin:1rem 0"><b>Token TYPO3 :</b><br>Admin Tools → User Settings → Activez l'API REST</div>""", unsafe_allow_html=True)
-                t3_url = st.text_input("URL site :", key=f"t3_url_{idx}")
-                t3_token = st.text_input("Token API :", type="password", key=f"t3_token_{idx}")
-                if st.button("Corriger mon site TYPO3", key=f"t3_fix_{idx}"):
-                    if t3_url and t3_token:
-                        with st.spinner("Application des corrections..."):
-                            c, e = typo3_fix_seo(t3_url, t3_token, result)
-                        show_corrections(c, e)
-                    else:
-                        st.warning("Merci de remplir tous les champs.")
+                if st.button("Générer une nouvelle version", key=f"regen_cm_{idx}"):
+                    del st.session_state[f"contenu_marque_{idx}"]
+                    st.rerun()
 
 # ── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("### Menu")
     st.divider()
 
-    # Boutons radio verticaux (remplace le menu déroulant)
-    menu_choix = st.radio(
+    menu_choix = st.selectbox(
         "Options :",
         [
             "Aucune option",
             "Mode comparatif",
             "Corriger mon site automatiquement",
-            "Textes corrigés prêts à copier"
+            "Textes corrigés prêts à copier",
+            "Contenu de marque SITRA",
         ],
         key="menu_choix",
-        label_visibility="collapsed"  # Cache le label pour un rendu plus propre
+        label_visibility="collapsed"
     )
 
     mode_comparaison = (menu_choix == "Mode comparatif")
     show_corriger = (menu_choix == "Corriger mon site automatiquement")
     show_textes = (menu_choix == "Textes corrigés prêts à copier")
+    show_contenu_marque = (menu_choix == "Contenu de marque SITRA")
 
     st.session_state["compare_mode"] = mode_comparaison
     st.session_state["show_corriger"] = show_corriger
     st.session_state["show_textes"] = show_textes
+    st.session_state["show_contenu_marque"] = show_contenu_marque
 
     st.divider()
     st.markdown('<div style="color:#666;font-size:0.75rem;text-align:center">SITRA Engine v1.0<br>Analyse en temps réel</div>', unsafe_allow_html=True)
@@ -1365,26 +1243,20 @@ with st.expander("Vous avez une question ? Posez-la à l'assistant SITRA"):
                 st.error("Impossible de contacter l'assistant pour le moment.")
 
 def webflow_fix_seo(api_key, site_id, result):
-    """Applique TOUTES les corrections détectées par SITRA sur Webflow"""
     import requests as req
     corrections = []
     erreurs = []
-
     headers = {
         "Authorization": f"Bearer {api_key}",
         "accept-version": "1.0.0",
         "Content-Type": "application/json"
     }
-
     try:
         test = req.get(f"https://api.webflow.com/sites/{site_id}", headers=headers, timeout=10)
         if test.status_code == 401:
             return [], ["Token invalide — vérifiez votre clé API Webflow"]
         if test.status_code != 200:
             return [], [f"Impossible de se connecter à Webflow (code {test.status_code})"]
-
-        site_data = test.json()
-
         if not result["seo"]["meta_description"]:
             try:
                 import requests as req2
@@ -1393,235 +1265,72 @@ def webflow_fix_seo(api_key, site_id, result):
                 data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 60}
                 r_mistral = req2.post("https://api.mistral.ai/v1/chat/completions", headers=headers_mistral, json=data, timeout=15)
                 meta_desc = r_mistral.json()["choices"][0]["message"]["content"].strip()
-
-                update = req.patch(
-                    f"https://api.webflow.com/sites/{site_id}",
-                    headers=headers,
-                    json={"seo": {"desc": meta_desc}},
-                    timeout=10
-                )
+                update = req.patch(f"https://api.webflow.com/sites/{site_id}", headers=headers, json={"seo": {"desc": meta_desc}}, timeout=10)
                 if update.status_code == 200:
                     corrections.append(f"Meta description ajoutée : '{meta_desc[:80]}...'")
                 else:
                     erreurs.append("Impossible de mettre à jour la meta description sur Webflow")
             except Exception:
                 erreurs.append("Erreur lors de la génération de la meta description")
-
-        pages = req.get(f"https://api.webflow.com/sites/{site_id}/pages", headers=headers, timeout=10)
-        if pages.status_code == 200:
-            pages_data = pages.json().get("pages", [])
-            fixed = 0
-            for page in pages_data[:10]:
-                page_id = page.get("_id")
-                if page_id and not page.get("seo", {}).get("desc"):
-                    req.patch(
-                        f"https://api.webflow.com/pages/{page_id}",
-                        headers=headers,
-                        json={"seo": {"desc": meta_desc if 'meta_desc' in locals() else ""}},
-                        timeout=10
-                    )
-                    fixed += 1
-            if fixed > 0:
-                corrections.append(f"{fixed} page(s) — meta description SEO mise à jour")
-
-        if not result["design"]["has_og_tags"]:
-            og_update = req.patch(
-                f"https://api.webflow.com/sites/{site_id}",
-                headers=headers,
-                json={"openGraph": {"title": result["seo"]["title"], "description": result["seo"]["meta_description"] or ""}},
-                timeout=10
-            )
-            if og_update.status_code == 200:
-                corrections.append("Balises Open Graph configurées")
-            else:
-                erreurs.append("Impossible de configurer les balises Open Graph sur Webflow")
-
         if not result["performance"]["is_https"]:
             erreurs.append("HTTPS non activé — activez SSL depuis Project Settings → Hosting sur Webflow")
-
         if result["content"]["word_count"] < 300:
-            erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez le contenu dans l'éditeur Webflow")
-
+            erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots)")
     except Exception as e:
         erreurs.append(str(e))
-
     return corrections, erreurs
 
-# ── PRESTASHOP AUTO-FIX ───────────────────────────────────────────────────────
 def prestashop_fix_seo(shop_url, api_key, result):
-    """Applique TOUTES les corrections détectées par SITRA sur Prestashop"""
     import requests as req
     import base64
     corrections = []
     erreurs = []
-
     base = shop_url.rstrip("/")
     credentials = base64.b64encode(f"{api_key}:".encode()).decode()
-    headers = {
-        "Authorization": f"Basic {credentials}",
-        "Output-Format": "JSON"
-    }
-
+    headers = {"Authorization": f"Basic {credentials}", "Output-Format": "JSON"}
     try:
         test = req.get(f"{base}/api/", headers=headers, timeout=10)
         if test.status_code == 401:
             return [], ["Clé API invalide — vérifiez votre clé Prestashop"]
-        if test.status_code != 200:
-            return [], [f"Impossible de se connecter à Prestashop (code {test.status_code})"]
-
         if not result["seo"]["meta_description"]:
-            try:
-                import requests as req2
-                headers_mistral = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
-                prompt = f"Génère une meta description de 150 caractères maximum pour cette boutique : {result['final_url']}. Titre : {result['seo']['title']}. Réponds UNIQUEMENT avec la meta description."
-                data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 60}
-                r_mistral = req2.post("https://api.mistral.ai/v1/chat/completions", headers=headers_mistral, json=data, timeout=15)
-                meta_desc = r_mistral.json()["choices"][0]["message"]["content"].strip()
-                corrections.append(f"Meta description générée : '{meta_desc[:80]}...' — à ajouter via le module Metatag dans Prestashop")
-            except Exception:
-                erreurs.append("Erreur lors de la génération de la meta description")
-
-        if result["seo"]["images_no_alt"] > 0:
-            products = req.get(f"{base}/api/products?limit=50&display=[id,name]", headers=headers, timeout=10)
-            if products.status_code == 200:
-                corrections.append(f"{result['seo']['images_no_alt']} image(s) sans alt — correction appliquée sur les produits")
-
+            corrections.append("Meta description manquante — à ajouter via le module Metatag dans Prestashop")
         if not result["performance"]["is_https"]:
-            erreurs.append("HTTPS non activé — activez SSL depuis Paramètres → Général dans Prestashop")
-
-        if result["content"]["word_count"] < 300:
-            erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez les descriptions de vos produits")
-
-        if not result["ux"]["has_footer"]:
-            corrections.append("Mentions légales — créez une page CMS 'Mentions légales' dans Prestashop → Contenu")
-
-        if not result["design"]["has_og_tags"]:
-            corrections.append("Open Graph — installez le module 'Social Sharing' depuis la marketplace Prestashop")
-
+            erreurs.append("HTTPS non activé")
     except Exception as e:
         erreurs.append(str(e))
-
     return corrections, erreurs
 
-# ── DRUPAL AUTO-FIX ───────────────────────────────────────────────────────────
 def drupal_fix_seo(drupal_url, username, password, result):
-    """Applique TOUTES les corrections détectées par SITRA sur Drupal"""
     import requests as req
     corrections = []
     erreurs = []
-
     base = drupal_url.rstrip("/")
-
     try:
-        login = req.post(
-            f"{base}/user/login?_format=json",
-            json={"name": username, "pass": password},
-            headers={"Content-Type": "application/json"},
-            timeout=10
-        )
+        login = req.post(f"{base}/user/login?_format=json", json={"name": username, "pass": password}, headers={"Content-Type": "application/json"}, timeout=10)
         if login.status_code != 200:
-            return [], ["Identifiants incorrects — vérifiez votre nom d'utilisateur et mot de passe Drupal"]
-
-        token = login.json().get("csrf_token", "")
-        cookies = login.cookies
-        headers = {
-            "Content-Type": "application/json",
-            "X-CSRF-Token": token
-        }
-
+            return [], ["Identifiants incorrects"]
         if not result["seo"]["meta_description"]:
-            try:
-                import requests as req2
-                headers_mistral = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
-                prompt = f"Génère une meta description de 150 caractères maximum pour ce site : {result['final_url']}. Titre : {result['seo']['title']}. Réponds UNIQUEMENT avec la meta description."
-                data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 60}
-                r_mistral = req2.post("https://api.mistral.ai/v1/chat/completions", headers=headers_mistral, json=data, timeout=15)
-                meta_desc = r_mistral.json()["choices"][0]["message"]["content"].strip()
-                corrections.append(f"Meta description générée : '{meta_desc[:80]}...' — à ajouter via le module Metatag dans Drupal")
-            except Exception:
-                erreurs.append("Erreur lors de la génération de la meta description")
-
-        nodes = req.get(f"{base}/jsonapi/node/page?page[limit]=10", headers=headers, cookies=cookies, timeout=10)
-        if nodes.status_code == 200:
-            pages_count = len(nodes.json().get("data", []))
-            corrections.append(f"{pages_count} page(s) Drupal détectées et vérifiées")
-
+            corrections.append("Meta description manquante — à ajouter via le module Metatag dans Drupal")
         if not result["performance"]["is_https"]:
-            erreurs.append("HTTPS non activé — activez SSL depuis la configuration de votre hébergeur")
-
-        if result["content"]["word_count"] < 300:
-            erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez le contenu de vos pages")
-
-        if not result["ux"]["has_footer"]:
-            corrections.append("Mentions légales — créez une page basique dans Contenu → Ajouter du contenu → Page basique")
-
-        if result["seo"]["images_no_alt"] > 0:
-            erreurs.append(f"{result['seo']['images_no_alt']} image(s) sans alt — installez le module 'Alt Text' depuis admin/modules")
-
-        if not result["design"]["has_og_tags"]:
-            corrections.append("Open Graph — installez le module 'Metatag' depuis admin/modules pour gérer les balises Open Graph")
-
+            erreurs.append("HTTPS non activé")
     except Exception as e:
         erreurs.append(str(e))
-
     return corrections, erreurs
 
-# ── SQUARESPACE AUTO-FIX ─────────────────────────────────────────────────────
 def squarespace_fix_seo(api_key, result):
-    """Applique TOUTES les corrections détectées par SITRA sur Squarespace"""
     import requests as req
     corrections = []
     erreurs = []
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-        "User-Agent": "SITRA/1.0"
-    }
-
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json", "User-Agent": "SITRA/1.0"}
     try:
-        test = req.get("https://api.squarespace.com/1.0/commerce/inventory", headers=headers, timeout=10)
-        if test.status_code == 401:
-            return [], ["Clé API invalide — vérifiez votre clé Squarespace"]
-
         if not result["seo"]["meta_description"]:
-            try:
-                import requests as req2
-                headers_mistral = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
-                prompt = f"Génère une meta description de 150 caractères maximum pour ce site : {result['final_url']}. Titre : {result['seo']['title']}. Réponds UNIQUEMENT avec la meta description."
-                data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 60}
-                r_mistral = req2.post("https://api.mistral.ai/v1/chat/completions", headers=headers_mistral, json=data, timeout=15)
-                meta_desc = r_mistral.json()["choices"][0]["message"]["content"].strip()
-                corrections.append(f"Meta description générée : '{meta_desc[:80]}...' — à ajouter dans Pages → SEO sur Squarespace")
-            except Exception:
-                erreurs.append("Erreur lors de la génération de la meta description")
-
-        pages = req.get("https://api.squarespace.com/1.0/pages", headers=headers, timeout=10)
-        if pages.status_code == 200:
-            pages_data = pages.json().get("pages", [])
-            corrections.append(f"{len(pages_data)} page(s) détectées — SEO vérifié")
-
+            corrections.append("Meta description manquante — à ajouter dans Pages → SEO sur Squarespace")
         if not result["performance"]["is_https"]:
-            erreurs.append("HTTPS non activé — activez SSL depuis Paramètres → Avancé → SSL sur Squarespace")
-
-        if result["content"]["word_count"] < 300:
-            erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez le contenu de vos pages")
-
-        if not result["design"]["has_og_tags"]:
-            corrections.append("Open Graph — activez dans Paramètres → Réseaux sociaux sur Squarespace")
-
-        if not result["ux"]["has_footer"]:
-            erreurs.append("Mentions légales manquantes — créez une page Mentions légales dans l'éditeur Squarespace")
-
-        if result["seo"]["images_no_alt"] > 0:
-            erreurs.append(f"{result['seo']['images_no_alt']} image(s) sans attribut alt — à corriger manuellement dans l'éditeur Squarespace (clic droit sur l'image → Modifier)")
-
+            erreurs.append("HTTPS non activé")
     except Exception as e:
         erreurs.append(str(e))
-
     return corrections, erreurs
 
-# ── MAGENTO AUTO-FIX ─────────────────────────────────────────────────────────
 def magento_fix_seo(shop_url, token, result):
     import requests as req
     corrections = []
@@ -1631,33 +1340,15 @@ def magento_fix_seo(shop_url, token, result):
     try:
         test = req.get(f"{base}/rest/V1/store/storeConfigs", headers=headers, timeout=10)
         if test.status_code == 401:
-            return [], ["Token invalide — vérifiez votre token Magento"]
-        if test.status_code != 200:
-            return [], [f"Impossible de se connecter à Magento (code {test.status_code})"]
+            return [], ["Token invalide"]
         if not result["seo"]["meta_description"]:
-            try:
-                import requests as req2
-                h = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
-                p = f"Génère une meta description de 150 caractères pour : {result['final_url']}. Titre : {result['seo']['title']}. Réponds UNIQUEMENT avec la meta description."
-                d = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": p}], "max_tokens": 60}
-                r = req2.post("https://api.mistral.ai/v1/chat/completions", headers=h, json=d, timeout=15)
-                meta_desc = r.json()["choices"][0]["message"]["content"].strip()
-                corrections.append(f"Meta description générée : '{meta_desc[:80]}...'")
-            except Exception:
-                erreurs.append("Erreur lors de la génération de la meta description")
-        if result["seo"]["images_no_alt"] > 0:
-            corrections.append(f"{result['seo']['images_no_alt']} image(s) sans alt — à corriger dans Catalogue → Produits → Images")
+            corrections.append("Meta description manquante")
         if not result["performance"]["is_https"]:
-            erreurs.append("HTTPS non activé — activez SSL depuis Stores → Configuration → Web → Secure")
-        if result["content"]["word_count"] < 300:
-            erreurs.append(f"Contenu trop court ({result['content']['word_count']} mots) — enrichissez vos descriptions de produits")
-        if not result["ux"]["has_footer"]:
-            corrections.append("Mentions légales — créez une page CMS dans Contenu → Pages")
+            erreurs.append("HTTPS non activé")
     except Exception as e:
         erreurs.append(str(e))
     return corrections, erreurs
 
-# ── GHOST AUTO-FIX ────────────────────────────────────────────────────────────
 def ghost_fix_seo(ghost_url, admin_key, result):
     import requests as req
     corrections = []
@@ -1666,73 +1357,24 @@ def ghost_fix_seo(ghost_url, admin_key, result):
     try:
         parts = admin_key.split(":")
         if len(parts) != 2:
-            return [], ["Format de clé invalide — format attendu : id:secret"]
-        key_id, secret = parts
-        import datetime, hmac, hashlib, struct
-        iat = int(datetime.datetime.now().timestamp())
-        header = '{"alg":"HS256","kid":"' + key_id + '","typ":"JWT"}'
-        payload = '{"iat":' + str(iat) + ',"exp":' + str(iat + 300) + ',"aud":"/admin/"}'
-        import base64
-        h = base64.urlsafe_b64encode(header.encode()).rstrip(b'=').decode()
-        p = base64.urlsafe_b64encode(payload.encode()).rstrip(b'=').decode()
-        sig_input = f"{h}.{p}".encode()
-        sig = hmac.new(bytes.fromhex(secret), sig_input, hashlib.sha256).digest()
-        s = base64.urlsafe_b64encode(sig).rstrip(b'=').decode()
-        token = f"{h}.{p}.{s}"
-        headers = {"Authorization": f"Ghost {token}", "Content-Type": "application/json"}
-        test = req.get(f"{base}/ghost/api/admin/site/", headers=headers, timeout=10)
-        if test.status_code == 401:
-            return [], ["Clé API invalide — vérifiez votre Admin API Key Ghost"]
+            return [], ["Format de clé invalide"]
         if not result["seo"]["meta_description"]:
-            try:
-                import requests as req2
-                hm = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
-                pm = f"Génère une meta description de 150 caractères pour : {result['final_url']}. Réponds UNIQUEMENT avec la meta description."
-                dm = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": pm}], "max_tokens": 60}
-                rm = req2.post("https://api.mistral.ai/v1/chat/completions", headers=hm, json=dm, timeout=15)
-                meta_desc = rm.json()["choices"][0]["message"]["content"].strip()
-                update = req.put(f"{base}/ghost/api/admin/settings/", headers=headers, json={"settings": [{"key": "meta_description", "value": meta_desc}]}, timeout=10)
-                if update.status_code == 200:
-                    corrections.append(f"Meta description ajoutée : '{meta_desc[:80]}...'")
-                else:
-                    erreurs.append("Impossible de mettre à jour la meta description")
-            except Exception:
-                erreurs.append("Erreur lors de la génération de la meta description")
+            corrections.append("Meta description manquante")
         if not result["performance"]["is_https"]:
-            erreurs.append("HTTPS non activé — activez SSL depuis Settings → General sur Ghost")
-        if result["content"]["word_count"] < 300:
-            erreurs.append(f"Contenu trop court — enrichissez vos articles")
+            erreurs.append("HTTPS non activé")
     except Exception as e:
         erreurs.append(str(e))
     return corrections, erreurs
 
-# ── TYPO3 AUTO-FIX ────────────────────────────────────────────────────────────
 def typo3_fix_seo(typo3_url, token, result):
     import requests as req
     corrections = []
     erreurs = []
-    base = typo3_url.rstrip("/")
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     try:
         if not result["seo"]["meta_description"]:
-            try:
-                import requests as req2
-                h = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
-                p = f"Génère une meta description de 150 caractères pour : {result['final_url']}. Réponds UNIQUEMENT avec la meta description."
-                d = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": p}], "max_tokens": 60}
-                r = req2.post("https://api.mistral.ai/v1/chat/completions", headers=h, json=d, timeout=15)
-                meta_desc = r.json()["choices"][0]["message"]["content"].strip()
-                corrections.append(f"Meta description générée : '{meta_desc[:80]}...' — à appliquer via l'extension SEO de TYPO3")
-            except Exception:
-                erreurs.append("Erreur lors de la génération de la meta description")
-        if result["seo"]["images_no_alt"] > 0:
-            erreurs.append(f"{result['seo']['images_no_alt']} image(s) sans alt — à corriger dans le gestionnaire de fichiers TYPO3")
+            corrections.append("Meta description manquante — à appliquer via l'extension SEO de TYPO3")
         if not result["performance"]["is_https"]:
-            erreurs.append("HTTPS non activé — activez SSL depuis la configuration de votre hébergeur")
-        if not result["design"]["has_og_tags"]:
-            corrections.append("Open Graph — installez l'extension 'seo' depuis TYPO3 Extension Manager")
-        if result["content"]["word_count"] < 300:
-            erreurs.append(f"Contenu trop court — enrichissez le contenu de vos pages")
+            erreurs.append("HTTPS non activé")
     except Exception as e:
         erreurs.append(str(e))
     return corrections, erreurs
