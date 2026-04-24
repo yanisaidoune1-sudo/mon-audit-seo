@@ -8,7 +8,7 @@
 <meta property="og:title" content="SITRA — Comment améliorer votre site web" />
 <meta property="og:description" content="Analyse, correction automatique, visibilité et sécurité pour votre site web." />
 <meta property="og:image" content="https://yanisaidoune1-sudo.github.io/mon-audit-seo/favicon.svg" />
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23000000'/%3E%3Ctext x='50' y='75' font-family='Georgia%2C serif' font-size='80' font-weight='bold' text-anchor='middle' fill='url(%23g)'%3E%3CdivergingGradient id='g'%3ES%3C/text%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%237c6af7'/%3E%3Cstop offset='100%25' stop-color='%23f07cf7'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23000000'/%3E%3Cdefs%3E%3ClinearGradient id='fg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%237c6af7'/%3E%3Cstop offset='100%25' stop-color='%23f07cf7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='50' y='78' font-family='Arial Black%2C sans-serif' font-size='72' font-weight='900' text-anchor='middle' fill='url(%23fg)'%3ES%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -164,28 +164,28 @@
 <div id="intro-screen">
   <div class="intro-glow"></div>
   <canvas id="particle-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;display:none"></canvas>
-  <svg id="s-svg" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:3;width:220px;height:286px">
-    <defs>
-      <linearGradient id="grad-s" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#7c6af7"/>
-        <stop offset="100%" style="stop-color:#f07cf7"/>
-      </linearGradient>
-    </defs>
-    <text
-      x="100" y="210"
-      font-family="Georgia, 'Times New Roman', serif"
-      font-size="240"
-      font-weight="bold"
-      text-anchor="middle"
-      fill="url(#grad-s)"
-      stroke="url(#grad-s)"
-      stroke-width="6"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      style="filter:drop-shadow(0 0 14px rgba(124,106,247,0.7));stroke-dasharray:1200;stroke-dashoffset:1200;fill-opacity:0;animation:draw-s 1.8s cubic-bezier(0.4,0,0.2,1) forwards 0.2s, fill-s 0.6s ease forwards 2.1s"
-    >S</text>
-  </svg>
-  <div class="intro-tagline">SITRA</div>
+  <div id="s-svg" style="position:relative;z-index:3;display:flex;align-items:center;justify-content:center;">
+    <span id="sitra-text" style="
+      font-family:'Georgia','Times New Roman',serif;
+      font-size:clamp(10rem,30vw,18rem);
+      font-weight:900;
+      line-height:1;
+      background:linear-gradient(135deg,#7c6af7 0%,#c070f0 50%,#f07cf7 100%);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+      opacity:0;
+      filter:drop-shadow(0 0 24px rgba(124,106,247,0.8));
+      animation:sitra-appear 0.5s cubic-bezier(0.4,0,0.2,1) forwards 0.2s;
+    ">S</span>
+  </div>
+  <style>
+    @keyframes sitra-appear {
+      0%  { opacity:0; transform:scale(0.85) translateY(10px); }
+      60% { opacity:1; transform:scale(1.04) translateY(-2px); }
+      100%{ opacity:1; transform:scale(1) translateY(0); }
+    }
+  </style>
 </div>
 
 <!-- ── NAV ── -->
@@ -194,7 +194,6 @@
   <div class="nav-links">
     <a href="#features">Fonctionnalités</a>
     <a href="#pricing">Forfaits</a>
-    <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" target="_blank" style="color:var(--muted);text-decoration:none;font-size:0.9rem;transition:color 0.2s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">Contenu de marque</a>
     <a href="#contact">Contact</a>
     <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="nav-cta" target="_blank">Analyser mon site</a>
   </div>
@@ -298,17 +297,17 @@
     <div class="pricing-card reveal">
       <div class="plan-name">Gratuit</div>
       <div class="plan-price">0€ <span>/ toujours</span></div>
-      <div class="plan-desc">Pour découvrir SITRA et voir l'état de votre site</div>
+      <div class="plan-desc">Pour découvrir SITRA et évaluer l'état actuel de votre site</div>
       <ul class="plan-features">
-        <li class="included">Analyse complète de votre site</li>
-        <li class="included">Score global par catégorie</li>
-        <li class="included">Liste des problèmes détectés</li>
-        <li class="included">Objectifs à atteindre</li>
+        <li class="included">Analyse complète de votre site web</li>
+        <li class="included">Score détaillé par catégorie</li>
+        <li class="included">Identification des problèmes prioritaires</li>
+        <li class="included">Plan d'objectifs personnalisé</li>
         <li class="included">2 analyses offertes</li>
-        <li class="excluded">Conseils personnalisés par l'IA</li>
+        <li class="excluded">Recommandations personnalisées par l'IA</li>
         <li class="excluded">Rapport PDF téléchargeable</li>
         <li class="excluded">Propositions de corrections sur mesure</li>
-        <li class="excluded">Contenu de marque IA</li>
+        <li class="excluded">Génération de contenu de marque</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-free" target="_blank">Commencer gratuitement</a>
     </div>
@@ -317,16 +316,15 @@
       <div class="popular-badge">Le plus populaire</div>
       <div class="plan-name">Pro</div>
       <div class="plan-price">9,99€ <span>/ forfait</span></div>
-      <div class="plan-desc">Pour savoir exactement quoi faire et comment améliorer votre site</div>
+      <div class="plan-desc">Pour identifier précisément les axes d'amélioration et passer à l'action</div>
       <ul class="plan-features">
-        <li class="included">Tout ce qui est dans Gratuit</li>
+        <li class="included">Toutes les fonctionnalités du plan Gratuit</li>
         <li class="included">Analyses illimitées</li>
-        <li class="included">Conseils personnalisés rédigés par l'IA</li>
-        <li class="included">Rapport complet téléchargeable en PDF</li>
-        <li class="included">Analyse approfondie des images</li>
-        <li class="included">SITRA rédige pour vous les textes corrigés de votre site à copier-coller</li>
-        <li class="included">Contenu de marque IA — posts, emails, publicités</li>
-        <li class="included">Détection des éléments inutiles sur le site</li>
+        <li class="included">Recommandations personnalisées rédigées par l'IA</li>
+        <li class="included">Rapport d'analyse complet téléchargeable en PDF</li>
+        <li class="included">Audit approfondi des images et médias</li>
+        <li class="included">Rédaction automatique des textes optimisés, prêts à intégrer</li>
+        <li class="included">Détection des éléments superflus ralentissant votre site</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-paid" target="_blank">Choisir Pro</a>
     </div>
@@ -334,13 +332,14 @@
     <div class="pricing-card reveal">
       <div class="plan-name">Premium</div>
       <div class="plan-price">19,99€ <span>/ forfait</span></div>
-      <div class="plan-desc">Pour les sites qui ont besoin d'un suivi régulier et approfondi</div>
+      <div class="plan-desc">Pour les sites qui nécessitent un suivi approfondi et des outils avancés</div>
       <ul class="plan-features">
-        <li class="included">Tout ce qui est dans Pro</li>
+        <li class="included">Toutes les fonctionnalités du plan Pro</li>
         <li class="included">Analyses illimitées</li>
-        <li class="included">Mode comparatif — comparez votre site à un concurrent</li>
-        <li class="included">SITRA crée 2 nouveaux designs de site, vous choisissez celui que vous préférez</li>
-        <li class="included">Accès en avant-première aux nouvelles fonctionnalités</li>
+        <li class="included">Mode comparatif — analysez votre site face à un concurrent</li>
+        <li class="included">Génération de contenu de marque IA — posts animés, emails, publicités</li>
+        <li class="included">SITRA conçoit 2 propositions de design pour votre site</li>
+        <li class="included">Accès prioritaire aux nouvelles fonctionnalités</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-paid" target="_blank">Choisir Premium</a>
     </div>
@@ -351,7 +350,7 @@
 <!-- ── CTA ── -->
 <section class="cta-section">
   <h2 class="cta-title reveal">Votre site est-il<br><span style="background:linear-gradient(135deg,#7c6af7,#f07cf7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">vraiment optimisé ?</span></h2>
-  <p class="cta-sub reveal">Découvrez-le en 30 secondes. Gratuit, sans inscription.</p>
+  <p class="cta-sub reveal">Découvrez-le en 30 secondes.</p>
   <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="btn-primary reveal" target="_blank">Analyser mon site</a>
 </section>
 
@@ -359,7 +358,7 @@
 <section class="contact-section" id="contact">
   <div class="section-label">Contact</div>
   <h2 class="section-title reveal" style="margin-bottom:0">Une question ?</h2>
-  <p style="color:var(--muted);margin-top:1rem;margin-bottom:0;animation:fadeUp 0.6s ease both" class="reveal">Envoyez-nous un message, nous vous répondrons rapidement.</p>
+  <p style="color:var(--muted);margin-top:1rem;margin-bottom:0" class="reveal">Notre assistant IA répond instantanément à vos questions.</p>
   <div class="contact-form reveal">
     <div>
       <label>Votre nom</label>
@@ -373,9 +372,16 @@
       <label>Votre message</label>
       <textarea id="c-msg" placeholder="Décrivez votre question ou problème..."></textarea>
     </div>
-    <button class="btn-primary" style="width:100%" onclick="sendContact()">Envoyer le message</button>
-    <div id="contact-success">✅ Message envoyé ! Nous vous répondrons bientôt.</div>
+    <button class="btn-primary" style="width:100%" onclick="sendContactAI()">Envoyer le message</button>
     <div id="contact-error" style="display:none;color:#dc3545;font-size:0.9rem;margin-top:1rem;text-align:center">Merci de remplir tous les champs.</div>
+    <div id="contact-loading" style="display:none;text-align:center;margin-top:1rem;color:var(--muted)">
+      <span style="display:inline-block;width:18px;height:18px;border:2px solid #667eea;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:8px"></span>
+      L'assistant analyse votre message...
+    </div>
+    <div id="contact-ai-response" style="display:none;margin-top:1.5rem;background:rgba(102,126,234,0.08);border:1px solid rgba(102,126,234,0.3);border-radius:12px;padding:1.2rem">
+      <div style="color:#7c6af7;font-weight:600;font-size:0.85rem;margin-bottom:0.6rem">Réponse de l'assistant SITRA</div>
+      <div id="ai-response-text" style="color:var(--text);font-size:0.9rem;line-height:1.6"></div>
+    </div>
   </div>
 </section>
 
@@ -401,9 +407,9 @@
   }
   updateViews();
 
-  // Animation intro S avec particules
+  // Animation intro SITRA
   document.body.style.overflow = 'hidden';
-  const svg = document.getElementById('s-svg');
+  const sitraEl = document.getElementById('sitra-text');
   const canvas = document.getElementById('particle-canvas');
   const ctx2 = canvas.getContext('2d');
   canvas.width = window.innerWidth;
@@ -454,7 +460,7 @@
 
   let particles = [];
   function spawnParticles() {
-    const rect = svg.getBoundingClientRect();
+    const rect = sitraEl.getBoundingClientRect();
     const cx = rect.left + rect.width/2;
     const cy = rect.top + rect.height/2;
     for (let i = 0; i < 150; i++) {
@@ -472,44 +478,86 @@
 
   // Séquence
   setTimeout(() => {
-    svg.style.transition = 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1)';
-    svg.style.transform = 'scale(0.78)';
-  }, 2800);
+    sitraEl.style.transition = 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+    sitraEl.style.transform = 'scale(0.88)';
+  }, 1800);
   setTimeout(() => {
     canvas.style.display = 'block';
     spawnParticles();
     animParticles();
-    svg.style.transition = 'transform 0.45s ease, opacity 0.35s ease';
-    svg.style.transform = 'scale(3)';
-    svg.style.opacity = '0';
-    document.querySelector('.intro-tagline').style.transition = 'opacity 0.3s';
-    document.querySelector('.intro-tagline').style.opacity = '0';
+    sitraEl.style.transition = 'transform 0.45s ease, opacity 0.35s ease';
+    sitraEl.style.transform = 'scale(2.2)';
+    sitraEl.style.opacity = '0';
     document.querySelector('.intro-glow').style.transition = 'opacity 0.3s';
     document.querySelector('.intro-glow').style.opacity = '0';
-  }, 3150);
+  }, 2200);
   setTimeout(() => {
     const intro = document.getElementById('intro-screen');
     intro.style.transition = 'opacity 0.4s';
     intro.style.opacity = '0';
     document.body.style.overflow = '';
     setTimeout(() => intro.remove(), 400);
-  }, 3800);
+  }, 2800);
 
-  // Contact form
-  function sendContact() {
-    const nom = document.getElementById('c-nom').value;
-    const email = document.getElementById('c-email').value;
-    const msg = document.getElementById('c-msg').value;
+  // Add spin animation
+  const style = document.createElement('style');
+  style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+  document.head.appendChild(style);
+
+  // 8. AI-powered contact form
+  async function sendContactAI() {
+    const nom = document.getElementById('c-nom').value.trim();
+    const email = document.getElementById('c-email').value.trim();
+    const msg = document.getElementById('c-msg').value.trim();
     const err = document.getElementById('contact-error');
-    const suc = document.getElementById('contact-success');
+    const loading = document.getElementById('contact-loading');
+    const resp = document.getElementById('contact-ai-response');
+    const respText = document.getElementById('ai-response-text');
+
     if(!nom || !email || !msg || !email.includes('@')) {
-      err.style.display = 'block'; suc.style.display = 'none'; return;
+      err.style.display = 'block'; return;
     }
     err.style.display = 'none';
-    const subject = encodeURIComponent(`Message de ${nom} via SITRA`);
-    const body = encodeURIComponent(`Nom : ${nom}\nEmail : ${email}\n\nMessage :\n${msg}`);
-    window.location.href = `mailto:yanisaidoune1@gmail.com?subject=${subject}&body=${body}`;
-    suc.style.display = 'block';
+    resp.style.display = 'none';
+    loading.style.display = 'block';
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 400,
+          messages: [{
+            role: 'user',
+            content: `Tu es l'assistant de SITRA, un outil d'analyse de sites web. Réponds à ce message d'un utilisateur de façon professionnelle, chaleureuse et utile. Réponse en français, max 3 phrases courtes.
+
+Nom: ${nom}
+Message: ${msg}`
+          }]
+        })
+      });
+      const data = await response.json();
+      const aiReply = data.content?.[0]?.text || "Merci pour votre message. Notre équipe vous répondra dans les plus brefs délais.";
+      loading.style.display = 'none';
+      respText.textContent = aiReply;
+      resp.style.display = 'block';
+
+      // Send to admin via mailto silently
+      const subject = encodeURIComponent(`[SITRA Contact] Message de ${nom}`);
+      const body = encodeURIComponent(`Nom : ${nom}\nEmail : ${email}\n\nMessage :\n${msg}\n\n---\nRéponse IA envoyée :\n${aiReply}`);
+      const link = document.createElement('a');
+      link.href = `mailto:yanisaidoune1@gmail.com?subject=${subject}&body=${body}`;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+    } catch(e) {
+      loading.style.display = 'none';
+      respText.textContent = "Merci pour votre message ! Notre équipe SITRA vous répondra dans les plus brefs délais.";
+      resp.style.display = 'block';
+    }
   }
 </script>
 </body>
