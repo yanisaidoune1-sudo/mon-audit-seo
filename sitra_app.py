@@ -692,9 +692,11 @@ def render_result(result, idx=0):
         "Partager",
     ]
     if show_corriger:
-        tabs_list.append("Corriger mon site automatiquement")
+        tabs_list.append("Corriger mon site")
+    if show_textes:
+        tabs_list.append("Textes corrigés")
     if show_contenu_marque:
-        tabs_list.append("Génération de contenu pour votre marque")
+        tabs_list.append("Génération de contenu")
 
     tabs = st.tabs(tabs_list)
 
@@ -923,9 +925,9 @@ def render_result(result, idx=0):
         st.code(texte_partage, language=None)
 
     # ── ONGLET CORRIGER ──
-    tab_offset = 6
-    if show_corriger and len(tabs) > tab_offset - 1:
-        with tabs[tab_offset - 1]:
+    if show_corriger:
+        tab_corriger_idx = tabs_list.index("Corriger mon site")
+        with tabs[tab_corriger_idx]:
             st.markdown("### Corriger mon site automatiquement")
             st.caption("SITRA va vous proposer 2 versions de corrections. Vous choisissez celle que vous préférez avant de l'appliquer.")
 
@@ -969,7 +971,6 @@ def render_result(result, idx=0):
                             if l.strip():
                                 st.markdown(l)
                         st.markdown("</div>", unsafe_allow_html=True)
-
                         if st.button("Appliquer la Version 1", key=f"apply_v1_{idx}"):
                             st.session_state[f"version_choisie_{idx}"] = 1
                             st.info("Version 1 sélectionnée — entrez vos identifiants ci-dessous pour appliquer.")
@@ -981,7 +982,6 @@ def render_result(result, idx=0):
                             if l.strip():
                                 st.markdown(l)
                         st.markdown("</div>", unsafe_allow_html=True)
-
                         if st.button("Appliquer la Version 2", key=f"apply_v2_{idx}"):
                             st.session_state[f"version_choisie_{idx}"] = 2
                             st.info("Version 2 sélectionnée — entrez vos identifiants ci-dessous pour appliquer.")
@@ -1011,7 +1011,6 @@ def render_result(result, idx=0):
                                     show_corrections(c, e)
                                 else:
                                     st.warning("Merci de remplir tous les champs.")
-
                         elif plateforme == "Wix":
                             wix_account_id = st.text_input("Account ID :", key=f"wix_account_{idx}")
                             wix_site_id = st.text_input("Site ID :", key=f"wix_site_{idx}")
@@ -1023,7 +1022,6 @@ def render_result(result, idx=0):
                                     show_corrections(c, e)
                                 else:
                                     st.warning("Merci de remplir tous les champs.")
-
                         elif plateforme == "Shopify":
                             shop_url = st.text_input("URL boutique :", key=f"shopify_url_{idx}")
                             access_token = st.text_input("Token d'accès :", type="password", key=f"shopify_token_{idx}")
@@ -1035,10 +1033,57 @@ def render_result(result, idx=0):
                                 else:
                                     st.warning("Merci de remplir tous les champs.")
 
-    # ── ONGLET CONTENU DE MARQUE ──
-    contenu_tab_idx = tab_offset if show_corriger else tab_offset - 1
-    if show_contenu_marque and len(tabs) > contenu_tab_idx - 1:
-        with tabs[-1]:
+    # ── ONGLET TEXTES CORRIGÉS ──
+    if show_textes:
+        tab_textes_idx = tabs_list.index("Textes corrigés")
+        with tabs[tab_textes_idx]:
+            st.markdown("### Textes corrigés prêts à copier-coller")
+            st.caption("SITRA rédige pour vous les textes manquants ou à améliorer — copiez-les directement sur votre site.")
+            if st.button("Générer mes textes corrigés", key=f"gen_textes_{idx}"):
+                with st.spinner("Rédaction en cours..."):
+                    try:
+                        import requests as req
+                        headers_t = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
+                        prompt = f"""Tu es un expert en rédaction web. Pour ce site {result['final_url']}, rédige les textes manquants ou à améliorer.
+
+Titre actuel : {result['seo']['title'] or 'Manquant'}
+Meta description actuelle : {result['seo']['meta_description'] or 'Manquante'}
+Nombre de mots sur le site : {result['content']['word_count']}
+Problèmes détectés : {', '.join([i['message'] for i in result['all_issues'][:5]])}
+
+Rédige exactement ces éléments en français, de façon professionnelle :
+
+TITRE DE LA PAGE (50-60 caractères) :
+[rédige ici]
+
+DESCRIPTION GOOGLE (120-160 caractères) :
+[rédige ici]
+
+TEXTE D'INTRODUCTION POUR LA PAGE D'ACCUEIL (80-100 mots) :
+[rédige ici]
+
+TITRE PRINCIPAL DE LA PAGE (H1) :
+[rédige ici]"""
+                        data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 500}
+                        r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers_t, json=data, timeout=30)
+                        st.session_state[f"textes_tab_{idx}"] = r.json()["choices"][0]["message"]["content"]
+                    except Exception:
+                        st.error("Impossible de générer les textes pour le moment.")
+
+            if f"textes_tab_{idx}" in st.session_state:
+                for section in st.session_state[f"textes_tab_{idx}"].split("\n\n"):
+                    if section.strip():
+                        lignes = section.strip().split("\n")
+                        titre = lignes[0].replace(":", "").strip()
+                        contenu_txt = "\n".join(lignes[1:]).strip()
+                        if contenu_txt:
+                            st.markdown(f"**{titre}**")
+                            st.code(contenu_txt, language=None)
+
+    # ── ONGLET GÉNÉRATION DE CONTENU ──
+    if show_contenu_marque:
+        tab_cm_idx = tabs_list.index("Génération de contenu")
+        with tabs[tab_cm_idx]:
             st.markdown("### Génération de contenu pour votre marque")
             st.caption("SITRA a analysé votre site. Il connaît votre secteur et votre style. Choisissez ce que vous voulez créer — le contenu est généré en quelques secondes, prêt à publier.")
 
@@ -1084,10 +1129,8 @@ def render_result(result, idx=0):
                 st.divider()
                 type_gen = st.session_state.get(f"type_cm_{idx}", "")
                 contenu_gen = st.session_state[f"contenu_marque_{idx}"]
-
                 if type_gen == "Animation publicitaire HTML":
                     st.markdown("**Animation générée — prévisualisez puis téléchargez :**")
-                    # Extract HTML from the response
                     import re
                     html_match = re.search(r'```html\n(.*?)```', contenu_gen, re.DOTALL)
                     if html_match:
@@ -1107,7 +1150,6 @@ def render_result(result, idx=0):
                                 st.code("\n".join(lignes[1:]), language=None)
                             else:
                                 st.code(section.strip(), language=None)
-
                 if st.button("Générer une nouvelle version", key=f"regen_cm_{idx}"):
                     del st.session_state[f"contenu_marque_{idx}"]
                     st.rerun()
@@ -1171,55 +1213,6 @@ else:
         <p><strong>SITRA</strong> analyse votre site en temps réel et vous dit exactement quoi améliorer</p>
     </div>
     """, unsafe_allow_html=True)
-
-# ── TEXTES CORRIGÉS ───────────────────────────────────────────────────────────
-if st.session_state.get("show_textes") and "results" in st.session_state:
-    result_t = st.session_state["results"][0]
-    st.divider()
-    st.markdown("### Textes corrigés prêts à copier-coller")
-    st.caption("SITRA rédige pour vous les textes manquants ou à améliorer — copiez-les directement sur votre site.")
-    if st.button("Générer mes textes corrigés", key="gen_textes_sidebar"):
-        with st.spinner("Rédaction en cours..."):
-            try:
-                import requests as req
-                headers_t = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
-                prompt = f"""Tu es un expert en rédaction web. Pour ce site {result_t['final_url']}, rédige les textes manquants ou à améliorer.
-
-Titre actuel : {result_t['seo']['title'] or 'Manquant'}
-Meta description actuelle : {result_t['seo']['meta_description'] or 'Manquante'}
-Nombre de mots sur le site : {result_t['content']['word_count']}
-Problèmes détectés : {', '.join([i['message'] for i in result_t['all_issues'][:5]])}
-
-Rédige exactement ces éléments en français, de façon professionnelle et claire :
-
-TITRE DE LA PAGE (50-60 caractères) :
-[rédige ici]
-
-DESCRIPTION GOOGLE (120-160 caractères) :
-[rédige ici]
-
-TEXTE D'INTRODUCTION POUR LA PAGE D'ACCUEIL (80-100 mots) :
-[rédige ici]
-
-TITRE PRINCIPAL DE LA PAGE (H1) :
-[rédige ici]
-
-Adapte les textes au secteur d'activité du site."""
-                data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 500}
-                r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers_t, json=data, timeout=30)
-                st.session_state["textes_sidebar"] = r.json()["choices"][0]["message"]["content"]
-            except Exception:
-                st.error("Impossible de générer les textes pour le moment.")
-
-    if "textes_sidebar" in st.session_state:
-        for section in st.session_state["textes_sidebar"].split("\n\n"):
-            if section.strip():
-                lignes = section.strip().split("\n")
-                titre = lignes[0].replace(":", "").strip()
-                contenu = "\n".join(lignes[1:]).strip()
-                if contenu:
-                    st.markdown(f"**{titre}**")
-                    st.code(contenu, language=None)
 
 # ── ASSISTANT IA ──────────────────────────────────────────────────────────────
 st.divider()
