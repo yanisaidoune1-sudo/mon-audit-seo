@@ -541,7 +541,7 @@ def show_paywall():
     </div>
     """, unsafe_allow_html=True)
 
-st.set_page_config(page_title="SITRA | Analyseur de Sites Web", page_icon="⚡", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="SITRA | Analyseur de Sites Web", page_icon="🅂", layout="wide", initial_sidebar_state="expanded")
 
 # ── SIDEBAR — en premier pour que les variables existent partout ──────────────
 with st.sidebar:
@@ -573,14 +573,20 @@ show_textes          = (st.session_state.get("menu_choix") == "Textes corrigés 
 show_contenu_marque  = (st.session_state.get("menu_choix") == "Génération de contenu pour votre marque")
 
 st.markdown("""
-<head>
+<script>
+(function() {
+  var link = document.querySelector("link[rel~='icon']");
+  if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+  link.type = 'image/svg+xml';
+  link.href = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23000000'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%237c6af7'/%3E%3Cstop offset='100%25' stop-color='%23f07cf7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='50' y='76' font-family='Arial Black%2C sans-serif' font-size='78' font-weight='900' fill='url(%23g)' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E";
+})();
+</script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23000000'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%237c6af7'/%3E%3Cstop offset='100%25' stop-color='%23f07cf7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='50' y='76' font-family='Arial Black%2C sans-serif' font-size='78' font-weight='900' fill='url(%23g)' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
 <meta property="og:title" content="SITRA — Analyseur Intelligent de Sites Web" />
 <meta property="og:description" content="Analysez votre site gratuitement en 30 secondes. SEO, UX, Performance, Design — 20 critères vérifiés avec des recommandations IA personnalisées." />
 <meta property="og:image" content="https://yanisaidoune1-sudo.github.io/mon-audit-seo/favicon.svg" />
 <meta property="og:url" content="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" />
 <meta property="og:type" content="website" />
-</head>
 """, unsafe_allow_html=True)
 
 st.markdown("""
@@ -1092,8 +1098,8 @@ TITRE PRINCIPAL DE LA PAGE (H1) :
 
             st.markdown("""
             <div style="background:linear-gradient(135deg,rgba(102,126,234,0.15),rgba(240,124,247,0.1));border:1px solid rgba(102,126,234,0.4);border-radius:12px;padding:1.2rem 1.5rem;margin-bottom:1.5rem">
-                <div style="font-weight:700;color:#a090f7;margin-bottom:0.8rem;">Comment utiliser ce contenu ?</div>
-                <div style="color:#ffffff;font-size:0.88rem;line-height:1.7">
+                <div style="font-weight:700;color:#4a40c0;margin-bottom:0.8rem;font-size:0.95rem;">Comment utiliser ce contenu ?</div>
+                <div style="color:#1a1a1a;font-size:0.88rem;line-height:1.8">
                 • <b>Posts Instagram / Facebook / LinkedIn</b> : copiez le texte généré, ajoutez une photo de votre choix ou utilisez l'animation HTML fournie directement dans votre story ou publicité.<br>
                 • <b>Animations publicitaires</b> : SITRA génère une animation HTML prête à l'emploi. Téléchargez-la et importez-la dans Canva, Meta Ads ou votre site.<br>
                 • <b>Email marketing</b> : copiez le contenu dans votre outil d'emailing (Mailchimp, Brevo…).<br>
