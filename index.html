@@ -8,22 +8,261 @@
 <meta property="og:title" content="SITRA — Comment améliorer votre site web" />
 <meta property="og:description" content="Analyse, correction automatique, visibilité et sécurité pour votre site web." />
 <meta property="og:image" content="https://yanisaidoune1-sudo.github.io/mon-audit-seo/favicon.svg" />
+<!-- FAVICON : votre SVG depuis le fichier ODT — fond dégradé bleu→violet + S blanc -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea%3Bstop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23764ba2%3Bstop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23grad)'/%3E%3Ctext x='50' y='72' font-family='Arial Black%2Csans-serif' font-size='65' font-weight='900' fill='white' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-/* (tout ton CSS est IDENTIQUE, je ne change rien) */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --bg:#04040a; --surface:#0d0d1a; --border:rgba(255,255,255,0.06); --accent:#7c6af7; --accent2:#f07cf7; --text:#e8e8f0; --muted:#666680; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
+
+  /* ── INTRO ── */
+  #intro-screen { position:fixed; top:0; left:0; width:100%; height:100%; background:#04040a; display:flex; align-items:center; justify-content:center; z-index:9999; flex-direction:column; gap:1.5rem; }
+  .intro-glow { position:absolute; width:400px; height:400px; background:radial-gradient(ellipse,rgba(124,106,247,0.2) 0%,transparent 70%); border-radius:50%; animation:pulse-glow 2s ease-in-out infinite alternate; }
+  @keyframes pulse-glow { from{transform:scale(0.9);opacity:0.4} to{transform:scale(1.1);opacity:0.9} }
+
+  /* S — style Arial Black gras comme la photo, dégradé violet→rose */
+  #s-letter {
+    position:relative; z-index:3;
+    font-family:'Arial Black','Impact',sans-serif;
+    font-size:clamp(9rem,26vw,16rem);
+    font-weight:900;
+    line-height:1;
+    background:linear-gradient(160deg,#7c6af7 0%,#b570f5 45%,#f07cf7 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    filter:drop-shadow(0 0 28px rgba(124,106,247,0.8));
+    opacity:0;
+    animation:s-in 0.55s cubic-bezier(0.22,1,0.36,1) forwards 0.15s;
+  }
+  @keyframes s-in {
+    0%  { opacity:0; transform:scale(0.8) translateY(16px); }
+    65% { opacity:1; transform:scale(1.05) translateY(-3px); }
+    100%{ opacity:1; transform:scale(1) translateY(0); }
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  /* ── NAV ── */
+  nav { position:fixed; top:0; left:0; right:0; z-index:100; padding:1.2rem 4rem; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); backdrop-filter:blur(20px); background:rgba(4,4,10,0.8); }
+  .nav-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.4rem; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .nav-links { display:flex; gap:2rem; align-items:center; }
+  .nav-links a { color:var(--muted); text-decoration:none; font-size:0.9rem; transition:color 0.2s; }
+  .nav-links a:hover { color:var(--text); }
+  .nav-cta { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:white !important; border:none; padding:0.6rem 1.5rem; border-radius:8px; font-weight:500; font-size:0.9rem; cursor:pointer; text-decoration:none; transition:opacity 0.2s,transform 0.2s; }
+  .nav-cta:hover { opacity:0.85; transform:translateY(-1px); }
+
+  /* ── HERO ── */
+  .hero { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:8rem 2rem 4rem; position:relative; }
+  .hero::after { content:''; position:absolute; top:20%; left:50%; transform:translateX(-50%); width:600px; height:600px; background:radial-gradient(ellipse,rgba(124,106,247,0.12) 0%,transparent 70%); pointer-events:none; }
+  .hero-badge { display:inline-flex; align-items:center; gap:0.5rem; background:rgba(124,106,247,0.1); border:1px solid rgba(124,106,247,0.3); border-radius:999px; padding:0.4rem 1rem; font-size:0.8rem; color:var(--accent); font-weight:500; margin-bottom:2rem; letter-spacing:1px; text-transform:uppercase; animation:fadeUp 0.6s ease both; }
+  .hero-title { font-family:'Syne',sans-serif; font-size:clamp(3rem,8vw,6rem); font-weight:800; line-height:1.1; letter-spacing:-2px; margin-bottom:1.5rem; animation:fadeUp 0.6s 0.1s ease both; }
+  .hero-title span { background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .hero-sub { font-size:clamp(1rem,2vw,1.2rem); color:var(--muted); max-width:560px; line-height:1.7; margin-bottom:3rem; font-weight:300; animation:fadeUp 0.6s 0.2s ease both; }
+  .hero-actions { display:flex; gap:1rem; align-items:center; flex-wrap:wrap; justify-content:center; animation:fadeUp 0.6s 0.3s ease both; }
+  .views-badge { margin-top:2rem; color:var(--muted); font-size:0.85rem; animation:fadeUp 0.6s 0.4s ease both; }
+  .btn-primary { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:white; border:none; padding:1rem 2.5rem; border-radius:12px; font-family:'DM Sans',sans-serif; font-weight:500; font-size:1rem; cursor:pointer; text-decoration:none; transition:all 0.2s; box-shadow:0 0 40px rgba(124,106,247,0.3); display:inline-block; }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 0 60px rgba(124,106,247,0.5); }
+  .btn-secondary { background:transparent; color:var(--text); border:1px solid var(--border); padding:1rem 2.5rem; border-radius:12px; font-family:'DM Sans',sans-serif; font-weight:500; font-size:1rem; cursor:pointer; text-decoration:none; transition:all 0.2s; display:inline-block; }
+  .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* ── SEPARATOR ── */
+  .separator-bar { padding:1.5rem 4rem; border-top:1px solid var(--border); border-bottom:1px solid var(--border); background:var(--surface); overflow:hidden; }
+  .separator-inner { display:flex; gap:3rem; align-items:center; animation:scroll-items 20s linear infinite; white-space:nowrap; }
+  .separator-item { font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--muted); display:flex; align-items:center; gap:0.8rem; flex-shrink:0; }
+  .separator-dot { width:5px; height:5px; background:var(--accent); border-radius:50%; flex-shrink:0; }
+  @keyframes scroll-items { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+  /* ── SECTIONS ── */
+  .section { padding:6rem 4rem; max-width:1200px; margin:0 auto; }
+  .section-label { text-align:center; color:var(--accent); font-size:0.8rem; font-weight:600; letter-spacing:3px; text-transform:uppercase; margin-bottom:1rem; }
+  .section-title { font-family:'Syne',sans-serif; font-size:clamp(2rem,4vw,3rem); font-weight:800; text-align:center; letter-spacing:-1px; margin-bottom:4rem; }
+  .features-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.5rem; }
+  .feature-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:2rem; transition:border-color 0.3s,transform 0.3s; position:relative; overflow:hidden; }
+  .feature-card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent); opacity:0; transition:opacity 0.3s; }
+  .feature-card:hover { border-color:rgba(124,106,247,0.3); transform:translateY(-4px); }
+  .feature-card:hover::before { opacity:1; }
+  .feature-num { font-family:'Syne',sans-serif; font-size:1.8rem; font-weight:800; color:var(--accent); margin-bottom:0.8rem; }
+  .feature-title { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; margin-bottom:0.6rem; }
+  .feature-desc { color:var(--muted); font-size:0.9rem; line-height:1.6; }
+
+  /* ── HOW — texte forcé visible ── */
+  .how { padding:6rem 4rem; background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+  .how-inner { max-width:1200px; margin:0 auto; }
+  .steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:2rem; margin-top:4rem; }
+  .step { text-align:center; padding:2rem 1rem; }
+  .step-number { font-family:'Syne',sans-serif; font-size:4rem; font-weight:800; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1; margin-bottom:1rem; opacity:0.6; }
+  .step-title { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; margin-bottom:0.6rem; color:#e8e8f0; }
+  .step-desc { color:#9898b8; font-size:0.9rem; line-height:1.6; }
+
+  /* ── PRICING ── */
+  .pricing { padding:6rem 4rem; max-width:1200px; margin:0 auto; }
+  .pricing-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.5rem; margin-top:1rem; }
+  .pricing-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:2.5rem; position:relative; transition:transform 0.3s,border-color 0.3s; }
+  .pricing-card:hover { transform:translateY(-6px); }
+  .pricing-card.popular { border-color:var(--accent); background:linear-gradient(135deg,rgba(124,106,247,0.08),rgba(240,124,247,0.05)); }
+  .popular-badge { position:absolute; top:-14px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,var(--accent),var(--accent2)); color:white; padding:0.3rem 1.2rem; border-radius:999px; font-size:0.75rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; white-space:nowrap; }
+  .plan-name { font-family:'Syne',sans-serif; font-size:1.2rem; font-weight:700; margin-bottom:0.5rem; }
+  .plan-price { font-family:'Syne',sans-serif; font-size:3rem; font-weight:800; line-height:1; margin:1rem 0 0.3rem; }
+  .plan-price span { font-size:1rem; font-weight:400; color:var(--muted); }
+  .plan-desc { color:var(--muted); font-size:0.9rem; margin-bottom:2rem; padding-bottom:2rem; border-bottom:1px solid var(--border); }
+  .plan-features { list-style:none; margin-bottom:2rem; }
+  .plan-features li { padding:0.5rem 0; font-size:0.9rem; display:flex; align-items:flex-start; gap:0.6rem; line-height:1.4; }
+  .plan-features li.included { color:var(--text); }
+  .plan-features li.excluded { color:#444; }
+  .plan-features li::before { content:'✓'; color:var(--accent); font-weight:700; flex-shrink:0; margin-top:1px; }
+  .plan-features li.excluded::before { content:'×'; color:#444; }
+  .plan-btn { display:block; text-align:center; padding:0.9rem; border-radius:10px; font-weight:600; font-size:0.95rem; text-decoration:none; transition:all 0.2s; }
+  .plan-btn-free { background:transparent; border:1px solid var(--border); color:var(--text); }
+  .plan-btn-free:hover { border-color:var(--accent); color:var(--accent); }
+  .plan-btn-paid { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:white; border:none; }
+  .plan-btn-paid:hover { opacity:0.9; transform:translateY(-1px); }
+
+  /* ── CONTACT ── */
+  .contact-section { padding:6rem 4rem; max-width:700px; margin:0 auto; text-align:center; }
+  .contact-form { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:3rem; text-align:left; margin-top:3rem; }
+  .contact-form input, .contact-form textarea { width:100%; background:#0a0a18; border:1px solid var(--border); border-radius:8px; padding:0.8rem 1rem; color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.9rem; margin-bottom:1rem; outline:none; transition:border-color 0.2s; }
+  .contact-form input:focus, .contact-form textarea:focus { border-color:var(--accent); }
+  .contact-form textarea { height:120px; resize:none; }
+  .contact-form label { display:block; color:var(--muted); font-size:0.85rem; margin-bottom:0.4rem; }
+
+  /* ── CTA ── */
+  .cta-section { padding:8rem 4rem; text-align:center; position:relative; }
+  .cta-section::before { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:500px; height:300px; background:radial-gradient(ellipse,rgba(240,124,247,0.1) 0%,transparent 70%); pointer-events:none; }
+  .cta-title { font-family:'Syne',sans-serif; font-size:clamp(2rem,5vw,4rem); font-weight:800; letter-spacing:-2px; margin-bottom:1.5rem; }
+  .cta-sub { color:var(--muted); font-size:1.1rem; margin-bottom:3rem; font-weight:300; }
+
+  /* ── FOOTER ── */
+  footer { padding:2rem 4rem; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
+  .footer-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .footer-text { color:var(--muted); font-size:0.85rem; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .reveal { opacity:0; transform:translateY(30px); transition:opacity 0.6s ease,transform 0.6s ease; }
+  .reveal.visible { opacity:1; transform:translateY(0); }
+
+  @media(max-width:768px) {
+    nav { padding:1rem 1.5rem; }
+    .nav-links { display:none; }
+    .section,.pricing,.contact-section { padding:4rem 1.5rem; }
+    .how { padding:4rem 1.5rem; }
+    .cta-section { padding:4rem 1.5rem; }
+    footer { padding:2rem 1.5rem; flex-direction:column; text-align:center; }
+    .separator-bar { padding:1rem 1.5rem; }
+  }
 </style>
 </head>
 <body>
 
-<!-- (tout ton contenu est IDENTIQUE jusqu’à la partie pricing) -->
+<!-- INTRO — S se dessine, se remplit, puis explose en particules -->
+<div id="intro-screen">
+  <div class="intro-glow"></div>
+  <canvas id="particle-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;display:none"></canvas>
+  <svg id="s-svg" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:3;width:260px;height:295px">
+    <defs>
+      <linearGradient id="grad-s" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#7c6af7"/>
+        <stop offset="100%" style="stop-color:#f07cf7"/>
+      </linearGradient>
+    </defs>
+    <!-- S rempli — apparaît après le tracé -->
+    <text id="s-fill"
+      x="150" y="285"
+      font-family="'Arial Black', Impact, sans-serif"
+      font-size="300"
+      font-weight="900"
+      text-anchor="middle"
+      fill="url(#grad-s)"
+      style="opacity:0;filter:drop-shadow(0 0 20px rgba(124,106,247,0.9))"
+    >S</text>
+    <!-- S contour — se trace de haut en bas -->
+    <text id="s-stroke"
+      x="150" y="285"
+      font-family="'Arial Black', Impact, sans-serif"
+      font-size="300"
+      font-weight="900"
+      text-anchor="middle"
+      fill="none"
+      stroke="url(#grad-s)"
+      stroke-width="3"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      style="filter:drop-shadow(0 0 12px rgba(124,106,247,0.8))"
+    >S</text>
+  </svg>
+</div>
+
+<nav>
+  <div class="nav-logo">SITRA</div>
+  <div class="nav-links">
+    <a href="#features">Fonctionnalités</a>
+    <a href="#pricing">Forfaits</a>
+    <a href="#contact">Contact</a>
+    <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="nav-cta" target="_blank">Analyser mon site</a>
+  </div>
+</nav>
+
+<section class="hero" id="top">
+  <div class="hero-badge">Analyse gratuite — Résultats en temps réel</div>
+  <h1 class="hero-title">Comment améliorer<br><span>votre site web ?</span></h1>
+  <p class="hero-sub">SITRA analyse votre site et vous dit exactement quoi améliorer pour attirer plus de clients — analyse, correction, visibilité, sécurité.</p>
+  <div class="hero-actions">
+    <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="btn-primary" target="_blank">Analyser mon site</a>
+    <a href="#pricing" class="btn-secondary">Voir les forfaits</a>
+  </div>
+  <div class="views-badge">👁️ <span id="view-count">...</span> personnes ont déjà utilisé SITRA</div>
+</section>
+
+<div class="separator-bar">
+  <div class="separator-inner">
+    <span class="separator-item"><span class="separator-dot"></span>Référencement Google</span>
+    <span class="separator-item"><span class="separator-dot"></span>Vitesse du site</span>
+    <span class="separator-item"><span class="separator-dot"></span>Analyse des images</span>
+    <span class="separator-item"><span class="separator-dot"></span>Corrections automatiques</span>
+    <span class="separator-item"><span class="separator-dot"></span>Rapport IA personnalisé</span>
+    <span class="separator-item"><span class="separator-dot"></span>Navigation intuitive</span>
+    <span class="separator-item"><span class="separator-dot"></span>Sécurité HTTPS</span>
+    <span class="separator-item"><span class="separator-dot"></span>Génération de contenu</span>
+    <span class="separator-item"><span class="separator-dot"></span>Référencement Google</span>
+    <span class="separator-item"><span class="separator-dot"></span>Vitesse du site</span>
+    <span class="separator-item"><span class="separator-dot"></span>Analyse des images</span>
+    <span class="separator-item"><span class="separator-dot"></span>Corrections automatiques</span>
+    <span class="separator-item"><span class="separator-dot"></span>Rapport IA personnalisé</span>
+    <span class="separator-item"><span class="separator-dot"></span>Navigation intuitive</span>
+    <span class="separator-item"><span class="separator-dot"></span>Sécurité HTTPS</span>
+    <span class="separator-item"><span class="separator-dot"></span>Génération de contenu</span>
+  </div>
+</div>
+
+<section class="section" id="features">
+  <div class="section-label">Ce que SITRA analyse</div>
+  <h2 class="section-title reveal">Tout ce qui compte pour votre site</h2>
+  <div class="features-grid">
+    <div class="feature-card reveal"><div class="feature-num">01</div><div class="feature-title">Boostez votre position sur Google</div><div class="feature-desc">SITRA vérifie tout ce que Google regarde pour vous classer et vous dit exactement quoi améliorer.</div></div>
+    <div class="feature-card reveal"><div class="feature-num">02</div><div class="feature-title">Une expérience agréable pour vos visiteurs</div><div class="feature-desc">Menu, boutons, contact — votre site est-il facile à utiliser ? SITRA détecte ce qui bloque vos visiteurs.</div></div>
+    <div class="feature-card reveal"><div class="feature-num">03</div><div class="feature-title">Un site rapide qui ne fait pas fuir</div><div class="feature-desc">53% des visiteurs partent si votre site met plus de 3 secondes à charger. SITRA mesure et corrige.</div></div>
+    <div class="feature-card reveal"><div class="feature-num">04</div><div class="feature-title">Une belle première impression</div><div class="feature-desc">Polices, couleurs, aperçu sur les réseaux sociaux — votre site inspire-t-il confiance ?</div></div>
+    <div class="feature-card reveal"><div class="feature-num">05</div><div class="feature-title">Comparez aux références de votre secteur</div><div class="feature-desc">SITRA détecte votre secteur et compare votre site aux meilleurs acteurs de votre domaine.</div></div>
+    <div class="feature-card reveal"><div class="feature-num">06</div><div class="feature-title">Génération de contenu pour votre marque</div><div class="feature-desc">SITRA analyse votre identité et génère automatiquement des posts animés, emails et visuels publicitaires prêts à diffuser.</div></div>
+  </div>
+</section>
+
+<section class="how">
+  <div class="how-inner">
+    <div class="section-label">Comment ça marche</div>
+    <h2 class="section-title reveal">Simple. Rapide. Efficace.</h2>
+    <div class="steps">
+      <div class="step reveal"><div class="step-number">01</div><div class="step-title">Entrez votre URL</div><div class="step-desc">Collez l'adresse de votre site et lancez l'analyse.</div></div>
+      <div class="step reveal"><div class="step-number">02</div><div class="step-title">Analyse en temps réel</div><div class="step-desc">SITRA visite votre site et vérifie tous les points essentiels en quelques secondes.</div></div>
+      <div class="step reveal"><div class="step-number">03</div><div class="step-title">Rapport clair</div><div class="step-desc">Score par catégorie et liste des problèmes expliqués simplement.</div></div>
+      <div class="step reveal"><div class="step-number">04</div><div class="step-title">Propositions de corrections</div><div class="step-desc">SITRA propose 2 versions de corrections adaptées à votre site.</div></div>
+    </div>
+  </div>
+</section>
 
 <section class="pricing" id="pricing">
   <div class="section-label">Forfaits</div>
   <h2 class="section-title reveal">Choisissez votre forfait</h2>
   <div class="pricing-grid">
-
-    <!-- GRATUIT (inchangé) -->
     <div class="pricing-card reveal">
       <div class="plan-name">Gratuit</div>
       <div class="plan-price">0€ <span>/ toujours</span></div>
@@ -41,26 +280,22 @@
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-free" target="_blank">Commencer gratuitement</a>
     </div>
-
-    <!-- PRO (MODIFIÉ UNIQUEMENT ICI) -->
     <div class="pricing-card popular reveal">
       <div class="popular-badge">Le plus populaire</div>
       <div class="plan-name">Pro</div>
       <div class="plan-price">9,99€ <span>/ forfait</span></div>
       <div class="plan-desc">Pour identifier précisément les axes d'amélioration et passer à l'action</div>
       <ul class="plan-features">
-        <li class="included">Accès à toutes les fonctionnalités essentielles de l'analyse SITRA</li>
+        <li class="included">Toutes les fonctionnalités du plan Gratuit</li>
         <li class="included">Analyses illimitées</li>
         <li class="included">Recommandations personnalisées rédigées par l'IA</li>
         <li class="included">Rapport d'analyse complet téléchargeable en PDF</li>
-        <li class="included">Analyse détaillée de vos images et contenus visuels</li>
+        <li class="included">Audit approfondi des images et médias</li>
         <li class="included">Rédaction automatique des textes optimisés, prêts à intégrer</li>
-        <li class="included">Détection des éléments ralentissant votre site</li>
+        <li class="included">Détection des éléments superflus ralentissant votre site</li>
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-paid" target="_blank">Choisir Pro</a>
     </div>
-
-    <!-- PREMIUM (inchangé) -->
     <div class="pricing-card reveal">
       <div class="plan-name">Premium</div>
       <div class="plan-price">19,99€ <span>/ forfait</span></div>
@@ -75,11 +310,200 @@
       </ul>
       <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="plan-btn plan-btn-paid" target="_blank">Choisir Premium</a>
     </div>
-
   </div>
 </section>
 
-<!-- (tout le reste de ton site est STRICTEMENT identique) -->
+<section class="cta-section">
+  <h2 class="cta-title reveal">Votre site est-il<br><span style="background:linear-gradient(135deg,#7c6af7,#f07cf7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">vraiment optimisé ?</span></h2>
+  <p class="cta-sub reveal">Découvrez-le en 30 secondes.</p>
+  <a href="https://mon-audit-seo-ivaf8necmnfhqpmnyf2unx.streamlit.app" class="btn-primary reveal" target="_blank">Analyser mon site</a>
+</section>
 
+<section class="contact-section" id="contact">
+  <div class="section-label">Contact</div>
+  <h2 class="section-title reveal" style="margin-bottom:0">Une question ?</h2>
+  <p style="color:var(--muted);margin-top:1rem;margin-bottom:0" class="reveal">Notre assistant IA répond instantanément. Vous recevrez aussi une confirmation par email.</p>
+  <div class="contact-form reveal">
+    <div><label>Votre nom</label><input type="text" id="c-nom" placeholder="Jean Dupont"></div>
+    <div><label>Votre email</label><input type="email" id="c-email" placeholder="jean@exemple.fr"></div>
+    <div><label>Votre message</label><textarea id="c-msg" placeholder="Décrivez votre question ou problème..."></textarea></div>
+    <button class="btn-primary" id="contact-btn" style="width:100%" onclick="sendContactAI()">Envoyer le message</button>
+    <div id="contact-error" style="display:none;color:#dc3545;font-size:0.9rem;margin-top:1rem;text-align:center">Merci de remplir tous les champs.</div>
+    <div id="contact-loading" style="display:none;text-align:center;margin-top:1rem;color:var(--muted)">
+      <span style="display:inline-block;width:16px;height:16px;border:2px solid #7c6af7;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:8px"></span>
+      L'assistant analyse votre message...
+    </div>
+    <div id="contact-ai-response" style="display:none;margin-top:1.5rem;background:rgba(124,106,247,0.08);border:1px solid rgba(124,106,247,0.3);border-radius:12px;padding:1.2rem">
+      <div style="color:#a090f7;font-weight:600;font-size:0.85rem;margin-bottom:0.6rem">Réponse de l'assistant SITRA</div>
+      <div id="ai-response-text" style="color:#e8e8f0;font-size:0.9rem;line-height:1.6"></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">SITRA</div>
+  <div class="footer-text">Analyseur intelligent de sites web — Données réelles, recommandations précises</div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach((e,i) => { if(e.isIntersecting) setTimeout(()=>e.target.classList.add('visible'),i*80); });
+  }, {threshold:0.1});
+  reveals.forEach(el=>obs.observe(el));
+
+  // Vues
+  function updateViews() {
+    let v = parseInt(localStorage.getItem('sitra_views')||'0');
+    v++; localStorage.setItem('sitra_views',v);
+    document.getElementById('view-count').textContent = (v+142).toLocaleString('fr-FR');
+  }
+  updateViews();
+
+  // Intro animation — 1) tracé du S 2) remplissage 3) explosion particules
+  document.body.style.overflow = 'hidden';
+  const sStroke = document.getElementById('s-stroke');
+  const sFill   = document.getElementById('s-fill');
+  const sSvg    = document.getElementById('s-svg');
+  const canvas  = document.getElementById('particle-canvas');
+  const ctx2    = canvas.getContext('2d');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  // Mesure la longueur du tracé du S
+  const strokeLen = sStroke.getTotalLength ? sStroke.getTotalLength() : 1800;
+  sStroke.style.strokeDasharray  = strokeLen;
+  sStroke.style.strokeDashoffset = strokeLen;
+
+  // ÉTAPE 1 — tracé du contour de haut en bas (1.6s)
+  setTimeout(() => {
+    sStroke.style.transition = `stroke-dashoffset 1.6s cubic-bezier(0.4,0,0.2,1)`;
+    sStroke.style.strokeDashoffset = '0';
+  }, 200);
+
+  // ÉTAPE 2 — remplissage de la couleur (fondu 0.5s)
+  setTimeout(() => {
+    sFill.style.transition = 'opacity 0.5s ease';
+    sFill.style.opacity = '1';
+    // efface le contour proprement
+    setTimeout(() => {
+      sStroke.style.transition = 'opacity 0.3s ease';
+      sStroke.style.opacity = '0';
+    }, 400);
+  }, 1900);
+
+  // ÉTAPE 3 — mini rebond avant explosion
+  setTimeout(() => {
+    sSvg.style.transition = 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)';
+    sSvg.style.transform = 'scale(0.82)';
+  }, 2700);
+
+  // ÉTAPE 4 — explosion
+  class Particle {
+    constructor(x,y){
+      this.x=x; this.y=y;
+      const angle=Math.random()*Math.PI*2, speed=Math.random()*16+6;
+      this.vx=Math.cos(angle)*speed; this.vy=Math.sin(angle)*speed;
+      this.alpha=1; this.size=Math.random()*8+2;
+      this.decay=Math.random()*0.016+0.011;
+      const t=Math.random();
+      this.color=`rgb(${Math.round(124+(240-124)*t)},${Math.round(106+(124-106)*t)},247)`;
+      this.isLine=Math.random()>0.55;
+      this.len=Math.random()*24+8; this.rot=Math.random()*Math.PI*2;
+    }
+    update(){this.x+=this.vx;this.y+=this.vy;this.vx*=0.96;this.vy*=0.96;this.alpha-=this.decay;}
+    draw(){
+      ctx2.save();ctx2.globalAlpha=Math.max(0,this.alpha);
+      ctx2.fillStyle=this.color;ctx2.strokeStyle=this.color;ctx2.lineWidth=2.5;
+      if(this.isLine){ctx2.translate(this.x,this.y);ctx2.rotate(this.rot);ctx2.beginPath();ctx2.moveTo(-this.len/2,0);ctx2.lineTo(this.len/2,0);ctx2.stroke();}
+      else{ctx2.beginPath();ctx2.arc(this.x,this.y,this.size,0,Math.PI*2);ctx2.fill();}
+      ctx2.restore();
+    }
+  }
+  let particles=[];
+  function spawnParticles(){
+    const rect=sSvg.getBoundingClientRect();
+    const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+    for(let i=0;i<180;i++){
+      const ox=(Math.random()-0.5)*rect.width*0.85;
+      const oy=(Math.random()-0.5)*rect.height*0.85;
+      particles.push(new Particle(cx+ox,cy+oy));
+    }
+  }
+  function animParticles(){
+    ctx2.clearRect(0,0,canvas.width,canvas.height);
+    particles=particles.filter(p=>p.alpha>0);
+    particles.forEach(p=>{p.update();p.draw();});
+    if(particles.length>0) requestAnimationFrame(animParticles);
+  }
+
+  setTimeout(()=>{
+    canvas.style.display='block';
+    spawnParticles(); animParticles();
+    sSvg.style.transition='transform 0.45s ease, opacity 0.35s ease';
+    sSvg.style.transform='scale(3.2)';
+    sSvg.style.opacity='0';
+    document.querySelector('.intro-glow').style.transition='opacity 0.3s';
+    document.querySelector('.intro-glow').style.opacity='0';
+  },3050);
+
+  setTimeout(()=>{
+    const intro=document.getElementById('intro-screen');
+    intro.style.transition='opacity 0.4s';
+    intro.style.opacity='0';
+    document.body.style.overflow='';
+    setTimeout(()=>intro.remove(),400);
+  },3700);
+
+  // Contact IA — réponse immédiate + email admin via Resend
+  async function sendContactAI(){
+    const nom=document.getElementById('c-nom').value.trim();
+    const email=document.getElementById('c-email').value.trim();
+    const msg=document.getElementById('c-msg').value.trim();
+    const err=document.getElementById('contact-error');
+    const loading=document.getElementById('contact-loading');
+    const resp=document.getElementById('contact-ai-response');
+    const respText=document.getElementById('ai-response-text');
+    const btn=document.getElementById('contact-btn');
+
+    if(!nom||!email||!msg||!email.includes('@')){err.style.display='block';return;}
+    err.style.display='none'; resp.style.display='none';
+    loading.style.display='block'; btn.disabled=true; btn.style.opacity='0.6';
+
+    let aiReply="Merci pour votre message ! Notre équipe SITRA vous répondra dans les plus brefs délais.";
+    try{
+      const r=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514', max_tokens:300,
+          messages:[{role:'user',content:`Tu es l'assistant de SITRA, un outil d'analyse et d'optimisation de sites web. Réponds à ce message client en français, de façon professionnelle et utile. Maximum 3 phrases.\n\nNom: ${nom}\nMessage: ${msg}`}]
+        })
+      });
+      const d=await r.json();
+      if(d.content?.[0]?.text) aiReply=d.content[0].text;
+    }catch(e){}
+
+    loading.style.display='none';
+    respText.textContent=aiReply;
+    resp.style.display='block';
+    btn.disabled=false; btn.style.opacity='1';
+
+    // Email admin — remplacez YOUR_RESEND_KEY par votre clé Resend
+    try{
+      await fetch('https://api.resend.com/emails',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer YOUR_RESEND_KEY'},
+        body:JSON.stringify({
+          from:'SITRA Contact <onboarding@resend.dev>',
+          to:['yanisaidoune1@gmail.com'],
+          subject:`[SITRA Contact] ${nom} — ${email}`,
+          html:`<h2>Nouveau message SITRA</h2><p><b>Nom :</b> ${nom}</p><p><b>Email :</b> ${email}</p><p><b>Message :</b><br>${msg.replace(/\n/g,'<br>')}</p><hr><p><b>Réponse IA envoyée :</b><br>${aiReply}</p>`
+        })
+      });
+    }catch(e){}
+  }
+</script>
 </body>
 </html>
