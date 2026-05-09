@@ -357,24 +357,48 @@ Sois concret, percutant et prêt à publier directement."""
             "Post Facebook": f"{prompt}\n\nRédige 3 posts Facebook engageants (100-150 mots chacun). Format : POST 1 / POST 2 / POST 3",
             "Email marketing": f"{prompt}\n\nRédige un email marketing complet avec : Objet accrocheur, Préheader, Corps de l'email (200-300 mots), CTA fort.",
             "Texte publicitaire Google Ads": f"{prompt}\n\nRédige 3 annonces Google Ads complètes avec : Titre 1 (max 30 car.) / Titre 2 (max 30 car.) / Description (max 90 car.). Format : ANNONCE 1 / ANNONCE 2 / ANNONCE 3",
-            "Animation publicitaire HTML": f"""Tu es un expert en motion design web. Crée une animation publicitaire HTML/CSS/JS pour ce site.
+            "Animation publicitaire HTML": f"""Tu es un expert en motion design et publicité digitale. Crée une animation publicitaire HTML/CSS/JS complète et professionnelle pour ce site.
 
 Site : {result['final_url']}
-Titre : {result['seo']['title'] or 'SITRA'}
+Nom/Titre du site : {result['seo']['title'] or 'Mon Site'}
 Objectif : {objectif}
 
-Génère une animation publicitaire complète de 300x250px (format standard) en HTML autonome.
-L'animation doit :
-- Avoir un fond sombre avec dégradé violet/rose (#7c6af7 → #f07cf7)
-- Afficher le nom du site et un message accrocheur en animation CSS
-- Inclure un bouton CTA animé
-- Durer 5-6 secondes en boucle
-- Être 100% CSS/JS, sans images externes
+RÈGLES OBLIGATOIRES :
+- Taille exacte : 600px largeur x 300px hauteur (format bannière publicitaire)
+- Fond sombre avec dégradé violet/rose (couleurs #7c6af7 → #f07cf7)
+- Le contenu DOIT être directement lié à l'objectif : "{objectif}"
+- Inclure : un titre accrocheur animé, un sous-titre, un bouton CTA qui pulse
+- Animations CSS : texte qui apparaît en fondu, éléments qui bougent, bouton qui pulse
+- Durée : boucle infinie de 4-5 secondes
+- Typographie grande et lisible, style moderne
+- ZERO image externe, 100% CSS/JS
+- Le texte affiché doit correspondre exactement à l'objectif du client
 
-Retourne UNIQUEMENT le code HTML entre balises ```html et ```, rien d'autre.""",
+Retourne UNIQUEMENT le code HTML complet sans aucune explication, sans balises markdown, juste le code HTML brut qui commence par <!DOCTYPE html>.""",
         }
 
         prompt_final = types_prompts.get(type_contenu, prompt)
+
+        # Pour les animations, on utilise Claude qui génère de bien meilleur HTML
+        if type_contenu == "Animation publicitaire HTML":
+            try:
+                import requests as req2
+                headers2 = {
+                    "x-api-key": st.secrets.get("ANTHROPIC_API_KEY", ""),
+                    "anthropic-version": "2023-06-01",
+                    "Content-Type": "application/json"
+                }
+                data2 = {
+                    "model": "claude-sonnet-4-20250514",
+                    "max_tokens": 2000,
+                    "messages": [{"role": "user", "content": prompt_final}]
+                }
+                r2 = req2.post("https://api.anthropic.com/v1/messages", headers=headers2, json=data2, timeout=30)
+                resp2 = r2.json()
+                if resp2.get("content"):
+                    return resp2["content"][0]["text"]
+            except Exception:
+                pass  # fallback vers Mistral si erreur
         data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt_final}], "max_tokens": 800}
         r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=30)
         return r.json()["choices"][0]["message"]["content"]
@@ -1141,11 +1165,11 @@ TITRE PRINCIPAL DE LA PAGE (H1) :
                 if type_gen == "Animation publicitaire HTML":
                     st.markdown("**Animation générée :**")
                     import re
-                    # Nettoie les balises markdown peu importe le format
-                    html_code = contenu_gen
-                    html_code = re.sub(r'^```html\s*', '', html_code.strip())
-                    html_code = re.sub(r'^```\s*', '', html_code.strip())
-                    html_code = re.sub(r'```\s*$', '', html_code.strip())
+                    html_code = contenu_gen.strip()
+                    # Nettoie les balises markdown si présentes
+                    html_code = re.sub(r'^```html\s*', '', html_code)
+                    html_code = re.sub(r'^```\s*', '', html_code)
+                    html_code = re.sub(r'```\s*$', '', html_code)
                     html_code = html_code.strip()
 
                     col_prev, col_dl = st.columns([1, 1])
@@ -1156,7 +1180,7 @@ TITRE PRINCIPAL DE LA PAGE (H1) :
                         st.download_button("⬇️ Télécharger l'animation", html_code, file_name="animation_sitra.html", mime="text/html", key=f"dl_anim_{idx}")
                     if st.session_state.get(f"show_preview_{idx}", False):
                         st.markdown("**Prévisualisation :**")
-                        st.components.v1.html(html_code, height=320, scrolling=False)
+                        st.components.v1.html(html_code, height=340, scrolling=False)
                 else:
                     st.markdown("**Contenu généré — copiez et publiez directement :**")
                     sections = contenu_gen.split("\n\n")
