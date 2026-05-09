@@ -1228,7 +1228,7 @@ TITRE PRINCIPAL DE LA PAGE (H1) :
             with col_cm1:
                 type_contenu = st.selectbox(
                     "Type de contenu :",
-                    ["Post Instagram", "Post LinkedIn", "Post Facebook", "Email marketing", "Texte publicitaire Google Ads", "Animation publicitaire HTML"],
+                    ["Post Instagram", "Post LinkedIn", "Post Facebook", "Email marketing", "Texte publicitaire Google Ads"],
                     key=f"type_contenu_{idx}"
                 )
             with col_cm2:
@@ -1254,36 +1254,16 @@ TITRE PRINCIPAL DE LA PAGE (H1) :
                 st.divider()
                 type_gen = st.session_state.get(f"type_cm_{idx}", "")
                 contenu_gen = st.session_state[f"contenu_marque_{idx}"]
-                if type_gen == "Animation publicitaire HTML":
-                    st.markdown("**Animation générée :**")
-                    import re
-                    html_code = contenu_gen.strip()
-                    # Nettoie les balises markdown si présentes
-                    html_code = re.sub(r'^```html\s*', '', html_code)
-                    html_code = re.sub(r'^```\s*', '', html_code)
-                    html_code = re.sub(r'```\s*$', '', html_code)
-                    html_code = html_code.strip()
-
-                    col_prev, col_dl = st.columns([1, 1])
-                    with col_prev:
-                        if st.button("👁 Aperçu de l'animation", key=f"preview_{idx}"):
-                            st.session_state[f"show_preview_{idx}"] = not st.session_state.get(f"show_preview_{idx}", False)
-                    with col_dl:
-                        st.download_button("⬇️ Télécharger l'animation", html_code, file_name="animation_sitra.html", mime="text/html", key=f"dl_anim_{idx}")
-                    if st.session_state.get(f"show_preview_{idx}", False):
-                        st.markdown("**Prévisualisation :**")
-                        st.components.v1.html(html_code, height=340, scrolling=False)
-                else:
-                    st.markdown("**Contenu généré — copiez et publiez directement :**")
-                    sections = contenu_gen.split("\n\n")
-                    for section in sections:
-                        if section.strip():
-                            lignes = section.strip().split("\n")
-                            if len(lignes) > 1 and any(kw in lignes[0].upper() for kw in ["POST", "ACCROCHE", "ANNONCE", "OBJET", "EMAIL", "VERSION"]):
-                                st.markdown(f"**{lignes[0]}**")
-                                st.code("\n".join(lignes[1:]), language=None)
-                            else:
-                                st.code(section.strip(), language=None)
+                st.markdown("**Contenu généré — copiez et publiez directement :**")
+                sections = contenu_gen.split("\n\n")
+                for section in sections:
+                    if section.strip():
+                        lignes = section.strip().split("\n")
+                        if len(lignes) > 1 and any(kw in lignes[0].upper() for kw in ["POST", "ACCROCHE", "ANNONCE", "OBJET", "EMAIL", "VERSION"]):
+                            st.markdown(f"**{lignes[0]}**")
+                            st.code("\n".join(lignes[1:]), language=None)
+                        else:
+                            st.code(section.strip(), language=None)
                 if st.button("Générer une nouvelle version", key=f"regen_cm_{idx}"):
                     del st.session_state[f"contenu_marque_{idx}"]
                     st.rerun()
