@@ -802,8 +802,6 @@ def render_result(result, idx=0):
         st.divider()
         try:
             pdf_data = generer_pdf(result)
-        try:
-            pdf_data = generer_pdf(result)
             st.download_button(label="Télécharger le rapport PDF", data=pdf_data, file_name=f"SITRA_rapport_{idx}.pdf", mime="application/pdf", key=f"download_{idx}")
         except Exception:
             pass
