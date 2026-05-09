@@ -1139,13 +1139,20 @@ TITRE PRINCIPAL DE LA PAGE (H1) :
                 type_gen = st.session_state.get(f"type_cm_{idx}", "")
                 contenu_gen = st.session_state[f"contenu_marque_{idx}"]
                 if type_gen == "Animation publicitaire HTML":
-                    st.markdown("**Animation générée — prévisualisez puis téléchargez :**")
+                    st.markdown("**Animation générée :**")
                     import re
                     html_match = re.search(r'```html\n(.*?)```', contenu_gen, re.DOTALL)
                     if html_match:
                         html_code = html_match.group(1)
-                        st.components.v1.html(html_code, height=300)
-                        st.download_button("Télécharger l'animation HTML", html_code, file_name="animation_sitra.html", mime="text/html", key=f"dl_anim_{idx}")
+                        col_prev, col_dl = st.columns([1, 1])
+                        with col_prev:
+                            if st.button("👁 Aperçu de l'animation", key=f"preview_{idx}"):
+                                st.session_state[f"show_preview_{idx}"] = not st.session_state.get(f"show_preview_{idx}", False)
+                        with col_dl:
+                            st.download_button("⬇️ Télécharger l'animation", html_code, file_name="animation_sitra.html", mime="text/html", key=f"dl_anim_{idx}")
+                        if st.session_state.get(f"show_preview_{idx}", False):
+                            st.markdown("**Prévisualisation :**")
+                            st.components.v1.html(html_code, height=320, scrolling=False)
                     else:
                         st.code(contenu_gen, language="html")
                 else:
