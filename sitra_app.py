@@ -1141,20 +1141,22 @@ TITRE PRINCIPAL DE LA PAGE (H1) :
                 if type_gen == "Animation publicitaire HTML":
                     st.markdown("**Animation générée :**")
                     import re
-                    html_match = re.search(r'```html\n(.*?)```', contenu_gen, re.DOTALL)
-                    if html_match:
-                        html_code = html_match.group(1)
-                        col_prev, col_dl = st.columns([1, 1])
-                        with col_prev:
-                            if st.button("👁 Aperçu de l'animation", key=f"preview_{idx}"):
-                                st.session_state[f"show_preview_{idx}"] = not st.session_state.get(f"show_preview_{idx}", False)
-                        with col_dl:
-                            st.download_button("⬇️ Télécharger l'animation", html_code, file_name="animation_sitra.html", mime="text/html", key=f"dl_anim_{idx}")
-                        if st.session_state.get(f"show_preview_{idx}", False):
-                            st.markdown("**Prévisualisation :**")
-                            st.components.v1.html(html_code, height=320, scrolling=False)
-                    else:
-                        st.code(contenu_gen, language="html")
+                    # Nettoie les balises markdown peu importe le format
+                    html_code = contenu_gen
+                    html_code = re.sub(r'^```html\s*', '', html_code.strip())
+                    html_code = re.sub(r'^```\s*', '', html_code.strip())
+                    html_code = re.sub(r'```\s*$', '', html_code.strip())
+                    html_code = html_code.strip()
+
+                    col_prev, col_dl = st.columns([1, 1])
+                    with col_prev:
+                        if st.button("👁 Aperçu de l'animation", key=f"preview_{idx}"):
+                            st.session_state[f"show_preview_{idx}"] = not st.session_state.get(f"show_preview_{idx}", False)
+                    with col_dl:
+                        st.download_button("⬇️ Télécharger l'animation", html_code, file_name="animation_sitra.html", mime="text/html", key=f"dl_anim_{idx}")
+                    if st.session_state.get(f"show_preview_{idx}", False):
+                        st.markdown("**Prévisualisation :**")
+                        st.components.v1.html(html_code, height=320, scrolling=False)
                 else:
                     st.markdown("**Contenu généré — copiez et publiez directement :**")
                     sections = contenu_gen.split("\n\n")
