@@ -806,18 +806,7 @@ def render_result(result, idx=0):
         except Exception:
             st.caption("Export PDF indisponible pour le moment.")
         st.markdown("")
-        st.markdown("**Recevoir le rapport par email :**")
-        email_input = st.text_input("Votre email :", placeholder="exemple@email.com", key=f"email_{idx}")
-        if st.button("Envoyer le rapport PDF par email", key=f"send_email_{idx}"):
-            if email_input and "@" in email_input:
-                with st.spinner("Envoi en cours..."):
-                    succes = envoyer_rapport_email(email_input, result)
-                if succes:
-                    st.success(f"Rapport envoyé à {email_input} !")
-                else:
-                    st.error("Erreur lors de l'envoi. Vérifiez votre email.")
-            else:
-                st.warning("Merci d'entrer un email valide.")
+        st.info("📩 Pour recevoir votre rapport, téléchargez-le en PDF ci-dessus puis envoyez-le vous-même par email.")
 
     with tabs[4]:
         st.markdown("### Objectifs à atteindre")
