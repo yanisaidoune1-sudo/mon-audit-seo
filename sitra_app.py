@@ -672,7 +672,7 @@ with st.sidebar:
         [
             "Aucune option",
             "Mode comparatif",
-            "Corriger mon site automatiquement",
+            "Optimiser mon site",
             "Textes corrigés prêts à copier",
             "Génération de contenu pour votre marque",
         ],
@@ -684,7 +684,7 @@ with st.sidebar:
     st.markdown('<div style="color:#666;font-size:0.75rem;text-align:center">SITRA Engine v1.0<br>Analyse en temps réel</div>', unsafe_allow_html=True)
 
 mode_comparaison     = (st.session_state.get("menu_choix") == "Mode comparatif")
-show_corriger        = (st.session_state.get("menu_choix") == "Corriger mon site automatiquement")
+show_corriger        = (st.session_state.get("menu_choix") == "Optimiser mon site")
 show_textes          = (st.session_state.get("menu_choix") == "Textes corrigés prêts à copier")
 show_contenu_marque  = (st.session_state.get("menu_choix") == "Génération de contenu pour votre marque")
 
@@ -815,7 +815,7 @@ def render_result(result, idx=0):
         "Partager",
     ]
     if show_corriger:
-        tabs_list.append("Corriger mon site")
+        tabs_list.append("Optimiser mon site")
     if show_textes:
         tabs_list.append("Textes corrigés")
     if show_contenu_marque:
@@ -1051,9 +1051,9 @@ def render_result(result, idx=0):
 
     # ── ONGLET CORRIGER ──
     if show_corriger:
-        tab_corriger_idx = tabs_list.index("Corriger mon site")
+        tab_corriger_idx = tabs_list.index("Optimiser mon site")
         with tabs[tab_corriger_idx]:
-            st.markdown("### Corriger mon site automatiquement")
+            st.markdown("### Optimiser mon site")
             st.caption("SITRA va vous proposer 2 versions de corrections. Vous choisissez celle que vous préférez avant de l'appliquer.")
 
             plateforme = st.selectbox("Quelle plateforme utilise votre site ?", [
