@@ -707,13 +707,13 @@ st.markdown("""
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Inter:wght@400;500;600;700;800&display=swap');
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .main .block-container { padding-top: 2rem; padding-bottom: 4rem; max-width: 1200px; }
 [data-testid="stSidebar"] { background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%); }
 [data-testid="stSidebar"] * { color: #e0e0e0 !important; }
 .hero-header { background: linear-gradient(135deg, #0f0f1a 0%, #1a1a3e 50%, #0f0f1a 100%); border: 1px solid #2a2a5e; border-radius: 16px; padding: 2.5rem 3rem; margin-bottom: 2rem; text-align: center; }
-.hero-title { font-size: 5rem; font-weight: 800; background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0; letter-spacing: 0.15em; text-shadow: none; }
+.hero-title { font-family: 'Syne', sans-serif; font-size: 5.5rem; font-weight: 800; background: linear-gradient(135deg, #7c6af7 0%, #b06cf5 50%, #f07cf7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0; letter-spacing: 0.2em; filter: drop-shadow(0 0 30px rgba(124,106,247,0.5)); }
 .hero-subtitle { color: #888; font-size: 1rem; margin-top: 0.5rem; letter-spacing: 1px; }
 .metric-card { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 1px solid #2a2a4e; border-radius: 12px; padding: 1.2rem 1.5rem; text-align: center; }
 .metric-value { font-size: 1.8rem; font-weight: 700; }
