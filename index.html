@@ -102,7 +102,7 @@
   .pricing-card.popular { border-color:var(--accent); background:linear-gradient(135deg,rgba(124,106,247,0.08),rgba(240,124,247,0.05)); }
   .popular-badge { position:absolute; top:-14px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,var(--accent),var(--accent2)); color:white; padding:0.3rem 1.2rem; border-radius:999px; font-size:0.75rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; white-space:nowrap; }
   .plan-name { font-family:'Syne',sans-serif; font-size:1.2rem; font-weight:700; margin-bottom:0.5rem; }
-  .plan-price { font-family:'Syne',sans-serif; font-size:2.6rem; font-weight:800; line-height:1; margin:1rem 0 0.3rem; }
+  .plan-price { font-family:'Syne',sans-serif; font-size:2.6rem; font-weight:800; line-height:1; margin:1rem 0 0.3rem; display:block; min-width:100%; }
   .plan-price span { font-size:1rem; font-weight:400; color:var(--muted); }
   .plan-desc { color:var(--muted); font-size:0.9rem; margin-bottom:2rem; padding-bottom:2rem; border-bottom:1px solid var(--border); }
   .plan-features { list-style:none; margin-bottom:2rem; }
@@ -153,43 +153,42 @@
 </head>
 <body>
 
-<!-- INTRO — S se dessine, se remplit, puis explose en particules -->
+<!-- INTRO — S centré, se trace, se remplit, glisse gauche, ITRA apparaissent, explosion -->
 <div id="intro-screen">
   <div class="intro-glow"></div>
   <canvas id="particle-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;display:none"></canvas>
-  <svg id="s-svg" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:3;width:260px;height:295px">
-    <defs>
-      <linearGradient id="grad-s" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#7c6af7"/>
-        <stop offset="100%" style="stop-color:#f07cf7"/>
-      </linearGradient>
-    </defs>
-    <!-- S rempli — apparaît après le tracé -->
-    <text id="s-fill"
-      x="150" y="285"
-      font-family="'Arial Black', Impact, sans-serif"
-      font-size="300"
-      font-weight="900"
-      text-anchor="middle"
-      fill="url(#grad-s)"
-      style="opacity:0;filter:drop-shadow(0 0 20px rgba(124,106,247,0.9))"
-    >S</text>
-    <!-- S contour — se trace de haut en bas -->
-    <text id="s-stroke"
-      x="150" y="285"
-      font-family="'Arial Black', Impact, sans-serif"
-      font-size="300"
-      font-weight="900"
-      text-anchor="middle"
-      fill="none"
-      stroke="url(#grad-s)"
-      stroke-width="3"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      style="filter:drop-shadow(0 0 12px rgba(124,106,247,0.8))"
-    >S</text>
-  </svg>
+  <div id="sitra-wrap" style="position:relative;z-index:3;display:flex;align-items:center;justify-content:center;">
+    <svg id="s-svg" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg" style="width:150px;height:165px;flex-shrink:0;overflow:visible">
+      <defs>
+        <linearGradient id="grad-s" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#7c6af7"/>
+          <stop offset="100%" style="stop-color:#f07cf7"/>
+        </linearGradient>
+      </defs>
+      <text id="s-fill" x="100" y="185" font-family="'Arial Black',Impact,sans-serif" font-size="210" font-weight="900" text-anchor="middle" fill="url(#grad-s)" style="opacity:0">S</text>
+      <text id="s-stroke" x="100" y="185" font-family="'Arial Black',Impact,sans-serif" font-size="210" font-weight="900" text-anchor="middle" fill="none" stroke="url(#grad-s)" stroke-width="2">S</text>
+    </svg>
+    <div id="itra-wrap" style="display:flex;align-items:center;height:165px;width:0;overflow:hidden;opacity:0">
+      <span class="il">I</span><span class="il" style="animation-delay:.15s">T</span><span class="il" style="animation-delay:.28s">R</span><span class="il" style="animation-delay:.42s">A</span>
+    </div>
+  </div>
 </div>
+<style>
+.il {
+  font-family:'Arial Black',Impact,sans-serif;
+  font-size:clamp(6rem,16vw,9.5rem);
+  font-weight:900;line-height:1;
+  background:linear-gradient(160deg,#7c6af7 0%,#b570f5 50%,#f07cf7 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  opacity:0;transform:translateX(-10px);display:inline-block;
+}
+@keyframes letter-in{
+  0%  {opacity:0; transform:translateX(-30px) scale(0.88);}
+  40% {opacity:0.6;}
+  70% {transform:translateX(2px) scale(1.01);}
+  100%{opacity:1; transform:translateX(0) scale(1);}
+}
+</style>
 
 <nav>
   <div class="nav-logo">SITRA</div>
@@ -361,61 +360,67 @@
   }
   updateViews();
 
-  // Intro animation — 1) tracé du S 2) remplissage 3) explosion particules
+  // Intro : S centré → tracé → rempli → glisse gauche + ITRA → explosion
   document.body.style.overflow = 'hidden';
   const sStroke = document.getElementById('s-stroke');
   const sFill   = document.getElementById('s-fill');
-  const sSvg    = document.getElementById('s-svg');
+  const sWrap   = document.getElementById('sitra-wrap');
+  const itraWrap= document.getElementById('itra-wrap');
   const canvas  = document.getElementById('particle-canvas');
   const ctx2    = canvas.getContext('2d');
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
 
-  // Mesure la longueur du tracé du S
-  const strokeLen = sStroke.getTotalLength ? sStroke.getTotalLength() : 1800;
-  sStroke.style.strokeDasharray  = strokeLen;
-  sStroke.style.strokeDashoffset = strokeLen;
+  const sLen = sStroke.getTotalLength ? sStroke.getTotalLength() : 1400;
+  sStroke.style.strokeDasharray  = sLen;
+  sStroke.style.strokeDashoffset = sLen;
 
-  // ÉTAPE 1 — tracé du contour de haut en bas (1.6s)
+  // ÉTAPE 1 — S se trace lentement et avec douceur (2s)
   setTimeout(() => {
-    sStroke.style.transition = `stroke-dashoffset 1.6s cubic-bezier(0.4,0,0.2,1)`;
+    sStroke.style.transition = 'stroke-dashoffset 2s cubic-bezier(0.25,0.1,0.25,1)';
     sStroke.style.strokeDashoffset = '0';
-  }, 200);
+  }, 300);
 
-  // ÉTAPE 2 — remplissage de la couleur (fondu 0.5s)
+  // ÉTAPE 2 — couleur apparaît doucement en fondu
   setTimeout(() => {
-    sFill.style.transition = 'opacity 0.5s ease';
+    sFill.style.transition = 'opacity 0.8s ease-in-out';
     sFill.style.opacity = '1';
-    // efface le contour proprement
-    setTimeout(() => {
-      sStroke.style.transition = 'opacity 0.3s ease';
-      sStroke.style.opacity = '0';
-    }, 400);
-  }, 1900);
+    sStroke.style.transition = 'opacity 0.6s ease-in-out';
+    sStroke.style.opacity = '0';
+  }, 2400);
 
-  // ÉTAPE 3 — mini rebond avant explosion
+  // ÉTAPE 3 — S glisse doucement à gauche, ITRA arrivent avec grâce
   setTimeout(() => {
-    sSvg.style.transition = 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)';
-    sSvg.style.transform = 'scale(0.82)';
-  }, 2700);
+    itraWrap.style.transition = 'width 1.1s cubic-bezier(0.16,1,0.3,1), opacity 0.6s ease';
+    itraWrap.style.width = 'auto';
+    itraWrap.style.opacity = '1';
+    document.querySelectorAll('.il').forEach((el, i) => {
+      el.style.animation = `letter-in 0.9s cubic-bezier(0.16,1,0.3,1) forwards ${0.2 + i * 0.16}s`;
+    });
+  }, 3300);
 
-  // ÉTAPE 4 — explosion
+  // ÉTAPE 4 — léger souffle avant explosion
+  setTimeout(() => {
+    sWrap.style.transition = 'transform 0.5s cubic-bezier(0.34,1.2,0.64,1)';
+    sWrap.style.transform = 'scale(1.06)';
+  }, 4400);
+
   class Particle {
     constructor(x,y){
-      this.x=x; this.y=y;
-      const angle=Math.random()*Math.PI*2, speed=Math.random()*16+6;
-      this.vx=Math.cos(angle)*speed; this.vy=Math.sin(angle)*speed;
-      this.alpha=1; this.size=Math.random()*8+2;
-      this.decay=Math.random()*0.016+0.011;
+      this.x=x;this.y=y;
+      const angle=Math.random()*Math.PI*2,speed=Math.random()*12+4;
+      this.vx=Math.cos(angle)*speed;this.vy=Math.sin(angle)*speed;
+      this.alpha=1;this.size=Math.random()*7+2;
+      this.decay=Math.random()*0.012+0.008;
       const t=Math.random();
       this.color=`rgb(${Math.round(124+(240-124)*t)},${Math.round(106+(124-106)*t)},247)`;
       this.isLine=Math.random()>0.55;
-      this.len=Math.random()*24+8; this.rot=Math.random()*Math.PI*2;
+      this.len=Math.random()*22+8;this.rot=Math.random()*Math.PI*2;
     }
-    update(){this.x+=this.vx;this.y+=this.vy;this.vx*=0.96;this.vy*=0.96;this.alpha-=this.decay;}
+    update(){this.x+=this.vx;this.y+=this.vy;this.vx*=0.97;this.vy*=0.97;this.alpha-=this.decay;}
     draw(){
       ctx2.save();ctx2.globalAlpha=Math.max(0,this.alpha);
-      ctx2.fillStyle=this.color;ctx2.strokeStyle=this.color;ctx2.lineWidth=2.5;
+      ctx2.fillStyle=this.color;ctx2.strokeStyle=this.color;ctx2.lineWidth=2;
       if(this.isLine){ctx2.translate(this.x,this.y);ctx2.rotate(this.rot);ctx2.beginPath();ctx2.moveTo(-this.len/2,0);ctx2.lineTo(this.len/2,0);ctx2.stroke();}
       else{ctx2.beginPath();ctx2.arc(this.x,this.y,this.size,0,Math.PI*2);ctx2.fill();}
       ctx2.restore();
@@ -423,11 +428,11 @@
   }
   let particles=[];
   function spawnParticles(){
-    const rect=sSvg.getBoundingClientRect();
-    const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
-    for(let i=0;i<180;i++){
-      const ox=(Math.random()-0.5)*rect.width*0.85;
-      const oy=(Math.random()-0.5)*rect.height*0.85;
+    const rect=sWrap.getBoundingClientRect();
+    const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+    for(let i=0;i<220;i++){
+      const ox=(Math.random()-0.5)*rect.width*0.9;
+      const oy=(Math.random()-0.5)*rect.height*0.9;
       particles.push(new Particle(cx+ox,cy+oy));
     }
   }
@@ -437,24 +442,21 @@
     particles.forEach(p=>{p.update();p.draw();});
     if(particles.length>0) requestAnimationFrame(animParticles);
   }
-
   setTimeout(()=>{
     canvas.style.display='block';
-    spawnParticles(); animParticles();
-    sSvg.style.transition='transform 0.45s ease, opacity 0.35s ease';
-    sSvg.style.transform='scale(3.2)';
-    sSvg.style.opacity='0';
-    document.querySelector('.intro-glow').style.transition='opacity 0.3s';
+    spawnParticles();animParticles();
+    sWrap.style.transition='transform 0.7s cubic-bezier(0.4,0,0.2,1), opacity 0.6s ease';
+    sWrap.style.transform='scale(3)';
+    sWrap.style.opacity='0';
+    document.querySelector('.intro-glow').style.transition='opacity 0.5s ease';
     document.querySelector('.intro-glow').style.opacity='0';
-  },3050);
-
+  },4900);
   setTimeout(()=>{
     const intro=document.getElementById('intro-screen');
-    intro.style.transition='opacity 0.4s';
-    intro.style.opacity='0';
+    intro.style.transition='opacity 0.6s ease';intro.style.opacity='0';
     document.body.style.overflow='';
-    setTimeout(()=>intro.remove(),400);
-  },3700);
+    setTimeout(()=>intro.remove(),600);
+  },5600);
 
   // Contact IA — réponse immédiate + email admin via Resend
   async function sendContactAI(){
