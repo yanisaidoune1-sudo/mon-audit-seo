@@ -762,8 +762,10 @@ def render_issues(issues):
         st.markdown('<div class="issue-item issue-ok">Aucun problème détecté dans cette catégorie.</div>', unsafe_allow_html=True)
     else:
         for issue in issues:
+            # Nettoie les tirets et symboles techniques
+            msg = issue.replace("[X]", "").replace("[!]", "").replace(" — ", " : ").strip()
             css_class = "issue-critical" if issue.startswith("[X]") or "pas de" in issue.lower() else "issue-warning"
-            st.markdown(f'<div class="issue-item {css_class}">{issue}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="issue-item {css_class}">{msg}</div>', unsafe_allow_html=True)
 
 # ── RENDER RESULT ─────────────────────────────────────────────────────────────
 def render_result(result, idx=0):
@@ -854,9 +856,9 @@ def render_result(result, idx=0):
             col_u1, col_u2 = st.columns(2)
             with col_u1:
                 st.markdown("**Ce qu'on a trouvé**")
-                st.markdown(f"- **Menu** : {'Présent' if ux['has_nav'] else 'Absent'} ({ux['nav_links_count']} liens)")
-                st.markdown(f"- **Boutons** : {ux['buttons_count']} {'(correct)' if ux['buttons_count'] > 0 else '(manquant)'}")
-                st.markdown(f"- **Contact** : {'Trouvé' if ux['has_contact'] else 'Absent'}")
+                st.markdown(f"- **Menu de navigation** : {'Présent' if ux['has_nav'] else 'Absent'} ({ux['nav_links_count']} liens)")
+                st.markdown(f"- **Boutons d'action** : {ux['buttons_count']} {'(correct)' if ux['buttons_count'] > 0 else '(aucun trouvé)'}")
+                st.markdown(f"- **Page contact** : {'Trouvée' if ux['has_contact'] else 'Absente'}")
                 st.markdown(f"- **Pied de page** : {'Présent' if ux['has_footer'] else 'Absent'}")
             with col_u2:
                 st.markdown("**Ce qu'il faut améliorer**")
@@ -876,9 +878,9 @@ def render_result(result, idx=0):
             col_d1, col_d2 = st.columns(2)
             with col_d1:
                 st.markdown("**Ce qu'on a trouvé**")
-                st.markdown(f"- **Icône du site** : {'Présente' if design['has_favicon'] else 'Absente'}")
-                st.markdown(f"- **Polices personnalisées** : {'Oui' if design['has_google_fonts'] else 'Non'}")
-                st.markdown(f"- **Aperçu réseaux sociaux** : {'Configuré' if design['has_og_tags'] else 'Non configuré'}")
+                st.markdown(f"- **Logo et icône du site** : {'Présents' if design['has_favicon'] else 'Absents'}")
+                st.markdown(f"- **Polices de caractères** : {'Personnalisées' if design['has_google_fonts'] else 'Standard'}")
+                st.markdown(f"- **Aperçu sur les réseaux sociaux** : {'Configuré' if design['has_og_tags'] else 'Non configuré'}")
             with col_d2:
                 st.markdown("**Ce qu'il faut améliorer**")
                 render_issues(design["issues"])
@@ -892,9 +894,9 @@ def render_result(result, idx=0):
                 st.markdown("**Ce qu'on a mesuré**")
                 rt = perf['response_time']
                 rt_label = "Excellent" if rt and rt < 1 else ("Moyen" if rt and rt < 2 else "Lent")
-                st.markdown(f"- **Connexion sécurisée** : {'Oui' if perf['is_https'] else 'Non'}")
-                st.markdown(f"- **Temps de chargement** : {rt}s — {rt_label}")
-                st.markdown(f"- **Taille de la page** : {perf['html_size_kb']} KB")
+                st.markdown(f"- **Connexion sécurisée (HTTPS)** : {'Activée' if perf['is_https'] else 'Non activée'}")
+                st.markdown(f"- **Temps de chargement** : {rt} secondes — {rt_label}")
+                st.markdown(f"- **Poids de la page** : {perf['html_size_kb']} KB")
             with col_p2:
                 st.markdown("**Ce qu'il faut améliorer**")
                 render_issues(perf["issues"])
