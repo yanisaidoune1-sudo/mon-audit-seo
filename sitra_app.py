@@ -1414,7 +1414,8 @@ with st.expander("Vous avez une question ? Posez-la à l'assistant SITRA"):
                     contexte = f"Le site analysé est {r['final_url']} avec un score de {r['global_score']}/100. SEO: {r['seo']['score']}/100, UX: {r['ux']['score']}/100, Performance: {r['performance']['score']}/100."
 
                 messages = [
-                    {"role": "system", "content": f"""Tu es l'assistant de SITRA, un outil d'analyse de sites web. Tu réponds aux questions en langage simple et accessible, sans jargon technique. Tu expliques les termes avec des exemples concrets. Tu gardes le contexte de la conversation.
+                    {"role": "system", "content": f"""Tu es l'assistant de SITRA, un outil d'analyse de sites web. Tu réponds aux questions en langage simple et accessible, sans jargon technique. Tu expliques les termes avec des exemples concrets du quotidien. Tu gardes le contexte de la conversation.
+IMPORTANT : Tu dois TOUJOURS terminer tes réponses complètement. Ne coupe jamais une phrase en plein milieu. Si tu donnes une liste, termine-la entièrement.
 {f'Contexte du site analysé : {contexte}' if contexte else ''}"""}
                 ]
                 for msg in st.session_state["chat_messages"]:
@@ -1423,9 +1424,9 @@ with st.expander("Vous avez une question ? Posez-la à l'assistant SITRA"):
                 data = {
                     "model": "mistral-small-latest",
                     "messages": messages,
-                    "max_tokens": 500
+                    "max_tokens": 1500
                 }
-                r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=15)
+                r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=30)
                 reponse = r.json()["choices"][0]["message"]["content"]
                 st.session_state["chat_messages"].append({"role": "assistant", "content": reponse})
                 st.session_state["chat_input_key"] += 1
@@ -1569,3 +1570,4 @@ def typo3_fix_seo(typo3_url, token, result):
     except Exception as e:
         erreurs.append(str(e))
     return corrections, erreurs
+                
