@@ -240,7 +240,7 @@
     <div class="feature-card reveal"><div class="feature-num">03</div><div class="feature-title">Un site rapide qui ne fait pas fuir</div><div class="feature-desc">53% des visiteurs partent si votre site met plus de 3 secondes à charger. SITRA mesure et corrige.</div></div>
     <div class="feature-card reveal"><div class="feature-num">04</div><div class="feature-title">Une belle première impression</div><div class="feature-desc">Polices, couleurs, aperçu sur les réseaux sociaux — votre site inspire-t-il confiance ?</div></div>
     <div class="feature-card reveal"><div class="feature-num">05</div><div class="feature-title">Comparez aux références de votre secteur</div><div class="feature-desc">SITRA détecte votre secteur et compare votre site aux meilleurs acteurs de votre domaine.</div></div>
-    <div class="feature-card reveal"><div class="feature-num">06</div><div class="feature-title">Génération de contenu pour votre marque</div><div class="feature-desc">SITRA analyse votre identité et génère automatiquement des posts animés, emails et visuels publicitaires prêts à diffuser.</div></div>
+    <div class="feature-card reveal"><div class="feature-num">06</div><div class="feature-title">Génération de contenu pour votre marque</div><div class="feature-desc">SITRA génère automatiquement des emails et contenus marketing adaptés à votre identité de marque, prêts à envoyer.</div></div>
   </div>
 </section>
 
@@ -388,21 +388,22 @@
     sStroke.style.opacity = '0';
   }, 2400);
 
-  // ÉTAPE 3 — S glisse vers la gauche naturellement en laissant place aux lettres
+  // ÉTAPE 3 — S glisse vers la gauche, ITRA arrivent depuis la droite
   setTimeout(() => {
-    // On ajoute les lettres ITRA dans le DOM — elles poussent le S vers la gauche naturellement
-    itraWrap.style.transition = 'opacity 0.2s ease';
-    itraWrap.style.opacity = '1';
+    // Le wrapper passe en flex-start pour que le S parte à gauche
+    sWrap.style.transition = 'justify-content 0s';
+    sWrap.style.justifyContent = 'center';
 
-    // Chaque lettre glisse depuis sa position avec une belle courbe douce
+    // Le S se décale vers la gauche via margin
+    const sSvgEl = document.getElementById('s-svg');
+    sSvgEl.style.transition = 'margin-right 1.1s cubic-bezier(0.16,1,0.3,1)';
+    sSvgEl.style.marginRight = '0px';
+
+    // ITRA apparaissent lettre par lettre depuis la droite
+    itraWrap.style.opacity = '1';
     document.querySelectorAll('.il').forEach((el, i) => {
       el.style.animation = `letter-in 1.0s cubic-bezier(0.16,1,0.3,1) forwards ${i * 0.16}s`;
     });
-
-    // Le SVG du S se déplace vers la gauche en même temps, fluide
-    const sSvgEl = document.getElementById('s-svg');
-    sSvgEl.style.transition = 'transform 1.1s cubic-bezier(0.16,1,0.3,1)';
-    sSvgEl.style.transform = 'translateX(-4px)';
   }, 3300);
 
   // ÉTAPE 4 — léger souffle avant explosion
