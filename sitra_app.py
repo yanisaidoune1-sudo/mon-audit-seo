@@ -1113,7 +1113,136 @@ def render_result(result, idx=0):
         tab_corriger_idx = tabs_list.index("Optimiser mon site")
         with tabs[tab_corriger_idx]:
             st.markdown("### Optimiser mon site")
-            st.caption("SITRA va vous proposer 2 versions de corrections. Vous choisissez celle que vous préférez avant de l'appliquer.")
+            st.caption("SITRA a détecté les problèmes sur votre site. Voici où ils se trouvent, puis choisissez votre version de corrections.")
+
+            # ── APERÇU VISUEL DU SITE AVEC PROBLÈMES SURLIGNÉS ──
+            st.markdown("#### 🔍 Aperçu de votre site avec les problèmes détectés")
+
+            seo = result["seo"]
+            ux = result["ux"]
+            perf = result["performance"]
+            design = result["design"]
+            content = result["content"]
+
+            # Titre de la page
+            title_color = "#dc3545" if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70 else "#28a745"
+            title_text = seo["title"] or "(Titre manquant)"
+            title_note = "❌ Titre trop court ou manquant — Google ne sait pas de quoi parle votre site" if title_color == "#dc3545" else "✅ Titre correct"
+
+            # Description Google
+            desc_color = "#dc3545" if not seo["meta_description"] else "#28a745"
+            desc_text = seo["meta_description"] or "(Description manquante)"
+            desc_note = "❌ Description manquante — Google ne peut pas résumer votre site dans ses résultats" if desc_color == "#dc3545" else "✅ Description présente"
+
+            # Images
+            img_color = "#ffc107" if seo["images_no_alt"] > 0 else "#28a745"
+            img_note = f"⚠️ {seo['images_no_alt']} image(s) sans description — Google ne les comprend pas" if seo["images_no_alt"] > 0 else "✅ Toutes les images ont une description"
+
+            # HTTPS
+            https_color = "#dc3545" if not perf["is_https"] else "#28a745"
+            https_note = "❌ Site non sécurisé — les visiteurs voient une alerte de danger" if not perf["is_https"] else "✅ Site sécurisé"
+
+            # Vitesse
+            rt = perf.get("response_time", 0) or 0
+            speed_color = "#dc3545" if rt > 3 else ("#ffc107" if rt > 1.5 else "#28a745")
+            speed_note = f"❌ Très lent ({rt}s) — 53% des visiteurs partent" if rt > 3 else (f"⚠️ Moyen ({rt}s) — peut mieux faire" if rt > 1.5 else f"✅ Rapide ({rt}s)")
+
+            # Menu
+            nav_color = "#dc3545" if not ux["has_nav"] else "#28a745"
+            nav_note = "❌ Pas de menu détecté — les visiteurs ne savent pas où aller" if not ux["has_nav"] else f"✅ Menu présent avec {ux['nav_links_count']} liens"
+
+            # Contact
+            contact_color = "#dc3545" if not ux["has_contact"] else "#28a745"
+            contact_note = "❌ Pas de page contact — vous perdez des clients potentiels" if not ux["has_contact"] else "✅ Page contact présente"
+
+            # OG tags
+            og_color = "#ffc107" if not design["has_og_tags"] else "#28a745"
+            og_note = "⚠️ Aperçu réseaux sociaux non configuré — votre site s'affiche mal quand partagé" if not design["has_og_tags"] else "✅ Aperçu réseaux sociaux configuré"
+
+            st.markdown(f"""
+            <div style="border:2px solid #2a2a4e;border-radius:16px;overflow:hidden;margin-bottom:2rem;font-family:'Inter',sans-serif;">
+
+              <!-- Barre navigateur simulée -->
+              <div style="background:#1a1a2e;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.8rem;border-bottom:1px solid #2a2a4e;">
+                <div style="display:flex;gap:6px;">
+                  <div style="width:12px;height:12px;border-radius:50%;background:#dc3545;"></div>
+                  <div style="width:12px;height:12px;border-radius:50%;background:#ffc107;"></div>
+                  <div style="width:12px;height:12px;border-radius:50%;background:#28a745;"></div>
+                </div>
+                <div style="background:#0a0a18;border-radius:6px;padding:0.3rem 1rem;flex:1;font-size:0.8rem;color:#888;">
+                  {'🔒' if perf['is_https'] else '⚠️'} {result['final_url']}
+                </div>
+              </div>
+
+              <!-- Contenu simulé du site -->
+              <div style="background:#0f0f1a;padding:1.5rem;">
+
+                <!-- Titre -->
+                <div style="border:2px solid {title_color};border-radius:8px;padding:0.8rem 1rem;margin-bottom:0.8rem;position:relative;">
+                  <div style="font-size:0.7rem;font-weight:700;color:{title_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">TITRE DE LA PAGE</div>
+                  <div style="font-size:1.3rem;font-weight:700;color:#e8e8f0;">{title_text[:80]}</div>
+                  <div style="font-size:0.78rem;color:{title_color};margin-top:0.4rem;">{title_note}</div>
+                </div>
+
+                <!-- Description -->
+                <div style="border:2px solid {desc_color};border-radius:8px;padding:0.8rem 1rem;margin-bottom:0.8rem;">
+                  <div style="font-size:0.7rem;font-weight:700;color:{desc_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">DESCRIPTION GOOGLE</div>
+                  <div style="font-size:0.9rem;color:#aaa;font-style:italic;">{desc_text[:160]}</div>
+                  <div style="font-size:0.78rem;color:{desc_color};margin-top:0.4rem;">{desc_note}</div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:0.8rem;">
+
+                  <!-- Navigation -->
+                  <div style="border:2px solid {nav_color};border-radius:8px;padding:0.8rem 1rem;">
+                    <div style="font-size:0.7rem;font-weight:700;color:{nav_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">MENU DE NAVIGATION</div>
+                    <div style="font-size:0.85rem;color:#888;">{nav_note}</div>
+                  </div>
+
+                  <!-- Contact -->
+                  <div style="border:2px solid {contact_color};border-radius:8px;padding:0.8rem 1rem;">
+                    <div style="font-size:0.7rem;font-weight:700;color:{contact_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">PAGE CONTACT</div>
+                    <div style="font-size:0.85rem;color:#888;">{contact_note}</div>
+                  </div>
+
+                  <!-- Vitesse -->
+                  <div style="border:2px solid {speed_color};border-radius:8px;padding:0.8rem 1rem;">
+                    <div style="font-size:0.7rem;font-weight:700;color:{speed_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">VITESSE DE CHARGEMENT</div>
+                    <div style="font-size:0.85rem;color:#888;">{speed_note}</div>
+                  </div>
+
+                  <!-- HTTPS -->
+                  <div style="border:2px solid {https_color};border-radius:8px;padding:0.8rem 1rem;">
+                    <div style="font-size:0.7rem;font-weight:700;color:{https_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">SÉCURITÉ</div>
+                    <div style="font-size:0.85rem;color:#888;">{https_note}</div>
+                  </div>
+
+                  <!-- Images -->
+                  <div style="border:2px solid {img_color};border-radius:8px;padding:0.8rem 1rem;">
+                    <div style="font-size:0.7rem;font-weight:700;color:{img_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">IMAGES</div>
+                    <div style="font-size:0.85rem;color:#888;">{img_note}</div>
+                  </div>
+
+                  <!-- Réseaux sociaux -->
+                  <div style="border:2px solid {og_color};border-radius:8px;padding:0.8rem 1rem;">
+                    <div style="font-size:0.7rem;font-weight:700;color:{og_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">RÉSEAUX SOCIAUX</div>
+                    <div style="font-size:0.85rem;color:#888;">{og_note}</div>
+                  </div>
+
+                </div>
+
+                <!-- Légende -->
+                <div style="display:flex;gap:1.5rem;padding-top:0.8rem;border-top:1px solid #2a2a4e;">
+                  <span style="font-size:0.78rem;color:#dc3545;">🔴 Problème critique</span>
+                  <span style="font-size:0.78rem;color:#ffc107;">🟡 À améliorer</span>
+                  <span style="font-size:0.78rem;color:#28a745;">🟢 Correct</span>
+                </div>
+
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.divider()
 
             plateforme = st.selectbox("Quelle plateforme utilise votre site ?", [
                 "Choisissez votre plateforme...",
