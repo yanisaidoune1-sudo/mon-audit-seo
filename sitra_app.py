@@ -1115,133 +1115,115 @@ def render_result(result, idx=0):
             st.markdown("### Optimiser mon site")
             st.caption("SITRA a détecté les problèmes sur votre site. Voici où ils se trouvent, puis choisissez votre version de corrections.")
 
-            # ── APERÇU VISUEL DU SITE AVEC PROBLÈMES SURLIGNÉS ──
-            st.markdown("#### 🔍 Aperçu de votre site avec les problèmes détectés")
-
             seo = result["seo"]
             ux = result["ux"]
             perf = result["performance"]
             design = result["design"]
             content = result["content"]
 
-            # Titre de la page
             title_color = "#dc3545" if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70 else "#28a745"
-            title_text = seo["title"] or "(Titre manquant)"
-            title_note = "❌ Titre trop court ou manquant — Google ne sait pas de quoi parle votre site" if title_color == "#dc3545" else "✅ Titre correct"
+            title_text = (seo["title"] or "(Titre manquant)")[:80]
+            title_note = "❌ Titre manquant ou trop court — Google ne sait pas de quoi parle votre site" if title_color == "#dc3545" else "✅ Titre correct"
 
-            # Description Google
             desc_color = "#dc3545" if not seo["meta_description"] else "#28a745"
-            desc_text = seo["meta_description"] or "(Description manquante)"
-            desc_note = "❌ Description manquante — Google ne peut pas résumer votre site dans ses résultats" if desc_color == "#dc3545" else "✅ Description présente"
+            desc_text = (seo["meta_description"] or "(Description manquante)")[:160]
+            desc_note = "❌ Description manquante — Google ne peut pas résumer votre site" if desc_color == "#dc3545" else "✅ Description présente"
 
-            # Images
             img_color = "#ffc107" if seo["images_no_alt"] > 0 else "#28a745"
             img_note = f"⚠️ {seo['images_no_alt']} image(s) sans description — Google ne les comprend pas" if seo["images_no_alt"] > 0 else "✅ Toutes les images ont une description"
 
-            # HTTPS
             https_color = "#dc3545" if not perf["is_https"] else "#28a745"
-            https_note = "❌ Site non sécurisé — les visiteurs voient une alerte de danger" if not perf["is_https"] else "✅ Site sécurisé"
+            https_note = "❌ Site non sécurisé — alerte danger pour les visiteurs" if not perf["is_https"] else "✅ Site sécurisé"
 
-            # Vitesse
             rt = perf.get("response_time", 0) or 0
             speed_color = "#dc3545" if rt > 3 else ("#ffc107" if rt > 1.5 else "#28a745")
-            speed_note = f"❌ Très lent ({rt}s) — 53% des visiteurs partent" if rt > 3 else (f"⚠️ Moyen ({rt}s) — peut mieux faire" if rt > 1.5 else f"✅ Rapide ({rt}s)")
+            speed_note = f"❌ Très lent ({rt}s) — 53% des visiteurs partent" if rt > 3 else (f"⚠️ Moyen ({rt}s)" if rt > 1.5 else f"✅ Rapide ({rt}s)")
 
-            # Menu
             nav_color = "#dc3545" if not ux["has_nav"] else "#28a745"
-            nav_note = "❌ Pas de menu détecté — les visiteurs ne savent pas où aller" if not ux["has_nav"] else f"✅ Menu présent avec {ux['nav_links_count']} liens"
+            nav_note = "❌ Pas de menu — les visiteurs ne savent pas où aller" if not ux["has_nav"] else f"✅ Menu présent ({ux['nav_links_count']} liens)"
 
-            # Contact
             contact_color = "#dc3545" if not ux["has_contact"] else "#28a745"
-            contact_note = "❌ Pas de page contact — vous perdez des clients potentiels" if not ux["has_contact"] else "✅ Page contact présente"
+            contact_note = "❌ Pas de contact — vous perdez des clients" if not ux["has_contact"] else "✅ Page contact présente"
 
-            # OG tags
             og_color = "#ffc107" if not design["has_og_tags"] else "#28a745"
-            og_note = "⚠️ Aperçu réseaux sociaux non configuré — votre site s'affiche mal quand partagé" if not design["has_og_tags"] else "✅ Aperçu réseaux sociaux configuré"
+            og_note = "⚠️ Aperçu réseaux sociaux non configuré" if not design["has_og_tags"] else "✅ Aperçu réseaux sociaux configuré"
 
-            st.markdown(f"""
-            <div style="border:2px solid #2a2a4e;border-radius:16px;overflow:hidden;margin-bottom:2rem;font-family:'Inter',sans-serif;">
+            lock = "🔒" if perf["is_https"] else "⚠️"
 
-              <!-- Barre navigateur simulée -->
-              <div style="background:#1a1a2e;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.8rem;border-bottom:1px solid #2a2a4e;">
-                <div style="display:flex;gap:6px;">
-                  <div style="width:12px;height:12px;border-radius:50%;background:#dc3545;"></div>
-                  <div style="width:12px;height:12px;border-radius:50%;background:#ffc107;"></div>
-                  <div style="width:12px;height:12px;border-radius:50%;background:#28a745;"></div>
-                </div>
-                <div style="background:#0a0a18;border-radius:6px;padding:0.3rem 1rem;flex:1;font-size:0.8rem;color:#888;">
-                  {'🔒' if perf['is_https'] else '⚠️'} {result['final_url']}
-                </div>
-              </div>
+            html_preview = f"""
+<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>
+  body{{margin:0;padding:0;font-family:'Inter',Arial,sans-serif;background:#0f0f1a;color:#e8e8f0;}}
+  .browser{{border:2px solid #2a2a4e;border-radius:16px;overflow:hidden;}}
+  .bar{{background:#1a1a2e;padding:10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #2a2a4e;}}
+  .dots{{display:flex;gap:6px;}}
+  .dot{{width:12px;height:12px;border-radius:50%;}}
+  .url{{background:#0a0a18;border-radius:6px;padding:4px 14px;flex:1;font-size:12px;color:#888;}}
+  .body{{background:#0f0f1a;padding:20px;}}
+  .block{{border-radius:10px;padding:14px;margin-bottom:12px;}}
+  .label{{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}}
+  .value{{font-size:15px;font-weight:600;margin-bottom:6px;}}
+  .note{{font-size:12px;margin-top:4px;}}
+  .grid{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}}
+  .legend{{display:flex;gap:20px;padding-top:12px;border-top:1px solid #2a2a4e;font-size:12px;}}
+</style></head><body>
+<div class="browser">
+  <div class="bar">
+    <div class="dots">
+      <div class="dot" style="background:#dc3545"></div>
+      <div class="dot" style="background:#ffc107"></div>
+      <div class="dot" style="background:#28a745"></div>
+    </div>
+    <div class="url">{lock} {result['final_url']}</div>
+  </div>
+  <div class="body">
+    <div class="block" style="border:2px solid {title_color}">
+      <div class="label" style="color:{title_color}">Titre de la page</div>
+      <div class="value">{title_text}</div>
+      <div class="note" style="color:{title_color}">{title_note}</div>
+    </div>
+    <div class="block" style="border:2px solid {desc_color}">
+      <div class="label" style="color:{desc_color}">Description Google</div>
+      <div class="value" style="font-size:13px;color:#aaa;font-style:italic">{desc_text}</div>
+      <div class="note" style="color:{desc_color}">{desc_note}</div>
+    </div>
+    <div class="grid">
+      <div class="block" style="border:2px solid {nav_color}">
+        <div class="label" style="color:{nav_color}">Menu de navigation</div>
+        <div class="note" style="color:{nav_color}">{nav_note}</div>
+      </div>
+      <div class="block" style="border:2px solid {contact_color}">
+        <div class="label" style="color:{contact_color}">Page contact</div>
+        <div class="note" style="color:{contact_color}">{contact_note}</div>
+      </div>
+      <div class="block" style="border:2px solid {speed_color}">
+        <div class="label" style="color:{speed_color}">Vitesse de chargement</div>
+        <div class="note" style="color:{speed_color}">{speed_note}</div>
+      </div>
+      <div class="block" style="border:2px solid {https_color}">
+        <div class="label" style="color:{https_color}">Sécurité</div>
+        <div class="note" style="color:{https_color}">{https_note}</div>
+      </div>
+      <div class="block" style="border:2px solid {img_color}">
+        <div class="label" style="color:{img_color}">Images</div>
+        <div class="note" style="color:{img_color}">{img_note}</div>
+      </div>
+      <div class="block" style="border:2px solid {og_color}">
+        <div class="label" style="color:{og_color}">Réseaux sociaux</div>
+        <div class="note" style="color:{og_color}">{og_note}</div>
+      </div>
+    </div>
+    <div class="legend">
+      <span style="color:#dc3545">🔴 Problème critique</span>
+      <span style="color:#ffc107">🟡 À améliorer</span>
+      <span style="color:#28a745">🟢 Correct</span>
+    </div>
+  </div>
+</div>
+</body></html>"""
 
-              <!-- Contenu simulé du site -->
-              <div style="background:#0f0f1a;padding:1.5rem;">
-
-                <!-- Titre -->
-                <div style="border:2px solid {title_color};border-radius:8px;padding:0.8rem 1rem;margin-bottom:0.8rem;position:relative;">
-                  <div style="font-size:0.7rem;font-weight:700;color:{title_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">TITRE DE LA PAGE</div>
-                  <div style="font-size:1.3rem;font-weight:700;color:#e8e8f0;">{title_text[:80]}</div>
-                  <div style="font-size:0.78rem;color:{title_color};margin-top:0.4rem;">{title_note}</div>
-                </div>
-
-                <!-- Description -->
-                <div style="border:2px solid {desc_color};border-radius:8px;padding:0.8rem 1rem;margin-bottom:0.8rem;">
-                  <div style="font-size:0.7rem;font-weight:700;color:{desc_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">DESCRIPTION GOOGLE</div>
-                  <div style="font-size:0.9rem;color:#aaa;font-style:italic;">{desc_text[:160]}</div>
-                  <div style="font-size:0.78rem;color:{desc_color};margin-top:0.4rem;">{desc_note}</div>
-                </div>
-
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:0.8rem;">
-
-                  <!-- Navigation -->
-                  <div style="border:2px solid {nav_color};border-radius:8px;padding:0.8rem 1rem;">
-                    <div style="font-size:0.7rem;font-weight:700;color:{nav_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">MENU DE NAVIGATION</div>
-                    <div style="font-size:0.85rem;color:#888;">{nav_note}</div>
-                  </div>
-
-                  <!-- Contact -->
-                  <div style="border:2px solid {contact_color};border-radius:8px;padding:0.8rem 1rem;">
-                    <div style="font-size:0.7rem;font-weight:700;color:{contact_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">PAGE CONTACT</div>
-                    <div style="font-size:0.85rem;color:#888;">{contact_note}</div>
-                  </div>
-
-                  <!-- Vitesse -->
-                  <div style="border:2px solid {speed_color};border-radius:8px;padding:0.8rem 1rem;">
-                    <div style="font-size:0.7rem;font-weight:700;color:{speed_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">VITESSE DE CHARGEMENT</div>
-                    <div style="font-size:0.85rem;color:#888;">{speed_note}</div>
-                  </div>
-
-                  <!-- HTTPS -->
-                  <div style="border:2px solid {https_color};border-radius:8px;padding:0.8rem 1rem;">
-                    <div style="font-size:0.7rem;font-weight:700;color:{https_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">SÉCURITÉ</div>
-                    <div style="font-size:0.85rem;color:#888;">{https_note}</div>
-                  </div>
-
-                  <!-- Images -->
-                  <div style="border:2px solid {img_color};border-radius:8px;padding:0.8rem 1rem;">
-                    <div style="font-size:0.7rem;font-weight:700;color:{img_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">IMAGES</div>
-                    <div style="font-size:0.85rem;color:#888;">{img_note}</div>
-                  </div>
-
-                  <!-- Réseaux sociaux -->
-                  <div style="border:2px solid {og_color};border-radius:8px;padding:0.8rem 1rem;">
-                    <div style="font-size:0.7rem;font-weight:700;color:{og_color};margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:1px;">RÉSEAUX SOCIAUX</div>
-                    <div style="font-size:0.85rem;color:#888;">{og_note}</div>
-                  </div>
-
-                </div>
-
-                <!-- Légende -->
-                <div style="display:flex;gap:1.5rem;padding-top:0.8rem;border-top:1px solid #2a2a4e;">
-                  <span style="font-size:0.78rem;color:#dc3545;">🔴 Problème critique</span>
-                  <span style="font-size:0.78rem;color:#ffc107;">🟡 À améliorer</span>
-                  <span style="font-size:0.78rem;color:#28a745;">🟢 Correct</span>
-                </div>
-
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
-
+            import streamlit.components.v1 as components
+            components.html(html_preview, height=580, scrolling=False)
             st.divider()
 
             plateforme = st.selectbox("Quelle plateforme utilise votre site ?", [
@@ -1464,13 +1446,49 @@ TITRE PRINCIPAL DE LA PAGE (H1) :
                     del st.session_state[f"contenu_marque_{idx}"]
                     st.rerun()
 
-    # ── ONGLET MODE COMPARATIF ──
     if mode_comparaison:
         tab_comp_idx = tabs_list.index("Mode comparatif")
         with tabs[tab_comp_idx]:
             st.markdown("### Mode comparatif")
-            st.caption("Entrez l'URL de votre site et celle d'un concurrent pour comparer les scores côte à côte.")
-            st.info("Lancez une nouvelle analyse en mode comparatif depuis la barre de recherche en haut — entrez votre site ET le site concurrent.")
+            st.caption("Comparez votre site à un concurrent pour voir exactement où vous avez du retard.")
+
+            # Concurrents suggérés selon le secteur détecté
+            url_lower = result['final_url'].lower()
+            titre_lower = (result['seo']['title'] or "").lower()
+            texte = url_lower + " " + titre_lower
+
+            concurrents_sugeres = []
+            if any(w in texte for w in ["nike", "adidas", "sport", "chaussure", "basket", "running", "fitness"]):
+                concurrents_sugeres = ["adidas.fr", "decathlon.fr", "newbalance.fr"]
+            elif any(w in texte for w in ["restaurant", "brasserie", "café", "pizza", "sushi", "cuisine"]):
+                concurrents_sugeres = ["tripadvisor.fr", "thefork.fr", "deliveroo.fr"]
+            elif any(w in texte for w in ["immobilier", "appartement", "maison", "location", "achat"]):
+                concurrents_sugeres = ["seloger.com", "leboncoin.fr", "orpi.com"]
+            elif any(w in texte for w in ["coiffeur", "coiffure", "salon", "beauté", "spa"]):
+                concurrents_sugeres = ["treatwell.fr", "booksy.com", "planity.com"]
+            elif any(w in texte for w in ["avocat", "notaire", "juridique", "droit", "cabinet"]):
+                concurrents_sugeres = ["village-justice.com", "avocat.fr", "jurisite.com"]
+            elif any(w in texte for w in ["médecin", "docteur", "santé", "clinique", "dentiste"]):
+                concurrents_sugeres = ["doctolib.fr", "ameli.fr", "santeclair.fr"]
+            elif any(w in texte for w in ["agence", "marketing", "communication", "web", "digital"]):
+                concurrents_sugeres = ["hubspot.fr", "semrush.com", "ahrefs.com"]
+            elif any(w in texte for w in ["boutique", "shop", "ecommerce", "vente", "produit"]):
+                concurrents_sugeres = ["shopify.com", "prestashop.com", "woocommerce.com"]
+            else:
+                concurrents_sugeres = []
+
+            if concurrents_sugeres:
+                st.markdown("**💡 Concurrents suggérés dans votre secteur :**")
+                cols = st.columns(len(concurrents_sugeres))
+                for i, concurrent in enumerate(concurrents_sugeres):
+                    with cols[i]:
+                        if st.button(f"Analyser {concurrent}", key=f"comp_suggest_{i}_{idx}"):
+                            st.session_state["url2_suggestion"] = concurrent
+                            st.info(f"Entrez **{concurrent}** dans le champ 'Site concurrent' en haut et relancez l'analyse en mode comparatif.")
+
+                st.markdown("")
+
+            st.info("Lancez une nouvelle analyse en mode comparatif depuis la barre de recherche — entrez votre site ET le site concurrent pour comparer les scores côte à côte.")
 
 # ── HERO ─────────────────────────────────────────────────────────────────────
 st.markdown("""
