@@ -470,30 +470,38 @@ Sois concret, percutant et prêt à publier directement."""
             "Post Facebook": f"{prompt}\n\nRédige 3 posts Facebook engageants (100-150 mots chacun). Format : POST 1 / POST 2 / POST 3",
             "Email marketing": f"""{prompt}
 
-Rédige un email marketing simple et percutant en français pour cet objectif : {objectif}
+Tu es un expert en copywriting émotionnel. Rédige un email marketing qui donne vraiment envie, qui touche les émotions du lecteur et le pousse à agir. L'objectif est : {objectif}
 
-L'email doit être structuré ainsi :
+L'email doit :
+- Commencer par une phrase qui accroche immédiatement (une question, une douleur, un rêve)
+- Parler directement au lecteur comme si tu le connaissais
+- Créer un sentiment d'urgence ou d'opportunité
+- Utiliser des mots simples mais puissants
+- Finir par un appel à l'action irrésistible
 
-OBJET DE L'EMAIL :
-[une ligne accrocheuse, max 50 caractères]
+Structure exacte :
 
-TEXTE DE PRÉVISUALISATION :
-[ce que le lecteur voit avant d'ouvrir, max 90 caractères]
+OBJET :
+[accrocheur, crée de la curiosité ou de l'urgence, max 50 caractères]
 
-CONTENU DE L'EMAIL :
+PRÉVISUALISATION :
+[complète l'objet, donne envie d'ouvrir, max 90 caractères]
+
+EMAIL :
 Bonjour [Prénom],
 
-[2-3 phrases d'introduction qui parlent directement au lecteur]
+[phrase d'accroche émotionnelle — une question ou une situation que le lecteur vit]
 
-[1-2 phrases qui expliquent l'offre ou le message principal]
+[développe le problème ou le désir, 2-3 phrases qui font écho à ce qu'il ressent]
 
-[1 phrase d'appel à l'action clair]
+[présente la solution de façon naturelle et enthousiaste, 2 phrases]
 
-À bientôt,
-L'équipe {result['seo']['title'] or result['final_url']}
+[urgence ou bénéfice concret — pourquoi agir maintenant]
 
-BOUTON D'ACTION :
-[texte du bouton, ex : Je découvre / Je profite / J'essaie maintenant]""",
+[signature chaleureuse]
+
+BOUTON :
+[texte court et motivant, ex : Je veux ça / Je passe à l'action / Je découvre maintenant]""",
             "Texte publicitaire Google Ads": f"{prompt}\n\nRédige 3 annonces Google Ads complètes avec : Titre 1 (max 30 car.) / Titre 2 (max 30 car.) / Description (max 90 car.). Format : ANNONCE 1 / ANNONCE 2 / ANNONCE 3",
             "Animation publicitaire HTML": f"""Tu es un expert en motion design et publicité digitale. Crée une animation publicitaire HTML/CSS/JS complète et professionnelle pour ce site.
 
