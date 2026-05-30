@@ -1458,24 +1458,51 @@ TITRE PRINCIPAL DE LA PAGE (H1) :
             texte = url_lower + " " + titre_lower
 
             concurrents_sugeres = []
-            if any(w in texte for w in ["nike", "adidas", "sport", "chaussure", "basket", "running", "fitness"]):
-                concurrents_sugeres = ["adidas.fr", "decathlon.fr", "newbalance.fr"]
-            elif any(w in texte for w in ["restaurant", "brasserie", "café", "pizza", "sushi", "cuisine"]):
-                concurrents_sugeres = ["tripadvisor.fr", "thefork.fr", "deliveroo.fr"]
-            elif any(w in texte for w in ["immobilier", "appartement", "maison", "location", "achat"]):
-                concurrents_sugeres = ["seloger.com", "leboncoin.fr", "orpi.com"]
-            elif any(w in texte for w in ["coiffeur", "coiffure", "salon", "beauté", "spa"]):
-                concurrents_sugeres = ["treatwell.fr", "booksy.com", "planity.com"]
-            elif any(w in texte for w in ["avocat", "notaire", "juridique", "droit", "cabinet"]):
-                concurrents_sugeres = ["village-justice.com", "avocat.fr", "jurisite.com"]
-            elif any(w in texte for w in ["médecin", "docteur", "santé", "clinique", "dentiste"]):
-                concurrents_sugeres = ["doctolib.fr", "ameli.fr", "santeclair.fr"]
-            elif any(w in texte for w in ["agence", "marketing", "communication", "web", "digital"]):
-                concurrents_sugeres = ["hubspot.fr", "semrush.com", "ahrefs.com"]
-            elif any(w in texte for w in ["boutique", "shop", "ecommerce", "vente", "produit"]):
-                concurrents_sugeres = ["shopify.com", "prestashop.com", "woocommerce.com"]
+            if any(w in texte for w in ["nike"]):
+                concurrents_sugeres = ["adidas.fr", "puma.com", "newbalance.fr"]
+            elif any(w in texte for w in ["adidas"]):
+                concurrents_sugeres = ["nike.com", "puma.com", "reebok.fr"]
+            elif any(w in texte for w in ["amazon"]):
+                concurrents_sugeres = ["cdiscount.com", "fnac.com", "darty.com"]
+            elif any(w in texte for w in ["zara"]):
+                concurrents_sugeres = ["hm.com", "mangooutlet.com", "uniqlo.com"]
+            elif any(w in texte for w in ["apple"]):
+                concurrents_sugeres = ["samsung.com", "huawei.com", "sony.fr"]
+            elif any(w in texte for w in ["sport", "chaussure", "basket", "running", "fitness", "gym"]):
+                concurrents_sugeres = ["decathlon.fr", "nike.com", "adidas.fr"]
+            elif any(w in texte for w in ["restaurant", "brasserie", "bistrot", "pizz", "sushi", "burger", "cuisine"]):
+                concurrents_sugeres = ["restaurant-jules-verne.com", "ledoyen.com", "guy-savoy.com"]
+            elif any(w in texte for w in ["coiffeur", "coiffure", "salon", "barbier", "hair"]):
+                concurrents_sugeres = ["davidmallet.com", "jacquesdesange.fr", "jeanlouisdavid.fr"]
+            elif any(w in texte for w in ["immobilier", "appartement", "maison", "location", "achat", "agence immo"]):
+                concurrents_sugeres = ["century21.fr", "laforet.com", "guy-hoquet.com"]
+            elif any(w in texte for w in ["avocat", "notaire", "juridique", "droit", "cabinet", "law"]):
+                concurrents_sugeres = ["linklaters.com", "gide.com", "cms-fl.com"]
+            elif any(w in texte for w in ["medecin", "docteur", "sante", "clinique", "dentiste", "kine"]):
+                concurrents_sugeres = ["hopital-paris.fr", "clinique-saint-germain.fr", "radiologie-paris.fr"]
+            elif any(w in texte for w in ["hotel", "hebergement", "chambre", "sejour", "auberge"]):
+                concurrents_sugeres = ["hotel-ritz-paris.com", "lemeridien.com", "accor.com"]
+            elif any(w in texte for w in ["boulanger", "boulangerie", "patisserie", "gateau", "pain"]):
+                concurrents_sugeres = ["poilane.com", "ladureeparis.com", "lenotre.fr"]
+            elif any(w in texte for w in ["agence", "marketing", "communication", "publicite", "digital", "web"]):
+                concurrents_sugeres = ["publicisgroupe.com", "havas.com", "ogilvy.com"]
+            elif any(w in texte for w in ["boutique", "shop", "mode", "vetement", "luxe"]):
+                concurrents_sugeres = ["louisvuitton.com", "hermes.com", "gucci.com"]
+            elif any(w in texte for w in ["voiture", "auto", "garage", "moto", "concession"]):
+                concurrents_sugeres = ["renault.fr", "peugeot.fr", "bmw.fr"]
+            elif any(w in texte for w in ["voyage", "tourisme", "vacances", "tour operator"]):
+                concurrents_sugeres = ["clubmed.fr", "voyageprive.com", "lastminute.com"]
+            elif any(w in texte for w in ["photo", "photographe", "studio", "portrait"]):
+                concurrents_sugeres = ["yannarthus-bertrand.org", "studio-harcourt.com", "fredericlagrange.com"]
+            elif any(w in texte for w in ["architecte", "architecture", "design", "interieur"]):
+                concurrents_sugeres = ["wilmotte.com", "ateliers-jean-nouvel.com", "pca-stream.com"]
             else:
-                concurrents_sugeres = []
+                # Analyse le score pour proposer des références générales
+                score = result['global_score']
+                if score < 50:
+                    concurrents_sugeres = ["apple.com", "airbnb.fr", "spotify.com"]
+                else:
+                    concurrents_sugeres = []
 
             if concurrents_sugeres:
                 st.markdown("**💡 Concurrents suggérés dans votre secteur :**")
@@ -1541,6 +1568,88 @@ if "results" in st.session_state:
             render_result(results_list[0], idx=0)
         with col_r2:
             render_result(results_list[1], idx=1)
+
+        # ── ANALYSE DE L'ÉCART ──
+        st.divider()
+        r1 = results_list[0]
+        r2 = results_list[1]
+        ecart = r2["global_score"] - r1["global_score"]
+        site1 = r1["final_url"].replace("https://","").replace("www.","").split("/")[0]
+        site2 = r2["final_url"].replace("https://","").replace("www.","").split("/")[0]
+
+        if ecart > 0:
+            st.markdown(f"""
+            <div style="background:linear-gradient(135deg,rgba(102,126,234,0.12),rgba(240,124,247,0.08));border:1px solid rgba(102,126,234,0.4);border-radius:16px;padding:1.8rem 2rem;margin-top:1rem">
+                <div style="font-size:1.2rem;font-weight:700;color:#a090f7;margin-bottom:1rem">📊 Analyse de l'écart</div>
+                <div style="color:#e8e8f0;font-size:0.95rem;line-height:1.8">
+                    <b>{site2}</b> a un score de <b style="color:#28a745">{r2['global_score']}/100</b> contre <b style="color:#ffc107">{r1['global_score']}/100</b> pour votre site — soit <b style="color:#f07cf7">{ecart} points d'écart</b>.<br><br>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            with st.spinner("SITRA analyse l'écart et prépare vos recommandations..."):
+                try:
+                    import requests as req
+                    headers = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
+                    prompt = f"""Tu es un expert web qui analyse l'écart entre deux sites. Explique simplement, comme à un entrepreneur non-technicien.
+
+Site du client : {r1['final_url']}
+Score : {r1['global_score']}/100
+SEO : {r1['seo']['score']}/100, Navigation : {r1['ux']['score']}/100, Vitesse : {r1['performance']['score']}/100, Design : {r1['design']['score']}/100
+
+Site concurrent : {r2['final_url']}
+Score : {r2['global_score']}/100
+SEO : {r2['seo']['score']}/100, Navigation : {r2['ux']['score']}/100, Vitesse : {r2['performance']['score']}/100, Design : {r2['design']['score']}/100
+
+Rédige un texte court (5-6 phrases maximum) qui :
+1. Explique en langage simple pourquoi {site2} est devant
+2. Identifie les 2-3 points précis où le client a le plus de retard
+3. Dit exactement ce que le client doit faire en priorité pour rattraper {site2}
+4. Termine par une phrase motivante
+
+Sois direct, concret, sans jargon technique."""
+
+                    data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 400}
+                    r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=30)
+                    analyse = r.json()["choices"][0]["message"]["content"]
+
+                    st.markdown(f"""
+                    <div style="background:linear-gradient(135deg,rgba(102,126,234,0.12),rgba(240,124,247,0.08));border:1px solid rgba(102,126,234,0.4);border-radius:16px;padding:1.8rem 2rem;margin-top:1rem">
+                        <div style="font-size:1.2rem;font-weight:700;color:#a090f7;margin-bottom:1rem">📊 Analyse de l'écart — {site1} vs {site2}</div>
+                        <div style="color:#e8e8f0;font-size:0.95rem;line-height:1.8">{analyse.replace(chr(10), '<br>')}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                except Exception:
+                    st.markdown(f"""
+                    <div style="background:linear-gradient(135deg,rgba(102,126,234,0.12),rgba(240,124,247,0.08));border:1px solid rgba(102,126,234,0.4);border-radius:16px;padding:1.8rem 2rem;margin-top:1rem">
+                        <div style="font-size:1.2rem;font-weight:700;color:#a090f7;margin-bottom:1rem">📊 Analyse de l'écart</div>
+                        <div style="color:#e8e8f0;font-size:0.95rem;line-height:1.8">
+                            <b>{site2}</b> a <b>{ecart} points d'avance</b> sur votre site.<br><br>
+                            Les domaines à améliorer en priorité :<br>
+                            {'• Référencement Google : +' + str(r2["seo"]["score"] - r1["seo"]["score"]) + ' points à rattraper<br>' if r2["seo"]["score"] > r1["seo"]["score"] else ''}
+                            {'• Vitesse du site : +' + str(r2["performance"]["score"] - r1["performance"]["score"]) + ' points à rattraper<br>' if r2["performance"]["score"] > r1["performance"]["score"] else ''}
+                            {'• Navigation : +' + str(r2["ux"]["score"] - r1["ux"]["score"]) + ' points à rattraper<br>' if r2["ux"]["score"] > r1["ux"]["score"] else ''}
+                            {'• Apparence : +' + str(r2["design"]["score"] - r1["design"]["score"]) + ' points à rattraper<br>' if r2["design"]["score"] > r1["design"]["score"] else ''}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+        elif ecart < 0:
+            st.markdown(f"""
+            <div style="background:rgba(40,167,69,0.08);border:1px solid rgba(40,167,69,0.4);border-radius:16px;padding:1.8rem 2rem;margin-top:1rem">
+                <div style="font-size:1.2rem;font-weight:700;color:#28a745;margin-bottom:0.8rem">🏆 Vous êtes en avance !</div>
+                <div style="color:#e8e8f0;font-size:0.95rem;line-height:1.8">
+                    Votre site ({r1['global_score']}/100) dépasse <b>{site2}</b> ({r2['global_score']}/100) de <b>{abs(ecart)} points</b>. Continuez à l'optimiser pour creuser l'écart.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div style="background:rgba(255,193,7,0.08);border:1px solid rgba(255,193,7,0.3);border-radius:16px;padding:1.8rem 2rem;margin-top:1rem">
+                <div style="font-size:1.2rem;font-weight:700;color:#ffc107;margin-bottom:0.8rem">⚖️ Scores identiques</div>
+                <div style="color:#e8e8f0;font-size:0.95rem;">Vos deux sites ont le même score global. Regardez les scores par catégorie pour trouver où vous pouvez prendre l'avantage.</div>
+            </div>
+            """, unsafe_allow_html=True)
     else:
         render_result(results_list[0], idx=0)
 else:
