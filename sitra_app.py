@@ -2,6 +2,19 @@ import streamlit as st
 import time
 from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages, detect_secteur_et_concurrents
 
+# ── CACHE — réduit le temps de rechargement ───────────────────────────────────
+@st.cache_data(ttl=300, show_spinner=False)
+def cached_full_analysis(url):
+    return full_analysis(url)
+
+@st.cache_data(ttl=600, show_spinner=False)
+def cached_recommandations(final_url, global_score, issues_str):
+    return generer_recommandations_ia_inner(final_url, global_score, issues_str)
+
+@st.cache_data(ttl=600, show_spinner=False)
+def cached_contenu_marque(final_url, title, meta, score, word_count, type_contenu, objectif):
+    return generer_contenu_marque_inner(final_url, title, meta, score, word_count, type_contenu, objectif)
+
 # ── SHOPIFY AUTO-FIX ─────────────────────────────────────────────────────────
 def shopify_fix_seo(shop_url, access_token, result):
     """Applique TOUTES les corrections détectées par SITRA sur Shopify"""
@@ -267,7 +280,7 @@ def wordpress_fix_seo(wp_url, wp_user, wp_password, result):
     return corrections, erreurs
 
 # ── IA ────────────────────────────────────────────────────────────────────────
-def generer_recommandations_ia(result):
+def generer_recommandations_ia_inner(final_url, global_score, issues_str):
     try:
         import requests as req
         headers = {
@@ -276,9 +289,9 @@ def generer_recommandations_ia(result):
         }
         prompt = f"""Tu es un conseiller web qui aide des petits entrepreneurs à améliorer leur site. Explique les problèmes simplement, comme si tu parlais à quelqu'un qui ne connaît rien à l'informatique.
 
-Site : {result['final_url']}
-Score global : {result['global_score']}/100
-Problèmes détectés : {', '.join([i['message'] for i in result['all_issues'][:6]])}
+Site : {final_url}
+Score global : {global_score}/100
+Problèmes détectés : {issues_str}
 
 Écris exactement 5 conseils numérotés (1. 2. 3. 4. 5.).
 Chaque conseil doit être sur une nouvelle ligne, expliquer le problème simplement et dire quoi faire.
@@ -289,6 +302,10 @@ Pas de termes techniques — utilise des mots du quotidien."""
         return r.json()["choices"][0]["message"]["content"]
     except Exception:
         return None
+
+def generer_recommandations_ia(result):
+    issues_str = ', '.join([i['message'] for i in result['all_issues'][:6]])
+    return generer_recommandations_ia_inner(result['final_url'], result['global_score'], issues_str)
 
 def generer_deux_corrections(plateforme, result):
     try:
@@ -745,6 +762,13 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .main .block-container { padding-top: 2rem; padding-bottom: 4rem; max-width: 1200px; }
 [data-testid="stSidebar"] { background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%); }
 [data-testid="stSidebar"] * { color: #e0e0e0 !important; }
+/* Supprime le rideau transparent de Streamlit */
+[data-testid="stAppViewBlockContainer"] > div:first-child { opacity: 1 !important; }
+div[data-stale="true"] { opacity: 1 !important; transition: none !important; }
+.stSpinner { display: none !important; }
+.stApp > header { display: none; }
+/* Transitions instantanées */
+* { transition-duration: 0s !important; }
 .hero-header { background: linear-gradient(135deg, #0f0f1a 0%, #1a1a3e 50%, #0f0f1a 100%); border: 1px solid #2a2a5e; border-radius: 16px; padding: 2.5rem 3rem; margin-bottom: 2rem; text-align: center; }
 .hero-title { font-family: 'Syne', sans-serif; font-size: 5.5rem; font-weight: 800; background: linear-gradient(135deg, #7c6af7 0%, #b06cf5 50%, #f07cf7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0; letter-spacing: 0.2em; }
 .hero-subtitle { color: #888; font-size: 1rem; margin-top: 0.5rem; letter-spacing: 1px; }
@@ -1353,7 +1377,7 @@ if launch:
         results_list = []
         for url in urls_to_analyze:
             with st.spinner(f"Analyse de {url} en cours..."):
-                result = full_analysis(url)
+                result = cached_full_analysis(url)
             results_list.append(result)
         st.session_state["results"] = results_list
         st.session_state["mode_comp"] = mode_comparaison
@@ -1570,4 +1594,3 @@ def typo3_fix_seo(typo3_url, token, result):
     except Exception as e:
         erreurs.append(str(e))
     return corrections, erreurs
-                
