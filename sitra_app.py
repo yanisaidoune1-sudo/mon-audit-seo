@@ -468,7 +468,32 @@ Sois concret, percutant et prêt à publier directement."""
             "Post Instagram": f"{prompt}\n\nRédige 3 posts Instagram différents (150-200 caractères chacun + 5 hashtags pertinents). Format : POST 1 / POST 2 / POST 3",
             "Post LinkedIn": f"{prompt}\n\nRédige 2 posts LinkedIn professionnels (200-300 mots chacun). Format : POST 1 / POST 2",
             "Post Facebook": f"{prompt}\n\nRédige 3 posts Facebook engageants (100-150 mots chacun). Format : POST 1 / POST 2 / POST 3",
-            "Email marketing": f"{prompt}\n\nRédige un email marketing complet avec : Objet accrocheur, Préheader, Corps de l'email (200-300 mots), CTA fort.",
+            "Email marketing": f"""{prompt}
+
+Rédige un email marketing simple et percutant en français pour cet objectif : {objectif}
+
+L'email doit être structuré ainsi :
+
+OBJET DE L'EMAIL :
+[une ligne accrocheuse, max 50 caractères]
+
+TEXTE DE PRÉVISUALISATION :
+[ce que le lecteur voit avant d'ouvrir, max 90 caractères]
+
+CONTENU DE L'EMAIL :
+Bonjour [Prénom],
+
+[2-3 phrases d'introduction qui parlent directement au lecteur]
+
+[1-2 phrases qui expliquent l'offre ou le message principal]
+
+[1 phrase d'appel à l'action clair]
+
+À bientôt,
+L'équipe {result['seo']['title'] or result['final_url']}
+
+BOUTON D'ACTION :
+[texte du bouton, ex : Je découvre / Je profite / J'essaie maintenant]""",
             "Texte publicitaire Google Ads": f"{prompt}\n\nRédige 3 annonces Google Ads complètes avec : Titre 1 (max 30 car.) / Titre 2 (max 30 car.) / Description (max 90 car.). Format : ANNONCE 1 / ANNONCE 2 / ANNONCE 3",
             "Animation publicitaire HTML": f"""Tu es un expert en motion design et publicité digitale. Crée une animation publicitaire HTML/CSS/JS complète et professionnelle pour ce site.
 
@@ -840,7 +865,7 @@ def render_result(result, idx=0):
             st.markdown(f"- **Description Google** : {len(seo['meta_description'])} caractères")
             st.markdown(f"- **Titre principal** : {seo['h1_count']} {'(correct)' if seo['h1_count'] == 1 else '(à corriger)'}")
             st.markdown(f"- **Sous-titres** : {seo['h2_count']} {'(correct)' if seo['h2_count'] > 0 else '(manquant)'}")
-            st.markdown(f"- **Images sans description** : {seo['images_no_alt']}/{seo['images_total']}")
+            st.markdown(f"- **Images sans description** : {seo['images_no_alt']}/{seo['images_total']} (Google ne peut pas lire vos images sans description)")
         with col_s2:
             st.markdown("**Ce qu'il faut améliorer**")
             render_issues(seo["issues"])
@@ -1061,7 +1086,9 @@ def render_result(result, idx=0):
             plateforme = st.selectbox("Quelle plateforme utilise votre site ?", [
                 "Choisissez votre plateforme...",
                 "WordPress", "Wix", "Shopify", "Squarespace",
-                "Webflow", "Prestashop", "Drupal", "Magento", "Ghost", "TYPO3"
+                "Webflow", "Prestashop", "Drupal", "Magento", "Ghost", "TYPO3",
+                "GitHub Pages", "Notion", "Webnode", "Jimdo", "GoDaddy",
+                "Weebly", "BigCommerce", "OpenCart", "Joomla", "Autre"
             ], key=f"plateforme_{idx}")
 
             if plateforme != "Choisissez votre plateforme...":
@@ -1159,6 +1186,12 @@ def render_result(result, idx=0):
                                     show_corrections(c, e)
                                 else:
                                     st.warning("Merci de remplir tous les champs.")
+
+                        elif plateforme in ["GitHub Pages", "Notion", "Webnode", "Jimdo", "GoDaddy", "Weebly", "BigCommerce", "OpenCart", "Joomla", "Autre"]:
+                            st.info(f"**{plateforme}** ne dispose pas d'API permettant les corrections automatiques. Voici ce que vous pouvez faire manuellement :")
+                            for item in result['all_issues'][:6]:
+                                msg = item['message'].replace(" — ", " : ")
+                                st.markdown(f"- {msg}")
 
     # ── ONGLET TEXTES CORRIGÉS ──
     if show_textes:
