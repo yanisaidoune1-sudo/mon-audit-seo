@@ -1579,7 +1579,7 @@ if "results" in st.session_state:
 
         if ecart > 0:
             st.markdown(f"""
-            <div style="background:linear-gradient(135deg,rgba(102,126,234,0.12),rgba(240,124,247,0.08));border:1px solid rgba(102,126,234,0.4);border-radius:16px;padding:1.8rem 2rem;margin-top:1rem">
+            <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid rgba(102,126,234,0.4);border-radius:16px;padding:1.8rem 2rem;margin-top:1rem">
                 <div style="font-size:1.2rem;font-weight:700;color:#a090f7;margin-bottom:1rem">📊 Analyse de l'écart</div>
                 <div style="color:#e8e8f0;font-size:0.95rem;line-height:1.8">
                     <b>{site2}</b> a un score de <b style="color:#28a745">{r2['global_score']}/100</b> contre <b style="color:#ffc107">{r1['global_score']}/100</b> pour votre site — soit <b style="color:#f07cf7">{ecart} points d'écart</b>.<br><br>
@@ -1614,14 +1614,14 @@ Sois direct, concret, sans jargon technique."""
                     analyse = r.json()["choices"][0]["message"]["content"]
 
                     st.markdown(f"""
-                    <div style="background:linear-gradient(135deg,rgba(102,126,234,0.12),rgba(240,124,247,0.08));border:1px solid rgba(102,126,234,0.4);border-radius:16px;padding:1.8rem 2rem;margin-top:1rem">
+                    <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid rgba(102,126,234,0.4);border-radius:16px;padding:1.8rem 2rem;margin-top:1rem">
                         <div style="font-size:1.2rem;font-weight:700;color:#a090f7;margin-bottom:1rem">📊 Analyse de l'écart — {site1} vs {site2}</div>
-                        <div style="color:#e8e8f0;font-size:0.95rem;line-height:1.8">{analyse.replace(chr(10), '<br>')}</div>
+                        <div style="color:#e8e8f0;font-size:0.95rem;line-height:1.8">{analyse.replace(chr(10), '<br>').replace('**','').replace('*','')}</div>
                     </div>
                     """, unsafe_allow_html=True)
                 except Exception:
                     st.markdown(f"""
-                    <div style="background:linear-gradient(135deg,rgba(102,126,234,0.12),rgba(240,124,247,0.08));border:1px solid rgba(102,126,234,0.4);border-radius:16px;padding:1.8rem 2rem;margin-top:1rem">
+                    <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid rgba(102,126,234,0.4);border-radius:16px;padding:1.8rem 2rem;margin-top:1rem">
                         <div style="font-size:1.2rem;font-weight:700;color:#a090f7;margin-bottom:1rem">📊 Analyse de l'écart</div>
                         <div style="color:#e8e8f0;font-size:0.95rem;line-height:1.8">
                             <b>{site2}</b> a <b>{ecart} points d'avance</b> sur votre site.<br><br>
@@ -1636,16 +1636,16 @@ Sois direct, concret, sans jargon technique."""
 
         elif ecart < 0:
             st.markdown(f"""
-            <div style="background:rgba(40,167,69,0.08);border:1px solid rgba(40,167,69,0.4);border-radius:16px;padding:1.8rem 2rem;margin-top:1rem">
+            <div style="background:linear-gradient(135deg,#0f1f0f,#1a2e1a);border:1px solid rgba(40,167,69,0.4);border-radius:16px;padding:1.8rem 2rem;margin-top:1rem">
                 <div style="font-size:1.2rem;font-weight:700;color:#28a745;margin-bottom:0.8rem">🏆 Vous êtes en avance !</div>
                 <div style="color:#e8e8f0;font-size:0.95rem;line-height:1.8">
-                    Votre site ({r1['global_score']}/100) dépasse <b>{site2}</b> ({r2['global_score']}/100) de <b>{abs(ecart)} points</b>. Continuez à l'optimiser pour creuser l'écart.
+                    Votre site (<b style="color:#28a745">{r1['global_score']}/100</b>) dépasse <b>{site2}</b> (<b style="color:#ffc107">{r2['global_score']}/100</b>) de <b>{abs(ecart)} points</b>. Continuez à l'optimiser pour creuser l'écart.
                 </div>
             </div>
             """, unsafe_allow_html=True)
         else:
             st.markdown(f"""
-            <div style="background:rgba(255,193,7,0.08);border:1px solid rgba(255,193,7,0.3);border-radius:16px;padding:1.8rem 2rem;margin-top:1rem">
+            <div style="background:linear-gradient(135deg,#1a1a0f,#2e2a10);border:1px solid rgba(255,193,7,0.3);border-radius:16px;padding:1.8rem 2rem;margin-top:1rem">
                 <div style="font-size:1.2rem;font-weight:700;color:#ffc107;margin-bottom:0.8rem">⚖️ Scores identiques</div>
                 <div style="color:#e8e8f0;font-size:0.95rem;">Vos deux sites ont le même score global. Regardez les scores par catégorie pour trouver où vous pouvez prendre l'avantage.</div>
             </div>
