@@ -1121,52 +1121,58 @@ def render_result(result, idx=0):
             design = result["design"]
             content = result["content"]
 
-            title_color = "#dc3545" if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70 else "#28a745"
-            title_text = (seo["title"] or "(Titre manquant)")[:80]
-            title_note = "❌ Titre manquant ou trop court — Google ne sait pas de quoi parle votre site" if title_color == "#dc3545" else "✅ Titre correct"
-
-            desc_color = "#dc3545" if not seo["meta_description"] else "#28a745"
-            desc_text = (seo["meta_description"] or "(Description manquante)")[:160]
-            desc_note = "❌ Description manquante — Google ne peut pas résumer votre site" if desc_color == "#dc3545" else "✅ Description présente"
-
-            img_color = "#ffc107" if seo["images_no_alt"] > 0 else "#28a745"
-            img_note = f"⚠️ {seo['images_no_alt']} image(s) sans description — Google ne les comprend pas" if seo["images_no_alt"] > 0 else "✅ Toutes les images ont une description"
-
-            https_color = "#dc3545" if not perf["is_https"] else "#28a745"
-            https_note = "❌ Site non sécurisé — alerte danger pour les visiteurs" if not perf["is_https"] else "✅ Site sécurisé"
-
             rt = perf.get("response_time", 0) or 0
-            speed_color = "#dc3545" if rt > 3 else ("#ffc107" if rt > 1.5 else "#28a745")
-            speed_note = f"❌ Très lent ({rt}s) — 53% des visiteurs partent" if rt > 3 else (f"⚠️ Moyen ({rt}s)" if rt > 1.5 else f"✅ Rapide ({rt}s)")
+            https_ok = perf["is_https"]
+            title_ok = bool(seo["title"]) and 10 <= len(seo["title"]) <= 70
+            desc_ok = bool(seo["meta_description"])
+            h1_ok = seo["h1_count"] == 1
+            img_ok = seo["images_no_alt"] == 0
+            nav_ok = ux["has_nav"]
+            og_ok = design["has_og_tags"]
+            speed_ok = rt < 2
 
-            nav_color = "#dc3545" if not ux["has_nav"] else "#28a745"
-            nav_note = "❌ Pas de menu — les visiteurs ne savent pas où aller" if not ux["has_nav"] else f"✅ Menu présent ({ux['nav_links_count']} liens)"
+            title_val = seo["title"] or "(Aucun titre défini)"
+            desc_val = seo["meta_description"] or "(Aucune description)"
+            lock = "🔒" if https_ok else "⚠️"
 
-            contact_color = "#dc3545" if not ux["has_contact"] else "#28a745"
-            contact_note = "❌ Pas de contact — vous perdez des clients" if not ux["has_contact"] else "✅ Page contact présente"
+            def annotation(valeur, ok, correction):
+                """Affiche la valeur du site avec une annotation d'erreur ou de succès"""
+                if ok:
+                    return f'<span style="color:#e8e8f0">{valeur}</span> <span style="background:#28a745;color:white;font-size:11px;padding:2px 8px;border-radius:4px;margin-left:6px">✓ Correct</span>'
+                else:
+                    return f'''<span style="text-decoration:underline wavy #dc3545;color:#e8e8f0">{valeur}</span>
+                    <div style="display:flex;align-items:flex-start;margin-top:8px;gap:8px">
+                      <div style="color:#dc3545;font-size:18px;margin-top:2px">↳</div>
+                      <div style="background:rgba(220,53,69,0.15);border-left:3px solid #dc3545;border-radius:0 6px 6px 0;padding:6px 10px;font-size:12px;color:#ff8898">{correction}</div>
+                    </div>'''
 
-            og_color = "#ffc107" if not design["has_og_tags"] else "#28a745"
-            og_note = "⚠️ Aperçu réseaux sociaux non configuré" if not design["has_og_tags"] else "✅ Aperçu réseaux sociaux configuré"
-
-            lock = "🔒" if perf["is_https"] else "⚠️"
-
-            html_preview = f"""
-<!DOCTYPE html><html><head><meta charset="UTF-8">
+            html_annote = f"""<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>
-  body{{margin:0;padding:0;font-family:'Inter',Arial,sans-serif;background:#0f0f1a;color:#e8e8f0;}}
-  .browser{{border:2px solid #2a2a4e;border-radius:16px;overflow:hidden;}}
-  .bar{{background:#1a1a2e;padding:10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #2a2a4e;}}
-  .dots{{display:flex;gap:6px;}}
-  .dot{{width:12px;height:12px;border-radius:50%;}}
-  .url{{background:#0a0a18;border-radius:6px;padding:4px 14px;flex:1;font-size:12px;color:#888;}}
-  .body{{background:#0f0f1a;padding:20px;}}
-  .block{{border-radius:10px;padding:14px;margin-bottom:12px;}}
-  .label{{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}}
-  .value{{font-size:15px;font-weight:600;margin-bottom:6px;}}
-  .note{{font-size:12px;margin-top:4px;}}
-  .grid{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}}
-  .legend{{display:flex;gap:20px;padding-top:12px;border-top:1px solid #2a2a4e;font-size:12px;}}
-</style></head><body>
+  * {{box-sizing:border-box;margin:0;padding:0}}
+  body {{font-family:'Inter',Arial,sans-serif;background:#0f0f1a;color:#e8e8f0;padding:0}}
+  .browser {{border:2px solid #2a2a4e;border-radius:16px;overflow:hidden}}
+  .bar {{background:#1a1a2e;padding:10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #2a2a4e}}
+  .dots {{display:flex;gap:6px}}
+  .dot {{width:12px;height:12px;border-radius:50%}}
+  .url {{background:#0a0a18;border-radius:6px;padding:4px 14px;flex:1;font-size:12px;color:#888}}
+  .page {{padding:24px;background:#0f0f1a}}
+  .section {{margin-bottom:20px;padding:16px;border-radius:10px;border:1px solid #1e1e3a}}
+  .section-label {{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#555;margin-bottom:8px}}
+  .nav-bar {{display:flex;gap:16px;padding:10px 0;border-bottom:1px solid #1e1e3a;margin-bottom:20px;flex-wrap:wrap}}
+  .nav-item {{font-size:13px;color:#888;padding:4px 8px;border-radius:4px}}
+  .hero-title {{font-size:24px;font-weight:700;margin-bottom:8px}}
+  .hero-desc {{font-size:13px;color:#aaa;line-height:1.6;margin-bottom:8px}}
+  .grid2 {{display:grid;grid-template-columns:1fr 1fr;gap:12px}}
+  .badge-ok {{background:#28a745;color:white;font-size:11px;padding:2px 8px;border-radius:4px;margin-left:6px}}
+  .badge-err {{background:#dc3545;color:white;font-size:11px;padding:2px 8px;border-radius:4px;margin-left:6px}}
+  .arrow-note {{display:flex;align-items:flex-start;margin-top:8px;gap:8px}}
+  .arrow {{color:#dc3545;font-size:18px;margin-top:2px;flex-shrink:0}}
+  .note-box {{background:rgba(220,53,69,0.15);border-left:3px solid #dc3545;border-radius:0 6px 6px 0;padding:6px 10px;font-size:12px;color:#ff8898;line-height:1.5}}
+  .note-ok {{background:rgba(40,167,69,0.1);border-left:3px solid #28a745;border-radius:0 6px 6px 0;padding:6px 10px;font-size:12px;color:#7ddf96;line-height:1.5}}
+  .underline-err {{text-decoration:underline wavy #dc3545}}
+  .legend {{display:flex;gap:20px;padding:12px 16px;background:#1a1a2e;border-top:1px solid #2a2a4e;font-size:12px}}
+</style>
+</head><body>
 <div class="browser">
   <div class="bar">
     <div class="dots">
@@ -1176,54 +1182,74 @@ def render_result(result, idx=0):
     </div>
     <div class="url">{lock} {result['final_url']}</div>
   </div>
-  <div class="body">
-    <div class="block" style="border:2px solid {title_color}">
-      <div class="label" style="color:{title_color}">Titre de la page</div>
-      <div class="value">{title_text}</div>
-      <div class="note" style="color:{title_color}">{title_note}</div>
+
+  <div class="page">
+
+    <!-- MENU DE NAVIGATION -->
+    <div class="section" style="border-color:{'#28a745' if nav_ok else '#dc3545'}">
+      <div class="section-label">Menu de navigation</div>
+      {'<div class="nav-bar">' + ''.join([f'<div class="nav-item">{l}</div>' for l in ['Accueil','Produits','À propos','Contact','Blog']]) + '</div>' if nav_ok else '<div style="color:#888;font-style:italic;margin-bottom:8px">(aucun menu détecté)</div>'}
+      {'<div class="arrow-note"><div class="arrow">↳</div><div class="note-box">Pas de menu détecté — vos visiteurs ne savent pas comment naviguer sur votre site. Ajoutez un menu avec 5 à 7 liens principaux.</div></div>' if not nav_ok else '<div class="arrow-note"><div class="note-ok">✓ Menu de navigation présent avec {ux["nav_links_count"]} liens</div></div>'}
     </div>
-    <div class="block" style="border:2px solid {desc_color}">
-      <div class="label" style="color:{desc_color}">Description Google</div>
-      <div class="value" style="font-size:13px;color:#aaa;font-style:italic">{desc_text}</div>
-      <div class="note" style="color:{desc_color}">{desc_note}</div>
+
+    <!-- TITRE H1 -->
+    <div class="section" style="border-color:{'#28a745' if title_ok else '#dc3545'}">
+      <div class="section-label">Titre principal de la page (H1)</div>
+      <div class="hero-title {'underline-err' if not title_ok else ''}">{title_val[:80]}</div>
+      {'<div class="arrow-note"><div class="arrow">↳</div><div class="note-box">' + ('Titre manquant — sans titre, Google ne sait pas de quoi parle votre page.' if not seo["title"] else f'Titre {"trop court" if len(seo["title"]) < 10 else "trop long"} ({len(seo["title"])} caractères) — visez entre 50 et 60 caractères.') + '</div></div>' if not title_ok else '<div class="arrow-note"><div class="note-ok">✓ Titre correct — ' + str(len(seo["title"])) + ' caractères</div></div>'}
     </div>
-    <div class="grid">
-      <div class="block" style="border:2px solid {nav_color}">
-        <div class="label" style="color:{nav_color}">Menu de navigation</div>
-        <div class="note" style="color:{nav_color}">{nav_note}</div>
-      </div>
-      <div class="block" style="border:2px solid {contact_color}">
-        <div class="label" style="color:{contact_color}">Page contact</div>
-        <div class="note" style="color:{contact_color}">{contact_note}</div>
-      </div>
-      <div class="block" style="border:2px solid {speed_color}">
-        <div class="label" style="color:{speed_color}">Vitesse de chargement</div>
-        <div class="note" style="color:{speed_color}">{speed_note}</div>
-      </div>
-      <div class="block" style="border:2px solid {https_color}">
-        <div class="label" style="color:{https_color}">Sécurité</div>
-        <div class="note" style="color:{https_color}">{https_note}</div>
-      </div>
-      <div class="block" style="border:2px solid {img_color}">
-        <div class="label" style="color:{img_color}">Images</div>
-        <div class="note" style="color:{img_color}">{img_note}</div>
-      </div>
-      <div class="block" style="border:2px solid {og_color}">
-        <div class="label" style="color:{og_color}">Réseaux sociaux</div>
-        <div class="note" style="color:{og_color}">{og_note}</div>
-      </div>
+
+    <!-- DESCRIPTION GOOGLE -->
+    <div class="section" style="border-color:{'#28a745' if desc_ok else '#dc3545'}">
+      <div class="section-label">Description Google (texte sous le titre dans les résultats)</div>
+      <div class="hero-desc {'underline-err' if not desc_ok else ''}">{desc_val[:160]}</div>
+      {'<div class="arrow-note"><div class="arrow">↳</div><div class="note-box">Description manquante — Google va inventer un texte peu attractif à votre place. Rédigez une description de 120 à 160 caractères qui donne envie de cliquer.</div></div>' if not desc_ok else '<div class="arrow-note"><div class="note-ok">✓ Description présente — ' + str(len(seo["meta_description"])) + ' caractères</div></div>'}
     </div>
-    <div class="legend">
-      <span style="color:#dc3545">🔴 Problème critique</span>
-      <span style="color:#ffc107">🟡 À améliorer</span>
-      <span style="color:#28a745">🟢 Correct</span>
+
+    <!-- GRILLE DES AUTRES POINTS -->
+    <div class="grid2">
+
+      <!-- IMAGES -->
+      <div class="section" style="border-color:{'#28a745' if img_ok else '#ffc107'}">
+        <div class="section-label">Images</div>
+        <div style="font-size:14px;color:#e8e8f0">{seo['images_total']} image(s) détectée(s)</div>
+        {'<div class="arrow-note"><div class="arrow" style="color:#ffc107">↳</div><div class="note-box" style="border-color:#ffc107;color:#ffd966">' + str(seo["images_no_alt"]) + ' image(s) sans description — Google ne comprend pas ce qu\'elles montrent. Ajoutez un texte descriptif à chaque image.</div></div>' if not img_ok else '<div class="arrow-note"><div class="note-ok">✓ Toutes les images ont une description</div></div>'}
+      </div>
+
+      <!-- SÉCURITÉ -->
+      <div class="section" style="border-color:{'#28a745' if https_ok else '#dc3545'}">
+        <div class="section-label">Sécurité HTTPS</div>
+        <div style="font-size:14px;color:#e8e8f0">{'🔒 Site sécurisé' if https_ok else '⚠️ Site non sécurisé'}</div>
+        {'<div class="arrow-note"><div class="note-ok">✓ Connexion HTTPS activée</div></div>' if https_ok else '<div class="arrow-note"><div class="arrow">↳</div><div class="note-box">Les navigateurs affichent une alerte "Dangereux" — activez HTTPS chez votre hébergeur, c\'est gratuit avec Let\'s Encrypt.</div></div>'}
+      </div>
+
+      <!-- VITESSE -->
+      <div class="section" style="border-color:{'#28a745' if speed_ok else '#dc3545'}">
+        <div class="section-label">Vitesse de chargement</div>
+        <div style="font-size:14px;color:#e8e8f0">{rt}s</div>
+        {'<div class="arrow-note"><div class="note-ok">✓ Site rapide</div></div>' if speed_ok else '<div class="arrow-note"><div class="arrow">↳</div><div class="note-box">Site lent — 53% des visiteurs partent si le chargement dépasse 3 secondes. Compressez vos images et réduisez le nombre de plugins.</div></div>'}
+      </div>
+
+      <!-- RÉSEAUX SOCIAUX -->
+      <div class="section" style="border-color:{'#28a745' if og_ok else '#ffc107'}">
+        <div class="section-label">Partage réseaux sociaux</div>
+        <div style="font-size:14px;color:#e8e8f0">{'Configuré' if og_ok else 'Non configuré'}</div>
+        {'<div class="arrow-note"><div class="note-ok">✓ Aperçu réseaux sociaux configuré</div></div>' if og_ok else '<div class="arrow-note"><div class="arrow" style="color:#ffc107">↳</div><div class="note-box" style="border-color:#ffc107;color:#ffd966">Quand quelqu\'un partage votre site sur Instagram ou WhatsApp, aucune image ni description ne s\'affiche. Configurez les balises Open Graph.</div></div>'}
+      </div>
+
     </div>
+  </div>
+
+  <div class="legend">
+    <span style="color:#dc3545">❌ Erreur à corriger en priorité</span>
+    <span style="color:#ffc107">⚠️ À améliorer</span>
+    <span style="color:#28a745">✅ Correct</span>
   </div>
 </div>
 </body></html>"""
 
             import streamlit.components.v1 as components
-            components.html(html_preview, height=580, scrolling=False)
+            components.html(html_annote, height=780, scrolling=True)
             st.divider()
 
             plateforme = st.selectbox("Quelle plateforme utilise votre site ?", [
