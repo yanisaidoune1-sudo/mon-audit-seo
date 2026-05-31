@@ -1459,31 +1459,31 @@ TITRE PRINCIPAL DE LA PAGE (H1) :
 
             concurrents_sugeres = []
             if any(w in texte for w in ["nike"]):
-                concurrents_sugeres = ["adidas.fr", "puma.com", "newbalance.fr"]
+                concurrents_sugeres = ["adidas.com", "puma.com", "reebok.com"]
             elif any(w in texte for w in ["adidas"]):
-                concurrents_sugeres = ["nike.com", "puma.com", "reebok.fr"]
+                concurrents_sugeres = ["nike.com", "puma.com", "under-armour.com"]
             elif any(w in texte for w in ["amazon"]):
                 concurrents_sugeres = ["cdiscount.com", "fnac.com", "darty.com"]
             elif any(w in texte for w in ["zara"]):
-                concurrents_sugeres = ["hm.com", "mangooutlet.com", "uniqlo.com"]
+                concurrents_sugeres = ["hm.com", "uniqlo.com", "mango.com"]
             elif any(w in texte for w in ["apple"]):
-                concurrents_sugeres = ["samsung.com", "huawei.com", "sony.fr"]
+                concurrents_sugeres = ["samsung.com", "sony.fr", "microsoft.com"]
             elif any(w in texte for w in ["sport", "chaussure", "basket", "running", "fitness", "gym"]):
-                concurrents_sugeres = ["decathlon.fr", "nike.com", "adidas.fr"]
+                concurrents_sugeres = ["decathlon.fr", "nike.com", "adidas.com"]
             elif any(w in texte for w in ["restaurant", "brasserie", "bistrot", "pizz", "sushi", "burger", "cuisine"]):
-                concurrents_sugeres = ["restaurant-jules-verne.com", "ledoyen.com", "guy-savoy.com"]
+                concurrents_sugeres = ["restaurant-jules-verne.com", "ledoyen.com", "laserre-paris.com"]
             elif any(w in texte for w in ["coiffeur", "coiffure", "salon", "barbier", "hair"]):
-                concurrents_sugeres = ["davidmallet.com", "jacquesdesange.fr", "jeanlouisdavid.fr"]
+                concurrents_sugeres = ["jeanlouisdavid.fr", "dessange.com", "toniandguy.com"]
             elif any(w in texte for w in ["immobilier", "appartement", "maison", "location", "achat", "agence immo"]):
                 concurrents_sugeres = ["century21.fr", "laforet.com", "guy-hoquet.com"]
             elif any(w in texte for w in ["avocat", "notaire", "juridique", "droit", "cabinet", "law"]):
-                concurrents_sugeres = ["linklaters.com", "gide.com", "cms-fl.com"]
+                concurrents_sugeres = ["gide.com", "cms-fl.com", "linklaters.com"]
             elif any(w in texte for w in ["medecin", "docteur", "sante", "clinique", "dentiste", "kine"]):
-                concurrents_sugeres = ["hopital-paris.fr", "clinique-saint-germain.fr", "radiologie-paris.fr"]
+                concurrents_sugeres = ["clinique-du-sport.com", "fondation-rothschild.org", "clinique-saint-jean.fr"]
             elif any(w in texte for w in ["hotel", "hebergement", "chambre", "sejour", "auberge"]):
-                concurrents_sugeres = ["hotel-ritz-paris.com", "lemeridien.com", "accor.com"]
+                concurrents_sugeres = ["ritzparis.com", "mandarinoriental.com", "accor.com"]
             elif any(w in texte for w in ["boulanger", "boulangerie", "patisserie", "gateau", "pain"]):
-                concurrents_sugeres = ["poilane.com", "ladureeparis.com", "lenotre.fr"]
+                concurrents_sugeres = ["poilane.com", "laduree.com", "lenotre.fr"]
             elif any(w in texte for w in ["agence", "marketing", "communication", "publicite", "digital", "web"]):
                 concurrents_sugeres = ["publicisgroupe.com", "havas.com", "ogilvy.com"]
             elif any(w in texte for w in ["boutique", "shop", "mode", "vetement", "luxe"]):
@@ -1491,13 +1491,12 @@ TITRE PRINCIPAL DE LA PAGE (H1) :
             elif any(w in texte for w in ["voiture", "auto", "garage", "moto", "concession"]):
                 concurrents_sugeres = ["renault.fr", "peugeot.fr", "bmw.fr"]
             elif any(w in texte for w in ["voyage", "tourisme", "vacances", "tour operator"]):
-                concurrents_sugeres = ["clubmed.fr", "voyageprive.com", "lastminute.com"]
+                concurrents_sugeres = ["clubmed.fr", "voyageprive.com", "airbnb.fr"]
             elif any(w in texte for w in ["photo", "photographe", "studio", "portrait"]):
-                concurrents_sugeres = ["yannarthus-bertrand.org", "studio-harcourt.com", "fredericlagrange.com"]
+                concurrents_sugeres = ["studio-harcourt.com", "magnum-photos.com", "gettyimages.fr"]
             elif any(w in texte for w in ["architecte", "architecture", "design", "interieur"]):
-                concurrents_sugeres = ["wilmotte.com", "ateliers-jean-nouvel.com", "pca-stream.com"]
+                concurrents_sugeres = ["wilmotte.com", "pca-stream.com", "arquitectonica.com"]
             else:
-                # Analyse le score pour proposer des références générales
                 score = result['global_score']
                 if score < 50:
                     concurrents_sugeres = ["apple.com", "airbnb.fr", "spotify.com"]
