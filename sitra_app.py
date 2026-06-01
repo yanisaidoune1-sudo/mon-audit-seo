@@ -1119,21 +1119,177 @@ def render_result(result, idx=0):
             ux = result["ux"]
             perf = result["performance"]
             design = result["design"]
-            content = result["content"]
-
             rt = perf.get("response_time", 0) or 0
             https_ok = perf["is_https"]
             title_ok = bool(seo["title"]) and 10 <= len(seo["title"]) <= 70
             desc_ok = bool(seo["meta_description"])
-            h1_ok = seo["h1_count"] == 1
             img_ok = seo["images_no_alt"] == 0
             nav_ok = ux["has_nav"]
             og_ok = design["has_og_tags"]
             speed_ok = rt < 2
 
-            title_val = seo["title"] or "(Aucun titre défini)"
+            title_val = seo["title"] or "(Aucun titre)"
             desc_val = seo["meta_description"] or "(Aucune description)"
+
+            # Titre corrigé suggéré
+            title_fixed = title_val if title_ok else (title_val[:55] + "..." if len(title_val) > 60 else title_val + " | Site Professionnel")
+            desc_fixed = desc_val if desc_ok else f"Découvrez {title_val[:30]} — services professionnels, devis gratuit et contact rapide. Visitez notre site dès maintenant."
             lock = "🔒" if https_ok else "⚠️"
+
+            html_avant_apres = f"""<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>
+  *{{box-sizing:border-box;margin:0;padding:0}}
+  body{{font-family:'Inter',Arial,sans-serif;background:#0a0a14;color:#e8e8f0;padding:16px}}
+  h2{{font-size:15px;font-weight:700;margin-bottom:14px;padding:8px 12px;border-radius:8px;display:flex;align-items:center;gap:8px}}
+  .wrap{{display:grid;grid-template-columns:1fr 1fr;gap:16px}}
+  .col{{background:#0f0f1a;border-radius:14px;overflow:hidden;border:2px solid}}
+  .col-before{{border-color:#3a1a1a}}
+  .col-after{{border-color:#1a3a1a}}
+  .col-header{{padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,0.06)}}
+  .dots{{display:flex;gap:5px}}
+  .dot{{width:10px;height:10px;border-radius:50%}}
+  .url{{font-size:11px;color:#666;background:#0a0a18;padding:3px 10px;border-radius:4px;flex:1}}
+  .body{{padding:16px}}
+  .block{{border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid}}
+  .block-err{{background:rgba(220,53,69,0.1);border-color:#dc3545}}
+  .block-ok{{background:rgba(40,167,69,0.08);border-color:#28a745}}
+  .block-label{{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}}
+  .block-val{{font-size:13px;line-height:1.5}}
+  .block-note{{font-size:11px;margin-top:6px;padding:4px 8px;border-radius:4px;display:inline-block}}
+  .err-note{{background:rgba(220,53,69,0.2);color:#ff8898}}
+  .ok-note{{background:rgba(40,167,69,0.15);color:#7ddf96}}
+  .strikethrough{{text-decoration:line-through;color:#666;font-size:11px}}
+  .corrected{{color:#7ddf96;font-weight:600}}
+  .nav{{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}}
+  .nav-item{{font-size:11px;padding:3px 8px;border-radius:4px}}
+  .nav-err{{background:rgba(220,53,69,0.15);color:#ff8898;border:1px solid #dc3545}}
+  .nav-ok{{background:rgba(40,167,69,0.1);color:#7ddf96;border:1px solid #28a745}}
+  .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:8px}}
+</style></head><body>
+
+<div class="wrap">
+
+  <!-- AVANT -->
+  <div class="col col-before">
+    <h2 style="background:rgba(220,53,69,0.1);color:#ff8898;margin:12px 12px 0">❌ Avant — État actuel</h2>
+    <div class="col-header">
+      <div class="dots">
+        <div class="dot" style="background:#dc3545"></div>
+        <div class="dot" style="background:#ffc107"></div>
+        <div class="dot" style="background:#444"></div>
+      </div>
+      <div class="url">{lock} {result['final_url']}</div>
+    </div>
+    <div class="body">
+
+      <!-- Nav avant -->
+      <div class="block {'block-err' if not nav_ok else 'block-ok'}">
+        <div class="block-label" style="color:{'#dc3545' if not nav_ok else '#28a745'}">Menu de navigation</div>
+        {'<div class="nav"><div class="nav-err">???</div><div class="nav-err">???</div><div class="nav-err">???</div></div><div class="block-note err-note">❌ Aucun menu détecté</div>' if not nav_ok else f'<div class="nav">{"".join([f\'<div class="nav-ok">Lien</div>\' for _ range(min(ux["nav_links_count"],5))])}</div><div class="block-note ok-note">✅ Menu présent</div>'}
+      </div>
+
+      <!-- Titre avant -->
+      <div class="block {'block-err' if not title_ok else 'block-ok'}">
+        <div class="block-label" style="color:{'#dc3545' if not title_ok else '#28a745'}">Titre de la page (H1)</div>
+        <div class="block-val" style="color:{'#ff8898' if not title_ok else '#e8e8f0'}">{title_val[:70]}</div>
+        {'<div class="block-note err-note">❌ ' + ("Manquant" if not seo["title"] else f"{len(seo['title'])} car. — trop {'court' if len(seo['title'])<10 else 'long'}") + '</div>' if not title_ok else '<div class="block-note ok-note">✅ Correct</div>'}
+      </div>
+
+      <!-- Description avant -->
+      <div class="block {'block-err' if not desc_ok else 'block-ok'}">
+        <div class="block-label" style="color:{'#dc3545' if not desc_ok else '#28a745'}">Description Google</div>
+        <div class="block-val" style="color:{'#ff8898' if not desc_ok else '#aaa'};font-style:italic">{desc_val[:120]}</div>
+        {'<div class="block-note err-note">❌ Manquante — Google invente à votre place</div>' if not desc_ok else '<div class="block-note ok-note">✅ Présente</div>'}
+      </div>
+
+      <div class="grid2">
+        <div class="block {'block-err' if not https_ok else 'block-ok'}">
+          <div class="block-label" style="color:{'#dc3545' if not https_ok else '#28a745'}">Sécurité</div>
+          <div class="block-note {'err-note' if not https_ok else 'ok-note'}">{'❌ Non sécurisé' if not https_ok else '✅ HTTPS actif'}</div>
+        </div>
+        <div class="block {'block-err' if not speed_ok else 'block-ok'}">
+          <div class="block-label" style="color:{'#dc3545' if not speed_ok else '#28a745'}">Vitesse</div>
+          <div class="block-note {'err-note' if not speed_ok else 'ok-note'}">{'❌ ' if not speed_ok else '✅ '}{rt}s</div>
+        </div>
+        <div class="block {'block-err' if not img_ok else 'block-ok'}">
+          <div class="block-label" style="color:{'#dc3545' if not img_ok else '#28a745'}">Images</div>
+          <div class="block-note {'err-note' if not img_ok else 'ok-note'}">{'❌ ' + str(seo["images_no_alt"]) + ' sans desc.' if not img_ok else '✅ OK'}</div>
+        </div>
+        <div class="block {'block-err' if not og_ok else 'block-ok'}">
+          <div class="block-label" style="color:{'#dc3545' if not og_ok else '#28a745'}">Réseaux sociaux</div>
+          <div class="block-note {'err-note' if not og_ok else 'ok-note'}">{'❌ Non configuré' if not og_ok else '✅ Configuré'}</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- APRÈS -->
+  <div class="col col-after">
+    <h2 style="background:rgba(40,167,69,0.1);color:#7ddf96;margin:12px 12px 0">✅ Après — Avec les corrections SITRA</h2>
+    <div class="col-header">
+      <div class="dots">
+        <div class="dot" style="background:#dc3545"></div>
+        <div class="dot" style="background:#ffc107"></div>
+        <div class="dot" style="background:#28a745"></div>
+      </div>
+      <div class="url">🔒 {result['final_url']}</div>
+    </div>
+    <div class="body">
+
+      <!-- Nav après -->
+      <div class="block block-ok">
+        <div class="block-label" style="color:#28a745">Menu de navigation</div>
+        <div class="nav">
+          <div class="nav-ok">Accueil</div><div class="nav-ok">Services</div><div class="nav-ok">À propos</div><div class="nav-ok">Blog</div><div class="nav-ok">Contact</div>
+        </div>
+        <div class="block-note ok-note">✅ Menu clair avec 5 catégories principales</div>
+      </div>
+
+      <!-- Titre après -->
+      <div class="block block-ok">
+        <div class="block-label" style="color:#28a745">Titre de la page (H1)</div>
+        {'<div class="strikethrough">' + title_val[:50] + ('...' if len(title_val)>50 else '') + '</div>' if not title_ok else ''}
+        <div class="block-val corrected">{title_fixed[:65]}</div>
+        <div class="block-note ok-note">✅ {len(title_fixed)} caractères — optimal pour Google</div>
+      </div>
+
+      <!-- Description après -->
+      <div class="block block-ok">
+        <div class="block-label" style="color:#28a745">Description Google</div>
+        {'<div class="strikethrough">' + desc_val[:40] + '...</div>' if not desc_ok else ''}
+        <div class="block-val" style="color:#aaa;font-style:italic">{desc_fixed[:155]}</div>
+        <div class="block-note ok-note">✅ {len(desc_fixed)} caractères — visible dans Google</div>
+      </div>
+
+      <div class="grid2">
+        <div class="block block-ok">
+          <div class="block-label" style="color:#28a745">Sécurité</div>
+          <div class="block-note ok-note">✅ HTTPS activé</div>
+        </div>
+        <div class="block block-ok">
+          <div class="block-label" style="color:#28a745">Vitesse</div>
+          <div class="block-note ok-note">✅ {'Déjà rapide' if speed_ok else 'Images compressées → < 1.5s'}</div>
+        </div>
+        <div class="block block-ok">
+          <div class="block-label" style="color:#28a745">Images</div>
+          <div class="block-note ok-note">✅ {'Déjà OK' if img_ok else 'Descriptions ajoutées'}</div>
+        </div>
+        <div class="block block-ok">
+          <div class="block-label" style="color:#28a745">Réseaux sociaux</div>
+          <div class="block-note ok-note">✅ {'Déjà configuré' if og_ok else 'Open Graph configuré'}</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</body></html>"""
+
+            import streamlit.components.v1 as components
+            components.html(html_avant_apres, height=820, scrolling=True)
+            st.divider()
 
             def annotation(valeur, ok, correction):
                 """Affiche la valeur du site avec une annotation d'erreur ou de succès"""
