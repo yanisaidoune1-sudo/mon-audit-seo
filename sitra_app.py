@@ -1185,7 +1185,7 @@ def render_result(result, idx=0):
       <!-- Nav avant -->
       <div class="block {'block-err' if not nav_ok else 'block-ok'}">
         <div class="block-label" style="color:{'#dc3545' if not nav_ok else '#28a745'}">Menu de navigation</div>
-        {'<div class="nav"><div class="nav-err">???</div><div class="nav-err">???</div><div class="nav-err">???</div></div><div class="block-note err-note">❌ Aucun menu détecté</div>' if not nav_ok else f'<div class="nav">{"".join([f\'<div class="nav-ok">Lien</div>\' for _ range(min(ux["nav_links_count"],5))])}</div><div class="block-note ok-note">✅ Menu présent</div>'}
+        {'<div class="nav"><div class="nav-err">???</div><div class="nav-err">???</div><div class="nav-err">???</div></div><div class="block-note err-note">❌ Aucun menu détecté</div>' if not nav_ok else '<div class="nav"><div class="nav-ok">Lien 1</div><div class="nav-ok">Lien 2</div><div class="nav-ok">Lien 3</div></div><div class="block-note ok-note">✅ Menu présent</div>'}
       </div>
 
       <!-- Titre avant -->
