@@ -1120,119 +1120,298 @@ def render_result(result, idx=0):
             perf = result["performance"]
             design = result["design"]
             rt = perf.get("response_time", 0) or 0
-
-            erreurs = []
-
-            if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70:
-                t = seo["title"] or ""
-                erreurs.append({
-                    "zone": "Titre affiché sur Google (en haut de votre page)",
-                    "avant": t or "(vide — aucun titre défini)",
-                    "apres": (t[:52] + "...") if len(t) > 60 else ((t + " | Service Pro") if t else "Ajoutez le nom de votre activité et votre ville"),
-                    "explication": "Titre manquant ou trop court — Google ne sait pas de quoi parle votre site",
-                    "niveau": "critique"
-                })
-
-            if not seo["meta_description"]:
-                erreurs.append({
-                    "zone": "Description sous le titre dans les résultats Google",
-                    "avant": "(vide — Google invente un texte aléatoire à votre place)",
-                    "apres": f"Découvrez {(seo['title'] or 'notre site')[:30]} — expertise professionnelle, devis gratuit et réponse rapide. Contactez-nous dès aujourd'hui.",
-                    "explication": "Sans description, Google affiche n'importe quel texte — peu attractif pour les visiteurs",
-                    "niveau": "critique"
-                })
-
-            if seo["h1_count"] != 1:
-                erreurs.append({
-                    "zone": "Grand titre visible sur votre page (H1)",
-                    "avant": f"{seo['h1_count']} titre(s) H1 — {'aucun titre principal' if seo['h1_count']==0 else 'plusieurs titres en doublon'}",
-                    "apres": "1 seul grand titre qui résume clairement votre activité",
-                    "explication": "Google s'attend à exactement 1 titre principal par page pour comprendre le sujet",
-                    "niveau": "warning"
-                })
-
-            if seo["images_no_alt"] > 0:
-                erreurs.append({
-                    "zone": f"Images sur votre page ({seo['images_no_alt']} image(s) concernée(s))",
-                    "avant": '<img src="photo.jpg">   ← Google ne comprend pas cette image',
-                    "apres": '<img src="photo.jpg" alt="Description de ce que montre la photo">',
-                    "explication": f"{seo['images_no_alt']} image(s) sans description — Google ne peut pas les lire ni les indexer",
-                    "niveau": "warning"
-                })
-
-            if not perf["is_https"]:
-                url_clean = result["final_url"].replace("https://","").replace("http://","")
-                erreurs.append({
-                    "zone": "Adresse de votre site (barre du navigateur)",
-                    "avant": f"http://{url_clean}",
-                    "apres": f"https://{url_clean}",
-                    "explication": "Site non sécurisé — les navigateurs affichent 'Dangereux' en rouge à vos visiteurs",
-                    "niveau": "critique"
-                })
-
-            if rt > 2:
-                erreurs.append({
-                    "zone": "Vitesse d'affichage de votre page d'accueil",
-                    "avant": f"Votre site met {rt} secondes à s'afficher",
-                    "apres": "Objectif : moins de 2 secondes",
-                    "explication": "53% des visiteurs partent si le chargement dépasse 3 secondes",
-                    "niveau": "critique"
-                })
-
-            if not ux["has_nav"]:
-                erreurs.append({
-                    "zone": "Haut de votre page — Menu de navigation",
-                    "avant": "(aucun menu détecté sur votre site)",
-                    "apres": "[ Accueil ]  [ Services ]  [ À propos ]  [ Contact ]",
-                    "explication": "Sans menu, vos visiteurs ne savent pas comment naviguer et repartent immédiatement",
-                    "niveau": "critique"
-                })
-
-            if not design["has_og_tags"]:
-                erreurs.append({
-                    "zone": "Partage sur WhatsApp, Facebook, Instagram",
-                    "avant": "Lien brut sans image ni description",
-                    "apres": "Image + Titre + Description s'affichent automatiquement",
-                    "explication": "Sans balises Open Graph, votre lien s'affiche mal quand quelqu'un le partage",
-                    "niveau": "warning"
-                })
+            url_site = result["final_url"]
+            titre = seo["title"] or ""
+            desc = seo["meta_description"] or ""
 
             blocs_html = ""
-            for e in erreurs:
-                couleur = "#dc3545" if e["niveau"] == "critique" else "#ffc107"
-                bg = "rgba(220,53,69,0.06)" if e["niveau"] == "critique" else "rgba(255,193,7,0.04)"
-                icone = "❌" if e["niveau"] == "critique" else "⚠️"
+            nb_erreurs = 0
+
+            # ── ERREUR 1 : TITRE ──
+            if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70:
+                nb_erreurs += 1
+                t = seo["title"] or ""
+                t_corrige = (t[:52] + "...") if len(t) > 60 else ((t + " | Service Pro") if t else "Nom de votre activité — Ville | Service")
+                probleme = "Titre manquant" if not t else f"Titre {'trop court' if len(t)<10 else 'trop long'} ({len(t)} caractères)"
                 blocs_html += f"""
-<div style="background:{bg};border:1.5px solid {couleur};border-radius:12px;padding:16px 18px;margin-bottom:14px">
-  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:{couleur};margin-bottom:12px">{icone} {e['zone']}</div>
-  <div style="display:grid;grid-template-columns:1fr 32px 1fr;gap:8px;align-items:center;margin-bottom:10px">
-    <div style="background:rgba(0,0,0,0.4);border:1px solid {couleur};border-radius:8px;padding:10px 12px">
-      <div style="font-size:10px;color:{couleur};font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px">AVANT</div>
-      <div style="font-size:12px;color:#ccc;font-family:monospace;line-height:1.6;word-break:break-all">{e['avant']}</div>
+<div style="margin-bottom:20px">
+  <div style="font-size:11px;font-weight:700;color:#dc3545;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">❌ ERREUR {nb_erreurs} — {probleme}</div>
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch">
+    <div>
+      <div style="font-size:10px;color:#dc3545;font-weight:700;margin-bottom:6px;text-transform:uppercase">AVANT — Tel qu'il apparaît sur Google</div>
+      <div style="background:#1a0808;border:2px solid #dc3545;border-radius:10px;padding:14px;font-family:Arial,sans-serif">
+        <div style="font-size:10px;color:#888;margin-bottom:6px">google.com</div>
+        <div style="font-size:15px;color:{'#ff8898' if not t else '#888'};{'text-decoration:line-through' if t else ''}">{t or '(Aucun titre — Google invente quelque chose)'}</div>
+        <div style="font-size:12px;color:#666;margin-top:4px">{url_site}</div>
+        <div style="font-size:12px;color:#666;margin-top:2px">{desc[:80] + '...' if desc else '(pas de description)'}</div>
+      </div>
     </div>
-    <div style="text-align:center;font-size:18px;color:#7c6af7;font-weight:700">→</div>
-    <div style="background:rgba(40,167,69,0.08);border:1px solid #28a745;border-radius:8px;padding:10px 12px">
-      <div style="font-size:10px;color:#28a745;font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px">APRÈS CORRECTION</div>
-      <div style="font-size:12px;color:#7ddf96;font-family:monospace;line-height:1.6;word-break:break-all">{e['apres']}</div>
+    <div style="display:flex;align-items:center;font-size:24px;color:#7c6af7;padding:0 4px">→</div>
+    <div>
+      <div style="font-size:10px;color:#28a745;font-weight:700;margin-bottom:6px;text-transform:uppercase">APRÈS — Tel qu'il apparaîtra sur Google</div>
+      <div style="background:#081a08;border:2px solid #28a745;border-radius:10px;padding:14px;font-family:Arial,sans-serif">
+        <div style="font-size:10px;color:#888;margin-bottom:6px">google.com</div>
+        <div style="font-size:15px;color:#7ddf96">{t_corrige}</div>
+        <div style="font-size:12px;color:#666;margin-top:4px">{url_site}</div>
+        <div style="font-size:12px;color:#555;margin-top:2px">{desc[:80] + '...' if desc else 'Description claire et accrocheuse à ajouter...'}</div>
+      </div>
     </div>
   </div>
-  <div style="background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;border-radius:0 6px 6px 0;padding:7px 12px;font-size:12px;color:#b090f7;line-height:1.5">
-    💡 {e['explication']}
+  <div style="margin-top:8px;background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#b090f7">
+    💡 Rédigez un titre entre 50 et 60 caractères qui décrit clairement votre activité et votre ville.
+  </div>
+</div>"""
+
+            # ── ERREUR 2 : DESCRIPTION ──
+            if not seo["meta_description"]:
+                nb_erreurs += 1
+                desc_corrigee = f"Découvrez {titre[:25] or 'notre service'} — qualité professionnelle, devis gratuit et réponse rapide. Contactez-nous dès aujourd'hui !"
+                blocs_html += f"""
+<div style="margin-bottom:20px">
+  <div style="font-size:11px;font-weight:700;color:#dc3545;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">❌ ERREUR {nb_erreurs} — Description Google manquante</div>
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch">
+    <div>
+      <div style="font-size:10px;color:#dc3545;font-weight:700;margin-bottom:6px;text-transform:uppercase">AVANT — Ce que Google affiche</div>
+      <div style="background:#1a0808;border:2px solid #dc3545;border-radius:10px;padding:14px;font-family:Arial,sans-serif">
+        <div style="font-size:10px;color:#888;margin-bottom:6px">google.com</div>
+        <div style="font-size:15px;color:#7c9bf5">{titre or url_site}</div>
+        <div style="font-size:12px;color:#666;margin-top:4px">{url_site}</div>
+        <div style="font-size:12px;color:#888;margin-top:2px;font-style:italic">(Google va prendre n'importe quel texte de votre page — résultat peu attractif)</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;font-size:24px;color:#7c6af7;padding:0 4px">→</div>
+    <div>
+      <div style="font-size:10px;color:#28a745;font-weight:700;margin-bottom:6px;text-transform:uppercase">APRÈS — Ce que Google affichera</div>
+      <div style="background:#081a08;border:2px solid #28a745;border-radius:10px;padding:14px;font-family:Arial,sans-serif">
+        <div style="font-size:10px;color:#888;margin-bottom:6px">google.com</div>
+        <div style="font-size:15px;color:#7c9bf5">{titre or url_site}</div>
+        <div style="font-size:12px;color:#666;margin-top:4px">{url_site}</div>
+        <div style="font-size:12px;color:#7ddf96;margin-top:2px">{desc_corrigee}</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:8px;background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#b090f7">
+    💡 Rédigez une description de 120 à 160 caractères qui donne envie de cliquer sur votre site.
+  </div>
+</div>"""
+
+            # ── ERREUR 3 : H1 ──
+            if seo["h1_count"] != 1:
+                nb_erreurs += 1
+                pb = "Aucun titre principal (H1)" if seo["h1_count"] == 0 else f"{seo['h1_count']} titres H1 en doublon"
+                blocs_html += f"""
+<div style="margin-bottom:20px">
+  <div style="font-size:11px;font-weight:700;color:#ffc107;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">⚠️ ERREUR {nb_erreurs} — {pb}</div>
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch">
+    <div>
+      <div style="font-size:10px;color:#ffc107;font-weight:700;margin-bottom:6px;text-transform:uppercase">AVANT — Haut de votre page</div>
+      <div style="background:#1a1400;border:2px solid #ffc107;border-radius:10px;padding:14px;font-family:Arial,sans-serif">
+        <div style="height:8px;background:#1a1a2e;border-radius:4px;margin-bottom:10px"></div>
+        <div style="font-size:11px;color:#ffc107;font-style:italic">{'(Aucun grand titre visible — Google ne sait pas de quoi parle votre page)' if seo["h1_count"]==0 else f'({seo["h1_count"]} titres identiques répétés — confus pour Google)'}</div>
+        <div style="height:6px;background:#222;border-radius:3px;margin-top:10px;width:80%"></div>
+        <div style="height:6px;background:#222;border-radius:3px;margin-top:6px;width:60%"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;font-size:24px;color:#7c6af7;padding:0 4px">→</div>
+    <div>
+      <div style="font-size:10px;color:#28a745;font-weight:700;margin-bottom:6px;text-transform:uppercase">APRÈS — Haut de votre page corrigé</div>
+      <div style="background:#081a08;border:2px solid #28a745;border-radius:10px;padding:14px;font-family:Arial,sans-serif">
+        <div style="height:8px;background:#1a1a2e;border-radius:4px;margin-bottom:10px"></div>
+        <div style="font-size:16px;font-weight:700;color:#7ddf96">{titre or 'Votre activité principale — Ville'}</div>
+        <div style="height:6px;background:#1a3a1a;border-radius:3px;margin-top:10px;width:80%"></div>
+        <div style="height:6px;background:#1a3a1a;border-radius:3px;margin-top:6px;width:60%"></div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:8px;background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#b090f7">
+    💡 Mettez exactement 1 grand titre H1 par page qui résume clairement votre activité.
+  </div>
+</div>"""
+
+            # ── ERREUR 4 : IMAGES ──
+            if seo["images_no_alt"] > 0:
+                nb_erreurs += 1
+                blocs_html += f"""
+<div style="margin-bottom:20px">
+  <div style="font-size:11px;font-weight:700;color:#ffc107;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">⚠️ ERREUR {nb_erreurs} — {seo['images_no_alt']} image(s) sans description</div>
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch">
+    <div>
+      <div style="font-size:10px;color:#ffc107;font-weight:700;margin-bottom:6px;text-transform:uppercase">AVANT — Ce que Google voit dans votre code</div>
+      <div style="background:#1a1400;border:2px solid #ffc107;border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:#888;margin-bottom:6px">Code de votre page :</div>
+        <div style="font-family:monospace;font-size:12px;color:#ffc107">&lt;img src="photo.jpg"&gt;</div>
+        <div style="font-size:11px;color:#888;margin-top:8px;font-style:italic">← Google voit une image mais ne sait pas ce qu'elle représente</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;font-size:24px;color:#7c6af7;padding:0 4px">→</div>
+    <div>
+      <div style="font-size:10px;color:#28a745;font-weight:700;margin-bottom:6px;text-transform:uppercase">APRÈS — Code corrigé</div>
+      <div style="background:#081a08;border:2px solid #28a745;border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:#888;margin-bottom:6px">Code de votre page :</div>
+        <div style="font-family:monospace;font-size:12px;color:#7ddf96">&lt;img src="photo.jpg"<br>&nbsp;&nbsp;alt="Description claire<br>&nbsp;&nbsp;de ce que montre la photo"&gt;</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:8px;background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#b090f7">
+    💡 Ajoutez une description courte à chaque image — ex: "Façade de notre restaurant à Lyon" ou "Notre équipe de plombiers".
+  </div>
+</div>"""
+
+            # ── ERREUR 5 : HTTPS ──
+            if not perf["is_https"]:
+                nb_erreurs += 1
+                url_clean = url_site.replace("https://","").replace("http://","")
+                blocs_html += f"""
+<div style="margin-bottom:20px">
+  <div style="font-size:11px;font-weight:700;color:#dc3545;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">❌ ERREUR {nb_erreurs} — Site non sécurisé</div>
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch">
+    <div>
+      <div style="font-size:10px;color:#dc3545;font-weight:700;margin-bottom:6px;text-transform:uppercase">AVANT — Ce que voient vos visiteurs</div>
+      <div style="background:#1a0808;border:2px solid #dc3545;border-radius:10px;padding:14px;font-family:Arial,sans-serif">
+        <div style="background:#2a0808;border-radius:6px;padding:6px 10px;display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="color:#dc3545;font-size:14px">⚠️</span>
+          <span style="font-size:11px;color:#ff8898">Non sécurisé</span>
+          <span style="font-size:11px;color:#888">| http://{url_clean}</span>
+        </div>
+        <div style="font-size:11px;color:#888">Les navigateurs affichent une alerte rouge "Dangereux" — beaucoup de visiteurs repartent immédiatement.</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;font-size:24px;color:#7c6af7;padding:0 4px">→</div>
+    <div>
+      <div style="font-size:10px;color:#28a745;font-weight:700;margin-bottom:6px;text-transform:uppercase">APRÈS — Ce que verront vos visiteurs</div>
+      <div style="background:#081a08;border:2px solid #28a745;border-radius:10px;padding:14px;font-family:Arial,sans-serif">
+        <div style="background:#081a08;border-radius:6px;padding:6px 10px;display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="color:#28a745;font-size:14px">🔒</span>
+          <span style="font-size:11px;color:#7ddf96">https://{url_clean}</span>
+        </div>
+        <div style="font-size:11px;color:#888">Connexion sécurisée — vos visiteurs ont confiance et restent sur votre site.</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:8px;background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#b090f7">
+    💡 Activez le certificat SSL chez votre hébergeur — c'est gratuit (Let's Encrypt) et prend 5 minutes.
+  </div>
+</div>"""
+
+            # ── ERREUR 6 : VITESSE ──
+            if rt > 2:
+                nb_erreurs += 1
+                blocs_html += f"""
+<div style="margin-bottom:20px">
+  <div style="font-size:11px;font-weight:700;color:#dc3545;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">❌ ERREUR {nb_erreurs} — Site trop lent ({rt}s)</div>
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch">
+    <div>
+      <div style="font-size:10px;color:#dc3545;font-weight:700;margin-bottom:6px;text-transform:uppercase">AVANT — Expérience d'un visiteur</div>
+      <div style="background:#1a0808;border:2px solid #dc3545;border-radius:10px;padding:14px">
+        <div style="font-size:13px;color:#ff8898">⏱ {rt} secondes de chargement</div>
+        <div style="background:#2a0808;border-radius:6px;height:8px;margin-top:10px;overflow:hidden">
+          <div style="background:#dc3545;height:100%;width:100%;animation:none"></div>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:8px">53% des visiteurs partent si votre site met plus de 3 secondes à s'afficher.</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;font-size:24px;color:#7c6af7;padding:0 4px">→</div>
+    <div>
+      <div style="font-size:10px;color:#28a745;font-weight:700;margin-bottom:6px;text-transform:uppercase">APRÈS — Objectif à atteindre</div>
+      <div style="background:#081a08;border:2px solid #28a745;border-radius:10px;padding:14px">
+        <div style="font-size:13px;color:#7ddf96">⚡ Moins de 2 secondes</div>
+        <div style="background:#0a2a0a;border-radius:6px;height:8px;margin-top:10px;overflow:hidden">
+          <div style="background:#28a745;height:100%;width:35%"></div>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:8px">Compressez vos images et supprimez les plugins inutiles.</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:8px;background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#b090f7">
+    💡 Compressez vos images sur tinypng.com et désactivez les extensions inutiles sur votre CMS.
+  </div>
+</div>"""
+
+            # ── ERREUR 7 : MENU ──
+            if not ux["has_nav"]:
+                nb_erreurs += 1
+                blocs_html += f"""
+<div style="margin-bottom:20px">
+  <div style="font-size:11px;font-weight:700;color:#dc3545;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">❌ ERREUR {nb_erreurs} — Pas de menu de navigation</div>
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch">
+    <div>
+      <div style="font-size:10px;color:#dc3545;font-weight:700;margin-bottom:6px;text-transform:uppercase">AVANT — Haut de votre site</div>
+      <div style="background:#1a0808;border:2px solid #dc3545;border-radius:10px;padding:14px">
+        <div style="background:#2a0808;border-radius:6px;height:36px;display:flex;align-items:center;padding:0 12px;margin-bottom:8px">
+          <span style="font-size:11px;color:#dc3545;font-weight:700">{titre or 'Votre site'}</span>
+        </div>
+        <div style="font-size:11px;color:#888;font-style:italic">← Aucun menu — le visiteur ne sait pas où aller et repart</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;font-size:24px;color:#7c6af7;padding:0 4px">→</div>
+    <div>
+      <div style="font-size:10px;color:#28a745;font-weight:700;margin-bottom:6px;text-transform:uppercase">APRÈS — Haut de votre site corrigé</div>
+      <div style="background:#081a08;border:2px solid #28a745;border-radius:10px;padding:14px">
+        <div style="background:#0a2a0a;border-radius:6px;height:36px;display:flex;align-items:center;padding:0 12px;gap:16px;margin-bottom:8px">
+          <span style="font-size:11px;color:#7ddf96;font-weight:700">{titre or 'Votre site'}</span>
+          <span style="font-size:10px;color:#7ddf96">Accueil</span>
+          <span style="font-size:10px;color:#7ddf96">Services</span>
+          <span style="font-size:10px;color:#7ddf96">Contact</span>
+        </div>
+        <div style="font-size:11px;color:#888">Menu clair — vos visiteurs savent où aller</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:8px;background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#b090f7">
+    💡 Ajoutez un menu avec 5 à 7 liens : Accueil, Services, À propos, Blog, Contact.
+  </div>
+</div>"""
+
+            # ── ERREUR 8 : OG TAGS ──
+            if not design["has_og_tags"]:
+                nb_erreurs += 1
+                blocs_html += f"""
+<div style="margin-bottom:20px">
+  <div style="font-size:11px;font-weight:700;color:#ffc107;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">⚠️ ERREUR {nb_erreurs} — Aperçu réseaux sociaux non configuré</div>
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch">
+    <div>
+      <div style="font-size:10px;color:#ffc107;font-weight:700;margin-bottom:6px;text-transform:uppercase">AVANT — Quand quelqu'un partage votre lien</div>
+      <div style="background:#1a1400;border:2px solid #ffc107;border-radius:10px;padding:14px">
+        <div style="background:#222;border-radius:6px;padding:10px;font-size:11px;color:#888">
+          <div style="color:#ffc107;margin-bottom:4px">💬 Message WhatsApp / Facebook</div>
+          <div style="color:#7c9bf5;word-break:break-all">{url_site}</div>
+          <div style="color:#888;font-style:italic;margin-top:4px">(lien brut — pas d'image, pas de description)</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;font-size:24px;color:#7c6af7;padding:0 4px">→</div>
+    <div>
+      <div style="font-size:10px;color:#28a745;font-weight:700;margin-bottom:6px;text-transform:uppercase">APRÈS — Aperçu automatique</div>
+      <div style="background:#081a08;border:2px solid #28a745;border-radius:10px;padding:14px">
+        <div style="background:#0a2a0a;border-radius:6px;overflow:hidden">
+          <div style="background:#1a3a1a;height:50px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#7ddf96">🖼 Image de votre site</div>
+          <div style="padding:8px 10px">
+            <div style="font-size:12px;font-weight:700;color:#7ddf96">{titre or 'Titre de votre site'}</div>
+            <div style="font-size:11px;color:#888;margin-top:2px">{url_site}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:8px;background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#b090f7">
+    💡 Ajoutez les balises Open Graph dans le &lt;head&gt; de votre site — votre CMS le fait souvent en 1 clic.
   </div>
 </div>"""
 
             if not blocs_html:
-                blocs_html = '<div style="background:rgba(40,167,69,0.1);border:1.5px solid #28a745;border-radius:12px;padding:20px;text-align:center;color:#7ddf96;font-size:14px">✅ Aucune erreur critique — votre site est bien optimisé !</div>'
+                blocs_html = '<div style="background:rgba(40,167,69,0.1);border:2px solid #28a745;border-radius:12px;padding:24px;text-align:center;color:#7ddf96;font-size:15px;font-weight:600">✅ Aucune erreur détectée — votre site est bien optimisé !</div>'
 
             html_corrections = f"""<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:'Inter',Arial,sans-serif;background:#09090f;color:#e8e8f0;padding:16px}}</style>
 </head><body>
-<div style="margin-bottom:16px;font-size:13px;color:#888">SITRA a détecté <b style="color:#e8e8f0">{len(erreurs)} point(s) à corriger</b>. Voici exactement où et comment :</div>
+<div style="margin-bottom:20px;padding:12px 16px;background:#1a1a2e;border-radius:10px;font-size:13px;color:#888">
+  SITRA a détecté <b style="color:#e8e8f0">{nb_erreurs} point(s) à corriger</b> sur votre site. Chaque bloc montre exactement <b style="color:#e8e8f0">où est l'erreur</b> et <b style="color:#7ddf96">comment la corriger</b>.
+</div>
 {blocs_html}
 </body></html>"""
 
             import streamlit.components.v1 as components
-            components.html(html_corrections, height=max(400, len(erreurs) * 210), scrolling=True)
+            components.html(html_corrections, height=max(500, nb_erreurs * 280), scrolling=True)
             st.divider()
 
     # ── ONGLET TEXTES CORRIGÉS ──
