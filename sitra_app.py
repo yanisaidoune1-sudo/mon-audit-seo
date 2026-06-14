@@ -1107,58 +1107,55 @@ def render_result(result, idx=0):
         st.markdown("")
         st.markdown("**Pour Instagram et TikTok** — copiez ce texte :")
         st.code(texte_partage, language=None)
-       # ── ONGLET OPTIMISER MON SITE ─────────────────────────────────────────────
+                                                                                                                                                                                                                
+    # ── ONGLET OPTIMISER MON SITE (VERSION SIMPLE ET STABLE) ─────────────────────
     if show_corriger:
         tab_corriger_idx = tabs_list.index("Optimiser mon site")
         with tabs[tab_corriger_idx]:
             st.markdown("### 🎯 Optimiser mon site – Avant / Après")
-            st.caption("Voici la transformation concrète de votre site et le gain en clients.")
+            st.caption("Voici les améliorations principales pour attirer plus de clients.")
 
             seo = result["seo"]
             perf = result["performance"]
             rt = perf.get("response_time", 0) or 0
             titre = seo.get("title") or "Votre site"
 
-            st.subheader("🔧 Principales corrections")
+            st.subheader("🔧 Ce qu’il faut corriger")
 
             if not seo.get("title") or len(seo.get("title", "")) < 10 or len(seo.get("title", "")) > 70:
-                st.error("**Titre Google faible**")
-                st.write(f"**Actuel :** {titre}")
-                st.write(f"**Recommandé :** {(titre[:55] + ' | Votre Ville')[:60]}")
-                st.caption("→ Gain estimé : +25% à +45% de clics depuis Google")
+                st.error("**Titre Google à améliorer**")
+                st.write(f"Actuel : {titre}")
+                st.caption("→ Change-le pour quelque chose de clair avec ta ville")
 
             if not seo.get("meta_description"):
                 st.error("**Description Google manquante**")
-                st.caption("→ Gain estimé : Beaucoup plus de visiteurs cliquent sur votre lien")
+                st.caption("→ Ajoute une description qui donne envie de cliquer")
 
             if seo.get("images_no_alt", 0) > 0:
                 st.warning(f"**{seo['images_no_alt']} image(s) sans description**")
-                st.caption("Ajoutez un texte alternatif (alt) sur chaque image")
+                st.caption("→ Ajoute un texte alt sur tes images")
 
             if not perf.get("is_https"):
-                st.error("**Site non sécurisé (HTTP)**")
-                st.caption("→ Activez HTTPS pour inspirer confiance")
+                st.error("**Site non sécurisé**")
+                st.caption("→ Active HTTPS chez ton hébergeur")
 
             if rt > 2.5:
                 st.error(f"**Site trop lent ({rt:.1f} secondes)**")
-                st.caption("→ Les visiteurs partent si ça charge trop lentement")
+                st.caption("→ Compresse tes images")
 
             st.divider()
 
-            st.subheader("🎁 Votre mini-site prêt à l’emploi")
-            st.caption("Un template HTML moderne et optimisé que vous pouvez modifier facilement et mettre en ligne.")
-
-            if st.button("🔨 Générer et télécharger mon mini-site HTML amélioré", type="primary", use_container_width=True):
-                with st.spinner("Création du template..."):
+            st.subheader("🎁 Bonus : Mini site HTML")
+            if st.button("🔨 Générer mon mini-site HTML amélioré", type="primary", use_container_width=True):
+                with st.spinner("Génération..."):
                     template = generer_template_html_complet(result)
                     st.download_button(
-                        label="📥 Télécharger mon-site-ameliore.html",
-                        data=template,
+                        "📥 Télécharger mon-site-ameliore.html",
+                        template,
                         file_name="mon-site-ameliore.html",
                         mime="text/html"
                     )
-                    st.success("✅ Template généré ! Vous pouvez l'ouvrir avec votre navigateur, le modifier et le mettre en ligne.")
- 
+                    st.success("✅ Fichier téléchargé !")
 
             # ── ERREUR 1 : TITRE ──
             if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70:
@@ -1989,6 +1986,38 @@ def generer_template_html_complet(result):
     <main style="padding:40px; text-align:center; max-width:1000px; margin:auto;">
         <h2>Site optimisé par SITRA</h2>
         <p>Ce template est déjà optimisé SEO et responsive.<br>Remplacez simplement les textes et images par les vôtres.</p>
+    </main>
+</body>
+</html>"""
+    return html
+    def generer_template_html_complet(result):
+    """Génère un mini-site HTML amélioré"""
+    titre = result.get("seo", {}).get("title", "Mon Entreprise")
+    desc = result.get("seo", {}).get("meta_description", "Description professionnelle de mon activité")
+    
+    html = f"""<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="{desc}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{titre}</title>
+    <style>
+        body {{font-family: Arial, sans-serif; margin:0; background:#f8f9fa; color:#222; line-height:1.6;}}
+        header {{background: linear-gradient(135deg, #667eea, #764ba2); color:white; padding:100px 20px; text-align:center;}}
+        .cta {{background:white; color:#667eea; padding:18px 36px; border-radius:50px; text-decoration:none; font-weight:bold;}}
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{titre}</h1>
+        <p style="font-size:1.3rem; max-width:700px; margin:30px auto;">{desc}</p>
+        <a href="#" class="cta">Contactez-nous</a>
+    </header>
+    <main style="padding:40px; text-align:center; max-width:1000px; margin:auto;">
+        <h2>Site optimisé par SITRA</h2>
+        <p>Ce template est déjà optimisé SEO et responsive.<br>
+        Remplacez simplement les textes et images par les vôtres.</p>
     </main>
 </body>
 </html>"""
