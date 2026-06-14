@@ -1108,7 +1108,6 @@ def render_result(result, idx=0):
         st.markdown("**Pour Instagram et TikTok** — copiez ce texte :")
         st.code(texte_partage, language=None)
 
-    # ── ONGLET CORRIGER ──
        # ── ONGLET OPTIMISER MON SITE (VERSION AMÉLIORÉE) ─────────────────────────────
     if show_corriger:
         tab_corriger_idx = tabs_list.index("Optimiser mon site")
