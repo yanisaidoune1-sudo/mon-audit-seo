@@ -1107,8 +1107,7 @@ def render_result(result, idx=0):
         st.markdown("")
         st.markdown("**Pour Instagram et TikTok** — copiez ce texte :")
         st.code(texte_partage, language=None)
-
-        # ── ONGLET OPTIMISER MON SITE (VERSION PROPRE) ─────────────────────────────
+       # ── ONGLET OPTIMISER MON SITE ─────────────────────────────────────────────
     if show_corriger:
         tab_corriger_idx = tabs_list.index("Optimiser mon site")
         with tabs[tab_corriger_idx]:
@@ -1118,36 +1117,37 @@ def render_result(result, idx=0):
             seo = result["seo"]
             perf = result["performance"]
             rt = perf.get("response_time", 0) or 0
-            url_site = result["final_url"]
             titre = seo.get("title") or "Votre site"
 
-            st.markdown("#### Principales corrections :")
+            st.subheader("🔧 Principales corrections")
 
             if not seo.get("title") or len(seo.get("title", "")) < 10 or len(seo.get("title", "")) > 70:
-                st.error("**Titre Google faible ou manquant**")
-                st.write(f"Actuel : {titre}")
-                st.write(f"**Recommandé :** {(titre[:50] + ' | Votre Ville')[:60]}")
-                st.caption("→ Peut multiplier les clics sur Google par 1.3 à 1.5")
+                st.error("**Titre Google faible**")
+                st.write(f"**Actuel :** {titre}")
+                st.write(f"**Recommandé :** {(titre[:55] + ' | Votre Ville')[:60]}")
+                st.caption("→ Gain estimé : +25% à +45% de clics depuis Google")
 
             if not seo.get("meta_description"):
                 st.error("**Description Google manquante**")
-                st.caption("→ Une bonne description augmente fortement le taux de clics")
+                st.caption("→ Gain estimé : Beaucoup plus de visiteurs cliquent sur votre lien")
 
             if seo.get("images_no_alt", 0) > 0:
                 st.warning(f"**{seo['images_no_alt']} image(s) sans description**")
-                st.caption("Ajoutez un alt text sur chaque image")
+                st.caption("Ajoutez un texte alternatif (alt) sur chaque image")
 
             if not perf.get("is_https"):
                 st.error("**Site non sécurisé (HTTP)**")
-                st.caption("Activez HTTPS (gratuit chez la plupart des hébergeurs)")
+                st.caption("→ Activez HTTPS pour inspirer confiance")
 
             if rt > 2.5:
                 st.error(f"**Site trop lent ({rt:.1f} secondes)**")
-                st.caption("Compressez vos images pour garder les visiteurs")
+                st.caption("→ Les visiteurs partent si ça charge trop lentement")
 
             st.divider()
 
             st.subheader("🎁 Votre mini-site prêt à l’emploi")
+            st.caption("Un template HTML moderne et optimisé que vous pouvez modifier facilement et mettre en ligne.")
+
             if st.button("🔨 Générer et télécharger mon mini-site HTML amélioré", type="primary", use_container_width=True):
                 with st.spinner("Création du template..."):
                     template = generer_template_html_complet(result)
@@ -1157,7 +1157,7 @@ def render_result(result, idx=0):
                         file_name="mon-site-ameliore.html",
                         mime="text/html"
                     )
-                    st.success("✅ Template généré ! Tu peux l'ouvrir, le modifier facilement et le mettre en ligne.")
+                    st.success("✅ Template généré ! Vous pouvez l'ouvrir avec votre navigateur, le modifier et le mettre en ligne.")
  
 
             # ── ERREUR 1 : TITRE ──
@@ -1960,7 +1960,9 @@ def typo3_fix_seo(typo3_url, token, result):
         if not result["performance"]["is_https"]:
             erreurs.append("HTTPS non activé")
     except Exception as e:
-        erreurs.append(str(e))# ── FONCTION TEMPLATE HTML (à mettre tout en bas) ─────────────────────────────
+        erreurs.append(str(e))
+        
+         # ── TEMPLATE MINI-SITE HTML ─────────────────────────────────────────────────
 def generer_template_html_complet(result):
     titre = result["seo"].get("title", "Mon Entreprise") or "Mon Entreprise"
     desc = result["seo"].get("meta_description", "Description professionnelle de mon activité")
@@ -1973,24 +1975,21 @@ def generer_template_html_complet(result):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{titre}</title>
     <style>
-        body {{font-family: Arial, sans-serif; margin:0; background:#f8f9fa; color:#333; line-height:1.6;}}
-        header {{background: linear-gradient(135deg, #667eea, #764ba2); color:white; padding:80px 20px; text-align:center;}}
-        .cta {{background:white; color:#667eea; padding:16px 32px; border-radius:50px; text-decoration:none; font-weight:bold; font-size:1.1rem;}}
+        body {{font-family: Arial, sans-serif; margin:0; background:#f8f9fa; color:#222; line-height:1.6;}}
+        header {{background: linear-gradient(135deg, #667eea, #764ba2); color:white; padding:100px 20px; text-align:center;}}
+        .cta {{background:white; color:#667eea; padding:18px 36px; border-radius:50px; text-decoration:none; font-weight:bold; font-size:1.2rem;}}
     </style>
 </head>
 <body>
     <header>
         <h1>{titre}</h1>
-        <p style="font-size:1.4rem; max-width:800px; margin:25px auto;">{desc}</p>
-        <a href="#" class="cta">Obtenir un devis gratuit</a>
+        <p style="font-size:1.4rem; max-width:700px; margin:30px auto;">{desc}</p>
+        <a href="#" class="cta">Contactez-nous</a>
     </header>
-    <main style="max-width:1000px; margin:50px auto; padding:20px; text-align:center;">
-        <h2>Votre site optimisé par SITRA</h2>
-        <p>Ce template est déjà bien structuré, responsive et optimisé SEO.<br>
-        Remplace simplement les textes et images par les tiens.</p>
+    <main style="padding:40px; text-align:center; max-width:1000px; margin:auto;">
+        <h2>Site optimisé par SITRA</h2>
+        <p>Ce template est déjà optimisé SEO et responsive.<br>Remplacez simplement les textes et images par les vôtres.</p>
     </main>
 </body>
 </html>"""
     return html
-    return corrections, erreurs
-          
