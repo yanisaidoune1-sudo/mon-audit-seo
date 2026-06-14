@@ -1108,12 +1108,12 @@ def render_result(result, idx=0):
         st.markdown("**Pour Instagram et TikTok** — copiez ce texte :")
         st.code(texte_partage, language=None)
 
-       # ── ONGLET OPTIMISER MON SITE (VERSION AMÉLIORÉE) ─────────────────────────────
+     # ── ONGLET OPTIMISER MON SITE (VERSION AMÉLIORÉE) ─────────────────────────────
     if show_corriger:
         tab_corriger_idx = tabs_list.index("Optimiser mon site")
         with tabs[tab_corriger_idx]:
             st.markdown("### 🎯 Optimiser mon site – Avant / Après")
-            st.caption("**Voici exactement ce qui change sur votre site et pourquoi ça va vous ramener plus de clients.** Chaque correction montre le gain concret.")
+            st.caption("**Transformation visuelle de votre site.** Chaque bloc montre le problème actuel, la solution, et le gain en clients.")
 
             seo = result["seo"]
             ux = result["ux"]
@@ -1121,113 +1121,106 @@ def render_result(result, idx=0):
             design = result["design"]
             rt = perf.get("response_time", 0) or 0
             url_site = result["final_url"]
-            titre = seo["title"] or "Votre site"
-            desc = seo["meta_description"] or ""
+            titre = seo.get("title") or "Votre site"
+            desc = seo.get("meta_description") or ""
 
             blocs_html = ""
             nb_erreurs = 0
 
-            def mock_serp(avant_titre, avant_desc, apres_titre, apres_desc, gain):
+            def avant_apres(titre_erreur, avant, apres, gain):
+                nonlocal nb_erreurs
+                nb_erreurs += 1
                 return f"""
-                <div style="background:#1a1a2e; border-radius:12px; padding:18px; margin:20px 0; border:1px solid #334;">
-                    <div style="display:grid; grid-template-columns:1fr auto 1fr; gap:20px; align-items:center;">
-                        <div style="background:#2a0a0a; padding:14px; border-radius:10px; border:2px solid #dc3545;">
-                            <div style="font-size:11px; color:#dc3545; margin-bottom:6px;">AVANT (Google actuel)</div>
-                            <div style="color:#ff8898; font-weight:600; font-size:15px;">{avant_titre}</div>
-                            <div style="color:#666; font-size:13px; margin-top:4px;">{url_site}</div>
-                            <div style="color:#888; font-size:13px; margin-top:4px;">{avant_desc}</div>
+                <div style="margin:25px 0; background:#1a1a2e; padding:20px; border-radius:16px; border:1px solid #334155;">
+                    <div style="color:#dc3545; font-weight:700; margin-bottom:12px;">❌ ERREUR {nb_erreurs} — {titre_erreur}</div>
+                    <div style="display:grid; grid-template-columns:1fr 70px 1fr; gap:20px; align-items:center;">
+                        <div style="background:#2a0a0a; padding:16px; border-radius:12px; border:2px solid #dc3545;">
+                            <small style="color:#dc3545;">AVANT</small><br>
+                            {avant}
                         </div>
-                        <div style="font-size:42px; color:#7c6af7; text-align:center;">→</div>
-                        <div style="background:#0a2a0a; padding:14px; border-radius:10px; border:2px solid #28a745;">
-                            <div style="font-size:11px; color:#28a745; margin-bottom:6px;">APRÈS (nouveau résultat)</div>
-                            <div style="color:#7ddf96; font-weight:700; font-size:15px;">{apres_titre}</div>
-                            <div style="color:#666; font-size:13px; margin-top:4px;">{url_site}</div>
-                            <div style="color:#7ddf96; font-size:13px; margin-top:4px;">{apres_desc}</div>
+                        <div style="font-size:48px; color:#7c6af7; text-align:center; line-height:1;">→</div>
+                        <div style="background:#0a2a0a; padding:16px; border-radius:12px; border:2px solid #28a745;">
+                            <small style="color:#28a745;">APRÈS</small><br>
+                            {apres}
                         </div>
                     </div>
-                    <div style="margin-top:12px; padding:10px; background:rgba(40,167,69,0.15); border-radius:8px; color:#7ddf96; font-size:0.95rem; text-align:center;">
+                    <div style="margin-top:16px; padding:12px; background:rgba(40,167,69,0.2); border-radius:10px; color:#7ddf96; text-align:center; font-weight:600;">
                         💰 {gain}
                     </div>
                 </div>
                 """
 
-            # TITRE
-            if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70:
-                nb_erreurs += 1
-                t_corr = (titre[:50] + " | " + ("Lyon" if "lyon" in url_site.lower() else "Votre Ville"))[:60]
-                avant_desc = desc[:120] or "(pas de description)"
-                blocs_html += f"""
-                <div style="margin-bottom:25px;">
-                    <div style="color:#dc3545; font-weight:700; font-size:1.1rem;">❌ ERREUR {nb_erreurs} — Titre Google faible</div>
-                    {mock_serp(titre or '(Titre manquant)', avant_desc, t_corr, 'Description optimisée qui donne envie de cliquer', '+25 à +40% de clics sur Google')}
-                </div>
-                """
+            # Blocs Avant/Après
+            if not seo.get("title") or len(seo.get("title", "")) < 10 or len(seo.get("title", "")) > 70:
+                t_corr = (titre[:50] + (" | Lyon" if "lyon" in url_site.lower() else " | Votre Ville"))[:60]
+                blocs_html += avant_apres(
+                    "Titre Google faible",
+                    f"<strong style='color:#ff8898;'>{titre or '(Titre manquant)'}</strong>",
+                    f"<strong style='color:#7ddf96;'>{t_corr}</strong>",
+                    "+25% à +45% de clics sur Google"
+                )
 
-            # META + autres blocs (images, HTTPS, etc.) restent améliorés de la même façon...
+            if not seo.get("meta_description"):
+                blocs_html += avant_apres(
+                    "Description Google manquante",
+                    "<em style='color:#888;'>Google affiche un texte peu attractif...</em>",
+                    f"<span style='color:#7ddf96;'>Découvrez {titre} — service professionnel, devis gratuit...</span>",
+                    "+20% de clics grâce à une description persuasive"
+                )
+
+            if seo.get("images_no_alt", 0) > 0:
+                blocs_html += avant_apres(
+                    f"{seo['images_no_alt']} image(s) sans alt",
+                    "<code style='color:#ffc107;'>&lt;img src='photo.jpg'&gt;</code>",
+                    "<code style='color:#7ddf96;'>&lt;img src='photo.jpg' alt='Description précise'&gt;</code>",
+                    "Meilleur référencement images + accessibilité"
+                )
+
+            if not perf.get("is_https"):
+                blocs_html += avant_apres(
+                    "Site non sécurisé (HTTP)",
+                    "<span style='color:#dc3545;'>⚠️ Non sécurisé — alerte navigateur</span>",
+                    "<span style='color:#28a745;'>🔒 Site sécurisé — confiance immédiate</span>",
+                    "Moins d'abandons + meilleure image professionnelle"
+                )
+
+            if rt > 2.5:
+                blocs_html += avant_apres(
+                    f"Site trop lent ({rt:.1f}s)",
+                    "<span style='color:#dc3545;'>⏳ Chargement lent → visiteurs partent</span>",
+                    "<span style='color:#7ddf96;'>⚡ Chargement rapide (&lt; 2s)</span>",
+                    "Réduction des rebonds = plus de clients"
+                )
 
             if not blocs_html:
-                blocs_html = '<div style="background:#0a2a0a; padding:30px; border-radius:12px; text-align:center; color:#7ddf96; font-size:1.2rem;">✅ Votre site est déjà très bien optimisé !</div>'
+                blocs_html = "<div style='background:#0a2a0a; padding:40px; border-radius:16px; text-align:center; color:#7ddf96; font-size:1.3rem;'>✅ Votre site est déjà bien optimisé !</div>"
 
-            html_full = f"""
+            html_optim = f"""
             <style>
-                .optim-block {{ background:#111827; border-radius:16px; padding:24px; margin-bottom:24px; border:1px solid #334155; }}
+                .optim-container {{ font-family: 'Inter', Arial, sans-serif; color: #e0e0e0; }}
             </style>
-            <div style="font-family:Inter,Arial,sans-serif; max-width:100%; color:#e2e8f0;">
-                <h2 style="text-align:center; color:#a5b4fc;">Transformation Visuelle de Votre Site</h2>
-                <p style="text-align:center; color:#94a3b8;">Chaque Avant/Après montre le gain en clients potentiels</p>
+            <div class="optim-container">
+                <h2 style="text-align:center; color:#c4b5fd;">Transformation Visuelle de Votre Site</h2>
+                <p style="text-align:center; color:#94a3b8;">Chaque Avant/Après montre le gain concret en clients</p>
                 {blocs_html}
             </div>
             """
 
             import streamlit.components.v1 as components
-            components.html(html_full, height=900 + nb_erreurs * 180, scrolling=True)
+            components.html(html_optim, height=850 + nb_erreurs * 240, scrolling=True)
 
             st.divider()
 
-            # Bouton Template HTML
-            if st.button("🔨 Générer mon mini-site HTML complet amélioré (téléchargeable)", type="primary", use_container_width=True):
+            if st.button("🔨 Générer mon mini-site HTML complet amélioré", type="primary", use_container_width=True):
                 with st.spinner("Création du template optimisé..."):
-                    template_html = generer_template_html_complet(result)
+                    template = generer_template_html_complet(result)
                     st.download_button(
                         label="📥 Télécharger mon-site-ameliore.html",
-                        data=template_html,
+                        data=template,
                         file_name="mon-site-ameliore.html",
                         mime="text/html"
                     )
-                    st.success("✅ Template prêt ! Ouvre-le, modifie-le et uploade-le sur ton hébergeur.")
-
-# ── FONCTION TEMPLATE HTML COMPLET (à ajouter à la fin du fichier, avant les dernières fonctions) ──
-def generer_template_html_complet(result):
-    titre = result["seo"]["title"] or "Mon Site Optimisé"
-    desc = result["seo"]["meta_description"] or "Description professionnelle"
-    url = result["final_url"]
-
-    html = f"""<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="description" content="{desc}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{titre}</title>
-    <style>
-        body {{ font-family: 'Inter', Arial, sans-serif; margin:0; padding:0; background:#0f0f1a; color:#e0e0e0; }}
-        header {{ background:linear-gradient(135deg,#667eea,#764ba2); padding:2rem; text-align:center; }}
-        .cta {{ background:#7c6af7; color:white; padding:1rem 2rem; border-radius:50px; text-decoration:none; font-weight:bold; }}
-    </style>
-</head>
-<body>
-    <header>
-        <h1>{titre}</h1>
-        <p>{desc}</p>
-        <a href="#" class="cta">Contactez-nous</a>
-    </header>
-    <main style="padding:3rem; max-width:1100px; margin:auto;">
-        <h2>Bienvenue sur votre site amélioré par SITRA</h2>
-        <p>Ce template est déjà optimisé SEO, mobile et conversion. Personnalisez-le avec vos photos et textes.</p>
-    </main>
-</body>
-</html>"""
-    return html
+ 
 
             # ── ERREUR 1 : TITRE ──
             if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70:
