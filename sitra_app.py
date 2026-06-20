@@ -1,7 +1,7 @@
 import streamlit as st
 import time
 from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages, detect_secteur_et_concurrents
-from screenshot_helper import get_screenshot, render_before_after_block, render_fallback_block
+from screenshot_helper import get_screenshot, render_before_after_block, render_fallback_block, generic_before_after, get_zone_for_issue
 
 # ── CACHE — réduit le temps de rechargement ───────────────────────────────────
 @st.cache_data(ttl=300, show_spinner=False)
