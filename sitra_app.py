@@ -1416,51 +1416,134 @@ def render_result(result, idx=0):
             st.divider()
 
     # ── ONGLET TEXTES CORRIGÉS ──
-    if show_textes:
-        tab_textes_idx = tabs_list.index("Textes corrigés")
-        with tabs[tab_textes_idx]:
-            st.markdown("### Textes corrigés prêts à copier-coller")
-            st.caption("SITRA rédige pour vous les textes manquants ou à améliorer — copiez-les directement sur votre site.")
-            if st.button("Générer mes textes corrigés", key=f"gen_textes_{idx}"):
-                with st.spinner("Rédaction en cours..."):
-                    try:
-                        import requests as req
-                        headers_t = {"Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}", "Content-Type": "application/json"}
-                        prompt = f"""Tu es un expert en rédaction web. Pour ce site {result['final_url']}, rédige les textes manquants ou à améliorer.
+    # ── ONGLET CORRIGER ──
+    if show_corriger:
+        tab_corriger_idx = tabs_list.index("Optimiser mon site")
+        with tabs[tab_corriger_idx]:
+            st.markdown("### Optimiser mon site")
+            st.caption("SITRA a pris une vraie capture de votre site et repère exactement où se trouvent les erreurs, puis montre la correction proposée.")
 
-Titre actuel : {result['seo']['title'] or 'Manquant'}
-Meta description actuelle : {result['seo']['meta_description'] or 'Manquante'}
-Nombre de mots sur le site : {result['content']['word_count']}
-Problèmes détectés : {', '.join([i['message'] for i in result['all_issues'][:5]])}
+            seo = result["seo"]
+            ux = result["ux"]
+            perf = result["performance"]
+            design = result["design"]
+            rt = perf.get("response_time", 0) or 0
+            url_site = result["final_url"]
+            titre = seo["title"] or ""
+            desc = seo["meta_description"] or ""
 
-Rédige exactement ces éléments en français, de façon professionnelle :
+            with st.spinner("Capture de votre site en cours..."):
+                screenshot_url = get_screenshot(url_site)
 
-TITRE DE LA PAGE (50-60 caractères) :
-[rédige ici]
+            if screenshot_url:
+                st.caption("✅ Capture réelle récupérée")
+            else:
+                st.caption("⚠️ Capture indisponible pour ce site (certains sites bloquent les outils automatiques) — affichage en mode texte")
 
-DESCRIPTION GOOGLE (120-160 caractères) :
-[rédige ici]
+            blocs_html = ""
+            nb_erreurs = 0
 
-TEXTE D'INTRODUCTION POUR LA PAGE D'ACCUEIL (80-100 mots) :
-[rédige ici]
+            def ajouter_bloc(badge_color, before_text, after_text, conseil):
+                nonlocal blocs_html, nb_erreurs
+                nb_erreurs += 1
+                if screenshot_url:
+                    blocs_html += render_before_after_block(screenshot_url, nb_erreurs, badge_color, before_text, after_text, conseil)
+                else:
+                    blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
 
-TITRE PRINCIPAL DE LA PAGE (H1) :
-[rédige ici]"""
-                        data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 500}
-                        r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers_t, json=data, timeout=30)
-                        st.session_state[f"textes_tab_{idx}"] = r.json()["choices"][0]["message"]["content"]
-                    except Exception:
-                        st.error("Impossible de générer les textes pour le moment.")
+            # ── ERREUR 1 : TITRE ──
+            if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70:
+                t = seo["title"] or ""
+                t_corrige = (t[:52] + "...") if len(t) > 60 else ((t + " | Service Pro") if t else "Nom de votre activité — Ville | Service")
+                probleme = "Titre manquant" if not t else f"Titre {'trop court' if len(t)<10 else 'trop long'} ({len(t)} caractères)"
+                ajouter_bloc(
+                    "#dc3545",
+                    f"❌ {probleme}<br><span style='font-weight:400;opacity:0.9'>Onglet du navigateur : « {t or '(vide)'} »</span>",
+                    f"✅ Titre corrigé<br><span style='font-weight:400;opacity:0.9'>« {t_corrige} »</span>",
+                    "Rédigez un titre entre 50 et 60 caractères qui décrit clairement votre activité et votre ville."
+                )
 
-            if f"textes_tab_{idx}" in st.session_state:
-                for section in st.session_state[f"textes_tab_{idx}"].split("\n\n"):
-                    if section.strip():
-                        lignes = section.strip().split("\n")
-                        titre = lignes[0].replace(":", "").strip()
-                        contenu_txt = "\n".join(lignes[1:]).strip()
-                        if contenu_txt:
-                            st.markdown(f"**{titre}**")
-                            st.code(contenu_txt, language=None)
+            # ── ERREUR 2 : DESCRIPTION ──
+            if not seo["meta_description"]:
+                desc_corrigee = f"Découvrez {titre[:25] or 'notre service'} — qualité professionnelle, devis gratuit et réponse rapide. Contactez-nous dès aujourd'hui !"
+                ajouter_bloc(
+                    "#dc3545",
+                    "❌ Description Google manquante<br><span style='font-weight:400;opacity:0.9'>Google affichera un texte aléatoire de votre page</span>",
+                    f"✅ Description ajoutée<br><span style='font-weight:400;opacity:0.9'>« {desc_corrigee[:90]}... »</span>",
+                    "Rédigez une description de 120 à 160 caractères qui donne envie de cliquer sur votre site."
+                )
+
+            # ── ERREUR 3 : H1 ──
+            if seo["h1_count"] != 1:
+                pb = "Aucun titre principal (H1)" if seo["h1_count"] == 0 else f"{seo['h1_count']} titres H1 en doublon"
+                ajouter_bloc(
+                    "#ffc107",
+                    f"⚠️ {pb}<br><span style='font-weight:400;opacity:0.9'>Google ne sait pas identifier le sujet principal de la page</span>",
+                    f"✅ 1 seul titre H1 clair<br><span style='font-weight:400;opacity:0.9'>« {titre or 'Votre activité principale — Ville'} »</span>",
+                    "Mettez exactement 1 grand titre H1 par page qui résume clairement votre activité."
+                )
+
+            # ── ERREUR 4 : IMAGES ──
+            if seo["images_no_alt"] > 0:
+                ajouter_bloc(
+                    "#ffc107",
+                    f"⚠️ {seo['images_no_alt']} image(s) sans description<br><span style='font-weight:400;opacity:0.9'>Google ne peut pas comprendre ce qu'elles montrent</span>",
+                    "✅ Description ajoutée à chaque image<br><span style='font-weight:400;opacity:0.9'>Ex : « Façade de notre commerce à [Ville] »</span>",
+                    "Ajoutez une description courte à chaque image — ex: \"Façade de notre restaurant à Lyon\" ou \"Notre équipe de plombiers\"."
+                )
+
+            # ── ERREUR 5 : HTTPS ──
+            if not perf["is_https"]:
+                url_clean = url_site.replace("https://","").replace("http://","")
+                ajouter_bloc(
+                    "#dc3545",
+                    f"❌ Site non sécurisé<br><span style='font-weight:400;opacity:0.9'>⚠️ http://{url_clean} — alerte « Non sécurisé » dans le navigateur</span>",
+                    f"✅ Connexion sécurisée<br><span style='font-weight:400;opacity:0.9'>🔒 https://{url_clean}</span>",
+                    "Activez le certificat SSL chez votre hébergeur — c'est gratuit (Let's Encrypt) et prend 5 minutes."
+                )
+
+            # ── ERREUR 6 : VITESSE ──
+            if rt > 2:
+                ajouter_bloc(
+                    "#dc3545",
+                    f"❌ Site trop lent : {rt}s<br><span style='font-weight:400;opacity:0.9'>53% des visiteurs partent après 3 secondes</span>",
+                    "✅ Objectif : moins de 2 secondes<br><span style='font-weight:400;opacity:0.9'>Compressez vos images et limitez les plugins inutiles</span>",
+                    "Compressez vos images sur tinypng.com et désactivez les extensions inutiles sur votre CMS."
+                )
+
+            # ── ERREUR 7 : MENU ──
+            if not ux["has_nav"]:
+                ajouter_bloc(
+                    "#dc3545",
+                    "❌ Pas de menu de navigation<br><span style='font-weight:400;opacity:0.9'>Le visiteur ne sait pas où aller et repart</span>",
+                    "✅ Menu clair ajouté<br><span style='font-weight:400;opacity:0.9'>Accueil · Services · À propos · Contact</span>",
+                    "Ajoutez un menu avec 5 à 7 liens : Accueil, Services, À propos, Blog, Contact."
+                )
+
+            # ── ERREUR 8 : OG TAGS ──
+            if not design["has_og_tags"]:
+                ajouter_bloc(
+                    "#ffc107",
+                    "⚠️ Aperçu réseaux sociaux non configuré<br><span style='font-weight:400;opacity:0.9'>Lien brut sans image ni description quand on le partage</span>",
+                    f"✅ Aperçu configuré<br><span style='font-weight:400;opacity:0.9'>Image + « {titre or 'Titre de votre site'} »</span>",
+                    "Ajoutez les balises Open Graph dans le <head> de votre site — votre CMS le fait souvent en 1 clic."
+                )
+
+            if not blocs_html:
+                blocs_html = '<div style="background:rgba(40,167,69,0.1);border:2px solid #28a745;border-radius:12px;padding:24px;text-align:center;color:#7ddf96;font-size:15px;font-weight:600">✅ Aucune erreur détectée — votre site est bien optimisé !</div>'
+
+            html_corrections = f"""<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:'Inter',Arial,sans-serif;background:#09090f;color:#e8e8f0;padding:16px}}</style>
+</head><body>
+<div style="margin-bottom:20px;padding:12px 16px;background:#1a1a2e;border-radius:10px;font-size:13px;color:#888">
+  SITRA a détecté <b style="color:#e8e8f0">{nb_erreurs} point(s) à corriger</b> sur votre site. Chaque bloc montre exactement <b style="color:#e8e8f0">où est l'erreur</b> et <b style="color:#7ddf96">comment la corriger</b>.
+</div>
+{blocs_html}
+</body></html>"""
+
+            import streamlit.components.v1 as components
+            components.html(html_corrections, height=max(500, nb_erreurs * 420), scrolling=True)
+            st.divider()
 
     # ── ONGLET GÉNÉRATION DE CONTENU ──
     if show_contenu_marque:
