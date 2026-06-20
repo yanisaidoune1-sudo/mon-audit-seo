@@ -1110,17 +1110,18 @@ def render_result(result, idx=0):
                                                                                                                                                                                                                 
 # ── SECTION DES MODULES DE CORRECTION PREMIUM (89€) ──────────────────────────
 # Ce module filtre les erreurs de l'audit pour afficher un comparatif Avant/Après
-    def afficher_comparatif_optimisation(result):
+def afficher_comparatif_optimisation(result):
     """
-    Filtre et affiche un comparatif visuel Avant/Après uniquement pour 
-    les erreurs liées à l'optimisation et aux performances du site.
+    Filtre et affiche un comparatif visuel Avant/Après avec des titres clairs
+    et un texte explicatif pour chaque erreur liée à l'optimisation.
     """
     import streamlit as st
 
+    # Grand titre de la section pour situer le client
     st.markdown("""
-        <div style="text-align: center; margin-top: 30px; margin-bottom: 25px;">
-            <h2 style="color: #7c6af7; font-size: 2rem; font-weight: 800;">⚡ Optimisation du Site : Avant / Après</h2>
-            <p style="color: #c0b8f0; font-size: 1rem;">Découvrez les gains de performance et de visibilité après correction.</p>
+        <div style="text-align: center; margin-top: 30px; margin-bottom: 35px;">
+            <h2 style="color: #7c6af7; font-size: 2.2rem; font-weight: 800; margin-bottom: 5px;">⚡ ESPACE OPTIMISATION</h2>
+            <p style="color: #c0b8f0; font-size: 1.1rem;">Analyse comparative en temps réel et impact des corrections sur votre site.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -1128,28 +1129,34 @@ def render_result(result, idx=0):
         st.info("Aucune donnée d'optimisation disponible.")
         return
 
-    # Mots-clés pour cibler uniquement l'optimisation (SEO, vitesse, code, performance)
     categories_cibles = ["SEO", "PERFORMANCE", "OPTIMISATION", "SPEED"]
     id_correction = 1
 
     for issue in result["all_issues"]:
-        categorie = issue.get("category", "").upper()
+        categorie = issue.get("category", "Optimisation technique").upper()
         message_erreur = issue.get("message", "")
 
-        # On vérifie si l'erreur appartient bien à l'optimisation
         if any(cat in categorie for cat in categories_cibles) or "mot" in message_erreur.lower() or "image" in message_erreur.lower():
             
-            st.markdown(f"#### 🛠️ Optimisation N°{id_correction} : {message_erreur}")
+            # Titre de l'erreur pour que le client comprenne l'anomalie
+            st.markdown(f"""
+                <div style="margin-top: 20px; margin-bottom: 15px;">
+                    <span style="background-color: #7c6af7; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; margin-right: 10px;">
+                        🎯 correction {id_correction}
+                    </span>
+                    <strong style="font-size: 1.2rem; color: #ffffff;">Analyse du problème : {message_erreur}</strong>
+                </div>
+            """, unsafe_allow_html=True)
             
             col_avant, col_apres = st.columns(2)
             
             with col_avant:
                 st.markdown(f"""
                     <div style="background-color: #fff5f5; border-left: 5px solid #ff4b4b; padding: 20px; border-radius: 8px; min-height: 220px;">
-                        <h5 style="color: #ff4b4b; margin-top: 0; font-weight: 700;">🔴 ÉTAT ACTUEL</h5>
-                        <p style="color: #2d3748; font-weight: 600; font-size: 0.95rem;">❌ {message_erreur}</p>
-                        <p style="color: #718096; font-size: 0.85rem; line-height: 1.4;">
-                            <b>Impact :</b> Ralentit le site, dégrade l'expérience utilisateur et pénalise votre positionnement sur Google.
+                        <h5 style="color: #ff4b4b; margin-top: 0; font-weight: 700;">🔴 ÉTAT ACTUEL (AVANT)</h5>
+                        <p style="color: #2d3748; font-weight: 600; font-size: 0.95rem; margin-bottom: 10px;">❌ Erreur active : {message_erreur}</p>
+                        <p style="color: #718096; font-size: 0.85rem; line-height: 1.5;">
+                            <b>Impact :</b> Ce défaut ralentit votre site, fait fuir vos visiteurs et bloque votre progression sur les moteurs de recherche.
                         </p>
                     </div>
                 """, unsafe_allow_html=True)
@@ -1157,27 +1164,27 @@ def render_result(result, idx=0):
             with col_apres:
                 st.markdown("""
                     <div style="background-color: #f0fff4; border-left: 5px solid #38a169; padding: 20px; border-radius: 8px; min-height: 220px;">
-                        <h5 style="color: #38a169; margin-top: 0; font-weight: 700;">🟢 OPTIMISÉ PAR SITRA</h5>
-                        <p style="color: #22543d; font-weight: 600; font-size: 0.95rem;">✅ Correction technique appliquée</p>
-                        <p style="color: #4a5568; font-size: 0.85rem; line-height: 1.4;">
-                            <b>Résultat :</b> Code nettoyé, ressources optimisées. Votre site se charge instantanément et répond aux critères de Google.
+                        <h5 style="color: #38a169; margin-top: 0; font-weight: 700;">🟢 APRÈS OPTIMISATION (SITRA)</h5>
+                        <p style="color: #22543d; font-weight: 600; font-size: 0.95rem; margin-bottom: 10px;">✅ Structure et code entièrement corrigés</p>
+                        <p style="color: #4a5568; font-size: 0.85rem; line-height: 1.5;">
+                            <b>Bénéfice :</b> Les scripts superflus sont nettoyés. Le site répond instantanément, ce qui rassure vos prospects et améliore le taux de conversion.
                         </p>
                     </div>
                 """, unsafe_allow_html=True)
                 
             st.markdown("""
-                <div style="margin-top: 8px; margin-bottom: 25px; padding-left: 5px;">
-                    <p style="font-size: 0.85rem; color: #4a5568;">
-                        💡 <b>Bénéfice client :</b> Un site plus rapide et mieux optimisé retient 40% de visiteurs en plus. Vos 89€ sont rentabilisés dès les premières ventes sauvées.
+                <div style="margin-top: 10px; margin-bottom: 30px; padding-left: 5px;">
+                    <p style="font-size: 0.9rem; color: #a0aec0; line-height: 1.4;">
+                        💡 <b>Pourquoi cette action vaut de l'argent :</b> Corriger ce point élimine les frictions techniques, garantissant que chaque euro investi en publicité ou en temps ne soit pas gaspillé sur un site qui perd ses clients.
                     </p>
                 </div>
-                <hr style="border: 0; height: 1px; background: linear-gradient(to right, #e2e8f0, rgba(226, 232, 240, 0)); margin-bottom: 20px;">
+                <hr style="border: 0; height: 1px; background: linear-gradient(to right, rgba(255,255,255,0.1), rgba(255,255,255,0)); margin-bottom: 25px;">
             """, unsafe_allow_html=True)
             
             id_correction += 1
 
     if id_correction == 1:
-        st.success("🎉 Votre site est déjà parfaitement optimisé au niveau technique ! Pas de correction requise.")
+        st.success("🎉 Votre site ne présente aucun problème d'optimisation technique. Tout est parfait !")
 
             # ── ERREUR 1 : TITRE ──
             if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70:
