@@ -1185,6 +1185,7 @@ def afficher_comparatif_optimisation(result):
 
     if id_correction == 1:
         st.success("🎉 Votre site ne présente aucun problème d'optimisation technique. Tout est parfait !")
+            
             # ── ERREUR 1 : TITRE ──
             if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70:
                 nb_erreurs += 1
