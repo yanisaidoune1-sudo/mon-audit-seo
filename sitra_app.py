@@ -1109,7 +1109,7 @@ def render_result(result, idx=0):
         st.markdown("**Pour Instagram et TikTok** — copiez ce texte :")
         st.code(texte_partage, language=None)
 
-# ── ONGLET CORRIGER ──
+  # ── ONGLET CORRIGER ──
     if show_corriger:
         tab_corriger_idx = tabs_list.index("Optimiser mon site")
         with tabs[tab_corriger_idx]:
@@ -1139,9 +1139,13 @@ def render_result(result, idx=0):
             def ajouter_bloc(badge_color, before_text, after_text, conseil, zone="none"):
                 nonlocal blocs_html, nb_erreurs
                 nb_erreurs += 1
-                if screenshot_url:
-                    blocs_html += render_before_after_block(screenshot_url, nb_erreurs, badge_color, before_text, after_text, conseil, zone=zone, img_uid=f"sitra{idx}_{nb_erreurs}")
-                else:
+                try:
+                    if screenshot_url:
+                        blocs_html += render_before_after_block(screenshot_url, nb_erreurs, badge_color, before_text, after_text, conseil, zone=zone, img_uid=f"sitra_{id(result)}_{nb_erreurs}")
+                    else:
+                        blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
+                except Exception:
+                    # Sécurité : si un bloc échoue, on affiche une version texte simple plutôt que de planter toute la page
                     blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
 
             # ── ERREURS "SUR-MESURE" (rendu détaillé pour les plus fréquentes) ──
