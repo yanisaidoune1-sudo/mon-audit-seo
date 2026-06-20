@@ -1110,7 +1110,7 @@ def render_result(result, idx=0):
                                                                                                                                                                                                                 
 # ── SECTION DES MODULES DE CORRECTION PREMIUM (89€) ──────────────────────────
 # Ce module filtre les erreurs de l'audit pour afficher un comparatif Avant/Après
-def afficher_comparatif_optimisation(result):
+    def afficher_comparatif_optimisation(result):
     """
     Filtre et affiche un comparatif visuel Avant/Après uniquement pour 
     les erreurs liées à l'optimisation et aux performances du site.
