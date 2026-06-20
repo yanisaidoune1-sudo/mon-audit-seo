@@ -1114,7 +1114,7 @@ def render_result(result, idx=0):
         tab_corriger_idx = tabs_list.index("Optimiser mon site")
         with tabs[tab_corriger_idx]:
             st.markdown("### Optimiser mon site")
-            st.caption("SITRA capture précisément la zone concernée par chaque erreur (titre, menu, images, pied de page...) et montre la correction proposée. Cliquez sur une image pour zoomer.")
+            st.caption("SITRA a pris une vraie capture de votre site et repère la zone concernée par chaque erreur, puis montre la correction proposée. Cliquez sur une image pour zoomer.")
 
             seo = result["seo"]
             ux = result["ux"]
@@ -1125,38 +1125,32 @@ def render_result(result, idx=0):
             titre = seo["title"] or ""
             desc = seo["meta_description"] or ""
 
-            with st.spinner("Préparation des captures..."):
-                screenshot_fallback = get_screenshot(url_site)
+            with st.spinner("Capture de votre site en cours..."):
+                screenshot_url = get_screenshot(url_site)
 
-            if screenshot_fallback:
-                st.caption("✅ Capture du site récupérée")
+            if screenshot_url:
+                st.caption("✅ Capture réelle récupérée")
             else:
                 st.caption("⚠️ Capture indisponible pour ce site (certains sites bloquent les outils automatiques) — affichage en mode texte")
 
             blocs_html = ""
             nb_erreurs = 0
 
-            def ajouter_bloc(badge_color, before_text, after_text, conseil, selector=None):
+            def ajouter_bloc(badge_color, before_text, after_text, conseil, zone="none"):
                 nonlocal blocs_html, nb_erreurs
                 nb_erreurs += 1
                 try:
-                    if screenshot_fallback:
-                        if selector:
-                            img_url, was_targeted = get_screenshot_zone(url_site, selector)
-                        else:
-                            img_url, was_targeted = screenshot_fallback, False
-                        if img_url:
-                            blocs_html += render_before_after_block(img_url, nb_erreurs, badge_color, before_text, after_text, conseil, was_targeted=was_targeted, img_uid=f"sitra_{id(result)}_{nb_erreurs}")
-                        else:
-                            blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
+                    if screenshot_url:
+                        blocs_html += render_before_after_block(screenshot_url, nb_erreurs, badge_color, before_text, after_text, conseil, zone=zone, img_uid=f"sitra_{id(result)}_{nb_erreurs}")
                     else:
                         blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
                 except Exception:
+                    # Sécurité : si un bloc échoue, on affiche une version texte simple plutôt que de planter toute la page
                     blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
 
             # ── ERREURS "SUR-MESURE" (rendu détaillé pour les plus fréquentes) ──
 
-            # TITRE (pas de capture ciblée possible, le <title> n'est pas visible à l'écran)
+            # TITRE
             if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70:
                 t = seo["title"] or ""
                 t_corrige = (t[:52] + "...") if len(t) > 60 else ((t + " | Service Pro") if t else "Nom de votre activité — Ville | Service")
@@ -1166,10 +1160,10 @@ def render_result(result, idx=0):
                     f"❌ {probleme}<br><span style='font-weight:400;opacity:0.9'>Onglet du navigateur : « {t or '(vide)'} »</span>",
                     f"✅ Titre corrigé<br><span style='font-weight:400;opacity:0.9'>« {t_corrige} »</span>",
                     "Rédigez un titre entre 50 et 60 caractères qui décrit clairement votre activité et votre ville.",
-                    selector=None
+                    zone="top"
                 )
 
-            # DESCRIPTION (pas visible non plus)
+            # DESCRIPTION
             if not seo["meta_description"]:
                 desc_corrigee = f"Découvrez {titre[:25] or 'notre service'} — qualité professionnelle, devis gratuit et réponse rapide. Contactez-nous dès aujourd'hui !"
                 ajouter_bloc(
@@ -1177,10 +1171,10 @@ def render_result(result, idx=0):
                     "❌ Description Google manquante<br><span style='font-weight:400;opacity:0.9'>Google affichera un texte aléatoire de votre page</span>",
                     f"✅ Description ajoutée<br><span style='font-weight:400;opacity:0.9'>« {desc_corrigee[:90]}... »</span>",
                     "Rédigez une description de 120 à 160 caractères qui donne envie de cliquer sur votre site.",
-                    selector=None
+                    zone="top"
                 )
 
-            # H1 — capture ciblée sur le titre principal
+            # H1
             if seo["h1_count"] != 1:
                 pb = "Aucun titre principal (H1)" if seo["h1_count"] == 0 else f"{seo['h1_count']} titres H1 en doublon"
                 ajouter_bloc(
@@ -1188,20 +1182,20 @@ def render_result(result, idx=0):
                     f"⚠️ {pb}<br><span style='font-weight:400;opacity:0.9'>Google ne sait pas identifier le sujet principal de la page</span>",
                     f"✅ 1 seul titre H1 clair<br><span style='font-weight:400;opacity:0.9'>« {titre or 'Votre activité principale — Ville'} »</span>",
                     "Mettez exactement 1 grand titre H1 par page qui résume clairement votre activité.",
-                    selector="h1"
+                    zone="top"
                 )
 
-            # IMAGES SANS ALT — capture ciblée sur une image
+            # IMAGES SANS ALT
             if seo["images_no_alt"] > 0:
                 ajouter_bloc(
                     "#ffc107",
                     f"⚠️ {seo['images_no_alt']} image(s) sans description<br><span style='font-weight:400;opacity:0.9'>Google ne peut pas comprendre ce qu'elles montrent</span>",
                     "✅ Description ajoutée à chaque image<br><span style='font-weight:400;opacity:0.9'>Ex : « Façade de notre commerce à [Ville] »</span>",
                     "Ajoutez une description courte à chaque image — ex: \"Façade de notre restaurant à Lyon\" ou \"Notre équipe de plombiers\".",
-                    selector="img"
+                    zone="middle"
                 )
 
-            # HTTPS (concept invisible, pas de capture ciblée)
+            # HTTPS
             if not perf["is_https"]:
                 url_clean = url_site.replace("https://","").replace("http://","")
                 ajouter_bloc(
@@ -1209,40 +1203,42 @@ def render_result(result, idx=0):
                     f"❌ Site non sécurisé<br><span style='font-weight:400;opacity:0.9'>⚠️ http://{url_clean} — alerte « Non sécurisé » dans le navigateur</span>",
                     f"✅ Connexion sécurisée<br><span style='font-weight:400;opacity:0.9'>🔒 https://{url_clean}</span>",
                     "Activez le certificat SSL chez votre hébergeur — c'est gratuit (Let's Encrypt) et prend 5 minutes.",
-                    selector=None
+                    zone="top"
                 )
 
-            # VITESSE (invisible)
+            # VITESSE
             if rt > 2:
                 ajouter_bloc(
                     "#dc3545",
                     f"❌ Site trop lent : {rt}s<br><span style='font-weight:400;opacity:0.9'>53% des visiteurs partent après 3 secondes</span>",
                     "✅ Objectif : moins de 2 secondes<br><span style='font-weight:400;opacity:0.9'>Compressez vos images et limitez les plugins inutiles</span>",
                     "Compressez vos images sur tinypng.com et désactivez les extensions inutiles sur votre CMS.",
-                    selector=None
+                    zone="none"
                 )
 
-            # MENU — capture ciblée sur le nav/header
+            # MENU
             if not ux["has_nav"]:
                 ajouter_bloc(
                     "#dc3545",
                     "❌ Pas de menu de navigation<br><span style='font-weight:400;opacity:0.9'>Le visiteur ne sait pas où aller et repart</span>",
                     "✅ Menu clair ajouté<br><span style='font-weight:400;opacity:0.9'>Accueil · Services · À propos · Contact</span>",
                     "Ajoutez un menu avec 5 à 7 liens : Accueil, Services, À propos, Blog, Contact.",
-                    selector="nav, header"
+                    zone="top"
                 )
 
-            # OG TAGS (invisible, balise meta)
+            # OG TAGS
             if not design["has_og_tags"]:
                 ajouter_bloc(
                     "#ffc107",
                     "⚠️ Aperçu réseaux sociaux non configuré<br><span style='font-weight:400;opacity:0.9'>Lien brut sans image ni description quand on le partage</span>",
                     f"✅ Aperçu configuré<br><span style='font-weight:400;opacity:0.9'>Image + « {titre or 'Titre de votre site'} »</span>",
                     "Ajoutez les balises Open Graph dans le <head> de votre site — votre CMS le fait souvent en 1 clic.",
-                    selector=None
+                    zone="none"
                 )
 
             # ── TOUTES LES AUTRES ERREURS DÉTECTÉES (génériques, depuis all_issues) ──
+            # Les 8 erreurs ci-dessus ont déjà un rendu personnalisé. On évite de les
+            # afficher une deuxième fois en filtrant sur des mots-clés déjà couverts.
             deja_couverts = [
                 "balise <title>", "titre trop court", "titre trop long",
                 "meta description", "balise h1", "balises h1",
@@ -1254,10 +1250,10 @@ def render_result(result, idx=0):
                 msg = item["message"]
                 msg_lower = msg.lower()
                 if any(fragment in msg_lower for fragment in deja_couverts):
-                    continue
+                    continue  # déjà affiché ci-dessus avec un rendu sur-mesure
                 badge_color, before_text, after_text, conseil = generic_before_after(msg)
-                selector = get_selector_for_issue(msg)
-                ajouter_bloc(badge_color, before_text, after_text, conseil, selector=selector)
+                zone = get_zone_for_issue(msg)
+                ajouter_bloc(badge_color, before_text, after_text, conseil, zone=zone)
 
             if not blocs_html:
                 blocs_html = '<div style="background:rgba(40,167,69,0.1);border:2px solid #28a745;border-radius:12px;padding:24px;text-align:center;color:#7ddf96;font-size:15px;font-weight:600">✅ Aucune erreur détectée — votre site est bien optimisé !</div>'
@@ -1266,7 +1262,7 @@ def render_result(result, idx=0):
 <style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:'Inter',Arial,sans-serif;background:#09090f;color:#e8e8f0;padding:16px}}</style>
 </head><body>
 <div style="margin-bottom:20px;padding:12px 16px;background:#1a1a2e;border-radius:10px;font-size:13px;color:#888">
-  SITRA a détecté <b style="color:#e8e8f0">{nb_erreurs} point(s) à corriger</b> sur votre site — toutes les erreurs détectées sont listées ci-dessous, avec la zone exacte capturée quand c'est possible.
+  SITRA a détecté <b style="color:#e8e8f0">{nb_erreurs} point(s) à corriger</b> sur votre site — toutes les erreurs détectées sont listées ci-dessous. Chaque bloc montre <b style="color:#e8e8f0">la zone concernée</b> et <b style="color:#7ddf96">comment la corriger</b>.
 </div>
 {blocs_html}
 </body></html>"""
