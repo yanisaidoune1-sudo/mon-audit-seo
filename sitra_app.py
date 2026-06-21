@@ -1135,6 +1135,7 @@ def render_result(result, idx=0):
 
             blocs_html = ""
             nb_erreurs = 0
+            derniere_image_url = [None]  # liste pour être mutable dans la closure
 
             def ajouter_bloc(badge_color, before_text, after_text, conseil, selector=None):
                 nonlocal blocs_html, nb_erreurs
@@ -1145,8 +1146,13 @@ def render_result(result, idx=0):
                             img_url, was_targeted = get_screenshot_zone(url_site, selector)
                         else:
                             img_url, was_targeted = screenshot_fallback, False
+
                         if img_url:
-                            blocs_html += render_before_after_block(img_url, nb_erreurs, badge_color, before_text, after_text, conseil, was_targeted=was_targeted, img_uid=f"sitra_{id(result)}_{nb_erreurs}")
+                            # Détection de doublon : si cette image est identique à la précédente,
+                            # on le signale honnêtement plutôt que de prétendre avoir ciblé une zone différente
+                            is_duplicate = (img_url == derniere_image_url[0])
+                            derniere_image_url[0] = img_url
+                            blocs_html += render_before_after_block(img_url, nb_erreurs, badge_color, before_text, after_text, conseil, was_targeted=was_targeted, img_uid=f"sitra_{id(result)}_{nb_erreurs}", is_duplicate=is_duplicate)
                         else:
                             blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
                     else:
@@ -1188,17 +1194,17 @@ def render_result(result, idx=0):
                     f"⚠️ {pb}<br><span style='font-weight:400;opacity:0.9'>Google ne sait pas identifier le sujet principal de la page</span>",
                     f"✅ 1 seul titre H1 clair<br><span style='font-weight:400;opacity:0.9'>« {titre or 'Votre activité principale — Ville'} »</span>",
                     "Mettez exactement 1 grand titre H1 par page qui résume clairement votre activité.",
-                    selector="h1"
+                    selector="h1:first-of-type"
                 )
 
-            # IMAGES SANS ALT — capture ciblée sur une image
+            # IMAGES SANS ALT — capture ciblée sur une image précise
             if seo["images_no_alt"] > 0:
                 ajouter_bloc(
                     "#ffc107",
                     f"⚠️ {seo['images_no_alt']} image(s) sans description<br><span style='font-weight:400;opacity:0.9'>Google ne peut pas comprendre ce qu'elles montrent</span>",
                     "✅ Description ajoutée à chaque image<br><span style='font-weight:400;opacity:0.9'>Ex : « Façade de notre commerce à [Ville] »</span>",
                     "Ajoutez une description courte à chaque image — ex: \"Façade de notre restaurant à Lyon\" ou \"Notre équipe de plombiers\".",
-                    selector="img"
+                    selector="img:not([alt]):first-of-type, img[alt='']:first-of-type, img:first-of-type"
                 )
 
             # HTTPS (concept invisible, pas de capture ciblée)
@@ -1222,14 +1228,14 @@ def render_result(result, idx=0):
                     selector=None
                 )
 
-            # MENU — capture ciblée sur le nav/header
+            # MENU — capture ciblée sur le nav
             if not ux["has_nav"]:
                 ajouter_bloc(
                     "#dc3545",
                     "❌ Pas de menu de navigation<br><span style='font-weight:400;opacity:0.9'>Le visiteur ne sait pas où aller et repart</span>",
                     "✅ Menu clair ajouté<br><span style='font-weight:400;opacity:0.9'>Accueil · Services · À propos · Contact</span>",
                     "Ajoutez un menu avec 5 à 7 liens : Accueil, Services, À propos, Blog, Contact.",
-                    selector="nav, header"
+                    selector="nav:first-of-type"
                 )
 
             # OG TAGS (invisible, balise meta)
