@@ -1,24 +1,90 @@
 """
 Sitra - Module de capture d'écran réelle pour l'onglet "Optimiser mon site"
-Utilise l'API Microlink (gratuite, sans clé obligatoire) pour récupérer
-une vraie capture du site analysé, puis superpose un cadre de repérage
-(zone approximative : haut / milieu / bas de page) + bandeaux
-AVANT (problème) / APRÈS (correction proposée).
-Les images sont cliquables pour zoomer en plein écran.
+Utilise l'API Microlink (gratuite, sans clé obligatoire).
+
+Stratégie : au lieu d'une seule capture pleine page réutilisée pour toutes
+les erreurs (peu lisible), on cible une capture PAR ZONE concernée
+(ex: la balise <h1>, le <nav>, une <img>, le <footer>) via le paramètre
+screenshot.element de Microlink (sélecteur CSS).
+Si le sélecteur échoue (élément absent, timeout...), on retombe sur une
+capture pleine page, puis sur le mode texte si tout échoue.
 """
 
 import streamlit as st
 import requests as req
 
 
-# ── RÉCUPÉRATION DE LA CAPTURE ────────────────────────────────────────────────
+# ── SÉLECTEUR CSS PAR CATÉGORIE D'ERREUR ──────────────────────────────────────
+# Associe un fragment du message d'erreur (en minuscules) à un sélecteur CSS
+# ciblant l'élément concerné. L'ordre compte : règles spécifiques en premier.
+SELECTOR_RULES = [
+    ("balise <title>",            None),       # le <title> n'est pas visible à l'écran, pas de capture ciblée utile
+    ("titre trop court",          None),
+    ("titre trop long",           None),
+    ("meta description",         None),
+    ("balise h1",                 "h1"),
+    ("balises h1",                "h1"),
+    ("aucun h2",                  "h1, h2"),
+    ("attribut alt",              "img"),
+    ("images sans dimensions",    "img"),
+    ("canonical",                 None),
+    ("viewport",                  None),
+    ("attribut lang",             None),
+    ("balise <nav>",              "nav, header"),
+    ("navigation principale",     "nav, header"),
+    ("navigation surchargée",     "nav, header"),
+    ("bouton d'action",           "button, .btn, .button, .cta"),
+    ("information de contact",    "footer"),
+    ("formulaire(s) avec des",    "form"),
+    ("pied de page",              "footer"),
+    ("mentions légales",          "footer"),
+    ("paragraphe(s) très long",   "p"),
+    ("favicon",                   None),
+    ("og:title",                  None),
+    ("og:image",                  None),
+    ("éléments avec des styles",  None),
+    ("https",                     None),
+    ("temps de réponse",          None),
+    ("page html lourde",          None),
+    ("page html assez lourde",    None),
+    ("scripts dans le",           None),
+]
+
+
+def get_selector_for_issue(message: str):
+    """Retourne le sélecteur CSS à cibler pour une issue donnée, ou None si pas de zone pertinente."""
+    msg_lower = message.lower()
+    for fragment, selector in SELECTOR_RULES:
+        if fragment in msg_lower:
+            return selector
+    return None
+
+
+# ── RÉCUPÉRATION DE LA CAPTURE (PLEINE PAGE) ─────────────────────────────────
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_screenshot(url: str):
+    """Capture pleine page (fallback générique). Retourne l'URL de l'image ou None."""
+    return _microlink_screenshot(url, element=None)
+
+
+# ── RÉCUPÉRATION D'UNE CAPTURE CIBLÉE SUR UN ÉLÉMENT ─────────────────────────
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_screenshot_zone(url: str, selector: str):
     """
-    Récupère une vraie capture d'écran du site via Microlink.
-    Retourne l'URL de l'image hébergée par Microlink, ou None si échec.
-    Mise en cache 1h.
+    Capture ciblée sur un sélecteur CSS (ex: 'nav', 'footer', 'img').
+    Si la capture ciblée échoue (élément absent, timeout), retombe sur
+    la capture pleine page. Retourne (image_url, was_targeted: bool) ou (None, False).
     """
+    if selector:
+        targeted = _microlink_screenshot(url, element=selector)
+        if targeted:
+            return targeted, True
+    fallback = get_screenshot(url)
+    return fallback, False
+
+
+def _microlink_screenshot(url: str, element=None):
+    """Appel brut à Microlink. Retourne l'URL de l'image ou None si échec."""
     try:
         headers = {}
         try:
@@ -28,12 +94,11 @@ def get_screenshot(url: str):
         except Exception:
             pass
 
-        r = req.get(
-            "https://api.microlink.io",
-            params={"url": url, "screenshot": "true", "meta": "false"},
-            headers=headers,
-            timeout=20,
-        )
+        params = {"url": url, "screenshot": "true", "meta": "false"}
+        if element:
+            params["screenshot.element"] = element
+
+        r = req.get("https://api.microlink.io", params=params, headers=headers, timeout=20)
 
         if r.status_code != 200:
             return None
@@ -48,80 +113,21 @@ def get_screenshot(url: str):
         return None
 
 
-# ── ZONE DE REPÉRAGE PAR CATÉGORIE D'ERREUR ───────────────────────────────────
-ZONE_RULES = [
-    ("balise <title>",            "top"),
-    ("titre trop court",          "top"),
-    ("titre trop long",           "top"),
-    ("meta description",          "top"),
-    ("balise h1",                 "top"),
-    ("balises h1",                "top"),
-    ("aucun h2",                  "middle"),
-    ("attribut alt",              "middle"),
-    ("canonical",                 "none"),
-    ("viewport",                  "none"),
-    ("attribut lang",             "none"),
-    ("balise <nav>",              "top"),
-    ("navigation principale",     "top"),
-    ("navigation surchargée",     "top"),
-    ("bouton d'action",           "middle"),
-    ("information de contact",    "middle"),
-    ("formulaire(s) avec des",    "middle"),
-    ("pied de page",              "bottom"),
-    ("mentions légales",          "bottom"),
-    ("paragraphe(s) très long",   "middle"),
-    ("contenu très court",        "middle"),
-    ("contenu assez court",       "middle"),
-    ("erreurs de langue",         "middle"),
-    ("mots très répétés",         "middle"),
-    ("mots en majuscules",        "middle"),
-    ("favicon",                   "top"),
-    ("og:title",                  "none"),
-    ("og:image",                  "none"),
-    ("éléments avec des styles",  "none"),
-    ("images sans dimensions",    "middle"),
-    ("https",                     "top"),
-    ("temps de réponse",          "none"),
-    ("page html lourde",          "none"),
-    ("page html assez lourde",    "none"),
-    ("scripts dans le",           "none"),
-]
-
-
-def get_zone_for_issue(message: str) -> str:
-    """Détermine la zone (top/middle/bottom/none) à repérer sur l'image pour un message d'erreur donné."""
-    msg_lower = message.lower()
-    for fragment, zone in ZONE_RULES:
-        if fragment in msg_lower:
-            return zone
-    return "none"
-
-
-ZONE_STYLES = {
-    "top": {"top": "0%", "height": "22%", "label": "Zone concernée : haut de page"},
-    "middle": {"top": "30%", "height": "30%", "label": "Zone concernée : corps de la page"},
-    "bottom": {"top": "70%", "height": "30%", "label": "Zone concernée : bas de page"},
-}
-
-
-# ── BLOC AVANT / APRÈS AVEC VRAIE CAPTURE + CADRE DE REPÉRAGE ────────────────
-def render_before_after_block(screenshot_url, error_num, badge_color, before_text, after_text, conseil, zone="none", img_uid=""):
+# ── BLOC AVANT / APRÈS AVEC CAPTURE CIBLÉE ────────────────────────────────────
+def render_before_after_block(screenshot_url, error_num, badge_color, before_text, after_text, conseil, was_targeted=False, img_uid=""):
     """
-    Construit le HTML d'un bloc AVANT/APRÈS basé sur une vraie capture, avec :
-      - un bandeau de texte (problème / correction)
-      - un cadre de repérage pointillé sur la zone concernée (si zone != "none")
-      - les images cliquables pour zoom plein écran (modale JS légère)
+    Construit le HTML d'un bloc AVANT/APRÈS.
+    was_targeted=True  -> la capture montre précisément la zone concernée (pas besoin de cadre)
+    was_targeted=False -> capture pleine page générique (fallback), on l'indique au survol
     """
     badge_icon = "❌" if badge_color == "#dc3545" else "⚠️"
-
-    zone_overlay = ""
-    zone_caption = ""
-    if zone in ZONE_STYLES:
-        zs = ZONE_STYLES[zone]
-        zone_overlay = f"""<div style="position:absolute;left:0;right:0;top:{zs['top']};height:{zs['height']};border:3px dashed {badge_color};background:{badge_color}1a;pointer-events:none"></div>"""
-        zone_caption = f"""<div style="font-size:10px;color:#999;margin-top:4px;font-style:italic">📍 {zs['label']} (zone approximative)</div>"""
-
     uid = img_uid or f"img{error_num}"
+
+    precision_note = (
+        '<div style="font-size:10px;color:#7ddf96;margin-top:4px">🎯 Zone exacte capturée</div>'
+        if was_targeted else
+        '<div style="font-size:10px;color:#999;margin-top:4px;font-style:italic">📍 Vue générale du site (zone précise non disponible pour cette capture)</div>'
+    )
 
     return f"""
 <div style="margin-bottom:28px">
@@ -134,13 +140,12 @@ def render_before_after_block(screenshot_url, error_num, badge_color, before_tex
       <div style="font-size:10px;color:{badge_color};font-weight:700;margin-bottom:6px;text-transform:uppercase">AVANT — Capture réelle de votre site</div>
       <div style="position:relative;border:2px solid {badge_color};border-radius:10px;overflow:hidden;background:#111;cursor:zoom-in" onclick="document.getElementById('modal_{uid}_before').style.display='flex'">
         <img src="{screenshot_url}" style="width:100%;display:block" />
-        {zone_overlay}
         <div style="position:absolute;top:0;left:0;right:0;background:linear-gradient(180deg,{badge_color}f0,{badge_color}00);padding:10px 12px 24px;color:white;font-size:12px;font-weight:600;line-height:1.4">
           {before_text}
         </div>
         <div style="position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 8px;border-radius:10px">🔍 Cliquer pour zoomer</div>
       </div>
-      {zone_caption}
+      {precision_note}
     </div>
 
     <div style="display:flex;align-items:center;font-size:24px;color:#7c6af7;padding:0 4px;align-self:center">→</div>
@@ -171,9 +176,9 @@ def render_before_after_block(screenshot_url, error_num, badge_color, before_tex
 """
 
 
-# ── BLOC DE SECOURS (fallback, sans capture) ─────────────────────────────────
+# ── BLOC DE SECOURS (fallback, sans capture du tout) ─────────────────────────
 def render_fallback_block(error_num, badge_color, before_text, after_text, conseil):
-    """Version sans capture d'écran (utilisée si get_screenshot a renvoyé None)."""
+    """Version sans capture d'écran (utilisée si même la capture pleine page a échoué)."""
     badge_icon = "❌" if badge_color == "#dc3545" else "⚠️"
     return f"""
 <div style="margin-bottom:24px">
@@ -195,8 +200,7 @@ def render_fallback_block(error_num, badge_color, before_text, after_text, conse
 # ── GÉNÉRATEUR DE TEXTES AVANT/APRÈS GÉNÉRIQUE (pour les issues non codées en dur) ──
 def generic_before_after(message: str):
     """
-    Pour une issue brute venant de all_issues (ex: "⚠️ Pas de balise canonical — ..."),
-    génère un texte AVANT (le problème tel quel) et un texte APRÈS générique.
+    Pour une issue brute venant de all_issues, génère un texte AVANT/APRÈS générique.
     Retourne (badge_color, before_text, after_text, conseil).
     """
     is_critical = message.strip().startswith("❌")
