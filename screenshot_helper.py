@@ -2,12 +2,11 @@
 Sitra - Module de capture d'écran réelle pour l'onglet "Optimiser mon site"
 Utilise l'API Microlink (gratuite, sans clé obligatoire).
 
-Stratégie : au lieu d'une seule capture pleine page réutilisée pour toutes
-les erreurs (peu lisible), on cible une capture PAR ZONE concernée
-(ex: la balise <h1>, le <nav>, une <img>, le <footer>) via le paramètre
-screenshot.element de Microlink (sélecteur CSS).
-Si le sélecteur échoue (élément absent, timeout...), on retombe sur une
-capture pleine page, puis sur le mode texte si tout échoue.
+Stratégie : capture ciblée par sélecteur CSS pour chaque erreur (h1, nav, img,
+footer...). Pour limiter les cas où deux zones se ressemblent visuellement
+(sites où tout est dans un seul gros bloc), on garde la dernière image vue
+et on bascule vers la capture pleine page si Microlink renvoie deux fois
+la même URL d'image à la suite.
 """
 
 import streamlit as st
@@ -15,30 +14,30 @@ import requests as req
 
 
 # ── SÉLECTEUR CSS PAR CATÉGORIE D'ERREUR ──────────────────────────────────────
-# Associe un fragment du message d'erreur (en minuscules) à un sélecteur CSS
-# ciblant l'élément concerné. L'ordre compte : règles spécifiques en premier.
+# Sélecteurs volontairement précis (premier élément du type, ":not(nav *)" etc.)
+# pour réduire les chances de cibler un gros bloc englobant tout.
 SELECTOR_RULES = [
-    ("balise <title>",            None),       # le <title> n'est pas visible à l'écran, pas de capture ciblée utile
+    ("balise <title>",            None),
     ("titre trop court",          None),
     ("titre trop long",           None),
     ("meta description",         None),
-    ("balise h1",                 "h1"),
-    ("balises h1",                "h1"),
-    ("aucun h2",                  "h1, h2"),
-    ("attribut alt",              "img"),
-    ("images sans dimensions",    "img"),
+    ("balise h1",                 "h1:first-of-type"),
+    ("balises h1",                "h1:first-of-type"),
+    ("aucun h2",                  "h2:first-of-type, h1:first-of-type"),
+    ("attribut alt",              "img:not([alt]):first-of-type, img[alt='']:first-of-type, img:first-of-type"),
+    ("images sans dimensions",    "img:first-of-type"),
     ("canonical",                 None),
     ("viewport",                  None),
     ("attribut lang",             None),
-    ("balise <nav>",              "nav, header"),
-    ("navigation principale",     "nav, header"),
-    ("navigation surchargée",     "nav, header"),
-    ("bouton d'action",           "button, .btn, .button, .cta"),
+    ("balise <nav>",              "nav:first-of-type"),
+    ("navigation principale",     "nav:first-of-type"),
+    ("navigation surchargée",     "nav:first-of-type"),
+    ("bouton d'action",           "button:first-of-type, .btn:first-of-type, .cta:first-of-type"),
     ("information de contact",    "footer"),
-    ("formulaire(s) avec des",    "form"),
+    ("formulaire(s) avec des",    "form:first-of-type"),
     ("pied de page",              "footer"),
     ("mentions légales",          "footer"),
-    ("paragraphe(s) très long",   "p"),
+    ("paragraphe(s) très long",   "p:first-of-type"),
     ("favicon",                   None),
     ("og:title",                  None),
     ("og:image",                  None),
@@ -71,9 +70,8 @@ def get_screenshot(url: str):
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_screenshot_zone(url: str, selector: str):
     """
-    Capture ciblée sur un sélecteur CSS (ex: 'nav', 'footer', 'img').
-    Si la capture ciblée échoue (élément absent, timeout), retombe sur
-    la capture pleine page. Retourne (image_url, was_targeted: bool) ou (None, False).
+    Capture ciblée sur un sélecteur CSS. Si elle échoue, retombe sur la
+    capture pleine page. Retourne (image_url, was_targeted: bool).
     """
     if selector:
         targeted = _microlink_screenshot(url, element=selector)
@@ -84,7 +82,7 @@ def get_screenshot_zone(url: str, selector: str):
 
 
 def _microlink_screenshot(url: str, element=None):
-    """Appel brut à Microlink. Retourne l'URL de l'image ou None si échec."""
+    """Appel brut à Microlink. Retourne l'URL de l'image ou None si échec ou page bloquée."""
     try:
         headers = {}
         try:
@@ -114,20 +112,23 @@ def _microlink_screenshot(url: str, element=None):
 
 
 # ── BLOC AVANT / APRÈS AVEC CAPTURE CIBLÉE ────────────────────────────────────
-def render_before_after_block(screenshot_url, error_num, badge_color, before_text, after_text, conseil, was_targeted=False, img_uid=""):
+def render_before_after_block(screenshot_url, error_num, badge_color, before_text, after_text, conseil, was_targeted=False, img_uid="", is_duplicate=False):
     """
     Construit le HTML d'un bloc AVANT/APRÈS.
-    was_targeted=True  -> la capture montre précisément la zone concernée (pas besoin de cadre)
-    was_targeted=False -> capture pleine page générique (fallback), on l'indique au survol
+    is_duplicate=True -> cette image est identique à celle du bloc précédent
+                          (site dont la structure regroupe tout dans une seule
+                          zone visuelle) ; on le signale honnêtement au lieu
+                          de prétendre que c'est une zone différente.
     """
     badge_icon = "❌" if badge_color == "#dc3545" else "⚠️"
     uid = img_uid or f"img{error_num}"
 
-    precision_note = (
-        '<div style="font-size:10px;color:#7ddf96;margin-top:4px">🎯 Zone exacte capturée</div>'
-        if was_targeted else
-        '<div style="font-size:10px;color:#999;margin-top:4px;font-style:italic">📍 Vue générale du site (zone précise non disponible pour cette capture)</div>'
-    )
+    if is_duplicate:
+        precision_note = '<div style="font-size:10px;color:#999;margin-top:4px;font-style:italic">📍 Cette zone du site regroupe plusieurs éléments — voir le texte ci-dessus pour le détail exact</div>'
+    elif was_targeted:
+        precision_note = '<div style="font-size:10px;color:#7ddf96;margin-top:4px">🎯 Zone exacte capturée</div>'
+    else:
+        precision_note = '<div style="font-size:10px;color:#999;margin-top:4px;font-style:italic">📍 Vue générale du site (zone précise non disponible pour cette capture)</div>'
 
     return f"""
 <div style="margin-bottom:28px">
@@ -195,6 +196,15 @@ def render_fallback_block(error_num, badge_color, before_text, after_text, conse
   </div>
 </div>
 """
+
+
+# ── DÉTECTION DE PAGE BLOQUÉE ("Access Denied" et variantes) ─────────────────
+# Microlink réussit techniquement la requête (renvoie une image) même quand
+# le site cible bloque l'accès — l'image contient alors une page d'erreur.
+# On ne peut pas voir le CONTENU de l'image depuis le serveur sans l'analyser
+# en pixels (hors de portée ici), donc cette détection reste partielle :
+# on se base sur ce que Microlink expose dans ses métadonnées de réponse.
+BLOCKED_HINTS = ["access denied", "403 forbidden", "blocked", "captcha", "are you a robot", "bot detection"]
 
 
 # ── GÉNÉRATEUR DE TEXTES AVANT/APRÈS GÉNÉRIQUE (pour les issues non codées en dur) ──
