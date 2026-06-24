@@ -3,7 +3,7 @@ import time
 import os
 os.system("playwright install chromium")
 from analyzer import full_analysis, get_score_label, normalize_url, get_pagespeed, detect_pages, detect_secteur_et_concurrents
-from screenshot_helper import get_screenshot, get_screenshot_zone, render_before_after_block, render_fallback_block, generic_before_after, get_selector_for_issue
+from screenshot_helper import get_screenshot, get_screenshot_zone, render_before_after_block, render_fallback_block, generic_before_after, get_selector_for_issue, get_issue_texts
 
 # ── CACHE — réduit le temps de rechargement ───────────────────────────────────
 @st.cache_data(ttl=300, show_spinner=False)
