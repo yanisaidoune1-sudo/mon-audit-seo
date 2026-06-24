@@ -1176,7 +1176,8 @@ def render_result(result, idx=0):
             if seo["h1_count"] != 1:
                 pb = "Aucun titre principal (H1)" if seo["h1_count"] == 0 else f"{seo['h1_count']} titres H1 en doublon"
                 badge_color, before_text, after_text, conseil = get_issue_texts("balise h1" if seo["h1_count"] == 0 else "balises h1")
-                before_text = f"❌ {pb}<br><span style='font-weight:400;opacity:0.9'>👉 Regardez la page — {'aucun grand titre ne résume l\'activité' if seo['h1_count']==0 else 'le même grand titre est répété plusieurs fois'}</span>"
+                detail_h1 = "aucun grand titre ne résume l'activité" if seo["h1_count"] == 0 else "le même grand titre est répété plusieurs fois"
+                before_text = f"❌ {pb}<br><span style='font-weight:400;opacity:0.9'>👉 Regardez la page — {detail_h1}</span>"
                 after_text = f"✅ 1 seul titre H1 clair<br><span style='font-weight:400;opacity:0.9'>Ex : « {titre or 'Votre activité — Ville'} »</span>"
                 ajouter_bloc(badge_color, before_text, after_text, conseil, selector="h1:first-of-type")
 
