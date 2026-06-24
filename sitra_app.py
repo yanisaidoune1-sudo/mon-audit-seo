@@ -1114,7 +1114,7 @@ def render_result(result, idx=0):
         tab_corriger_idx = tabs_list.index("Optimiser mon site")
         with tabs[tab_corriger_idx]:
             st.markdown("### Optimiser mon site")
-            st.caption("SITRA capture précisément la zone concernée par chaque erreur (titre, menu, images, pied de page...) et montre la correction proposée. Cliquez sur une image pour zoomer.")
+            st.caption("SITRA capture la zone concernée par chaque erreur et vous explique exactement quoi corriger. Cliquez sur une image pour zoomer.")
 
             seo = result["seo"]
             ux = result["ux"]
@@ -1123,19 +1123,18 @@ def render_result(result, idx=0):
             rt = perf.get("response_time", 0) or 0
             url_site = result["final_url"]
             titre = seo["title"] or ""
-            desc = seo["meta_description"] or ""
 
-            with st.spinner("Préparation des captures..."):
+            with st.spinner("Capture de votre site en cours..."):
                 screenshot_fallback = get_screenshot(url_site)
 
             if screenshot_fallback:
                 st.caption("✅ Capture du site récupérée")
             else:
-                st.caption("⚠️ Capture indisponible pour ce site (certains sites bloquent les outils automatiques) — affichage en mode texte")
+                st.caption("⚠️ Capture indisponible pour ce site — affichage en mode texte")
 
             blocs_html = ""
             nb_erreurs = 0
-            derniere_image_url = [None]  # liste pour être mutable dans la closure
+            derniere_image_url = [None]
 
             def ajouter_bloc(badge_color, before_text, after_text, conseil, selector=None):
                 nonlocal blocs_html, nb_erreurs
@@ -1146,10 +1145,7 @@ def render_result(result, idx=0):
                             img_url, was_targeted = get_screenshot_zone(url_site, selector)
                         else:
                             img_url, was_targeted = screenshot_fallback, False
-
                         if img_url:
-                            # Détection de doublon : si cette image est identique à la précédente,
-                            # on le signale honnêtement plutôt que de prétendre avoir ciblé une zone différente
                             is_duplicate = (img_url == derniere_image_url[0])
                             derniere_image_url[0] = img_url
                             blocs_html += render_before_after_block(img_url, nb_erreurs, badge_color, before_text, after_text, conseil, was_targeted=was_targeted, img_uid=f"sitra_{id(result)}_{nb_erreurs}", is_duplicate=is_duplicate)
@@ -1160,95 +1156,56 @@ def render_result(result, idx=0):
                 except Exception:
                     blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
 
-            # ── ERREURS "SUR-MESURE" (rendu détaillé pour les plus fréquentes) ──
+            # ── ERREURS SUR-MESURE ──
 
-            # TITRE (pas de capture ciblée possible, le <title> n'est pas visible à l'écran)
             if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70:
                 t = seo["title"] or ""
                 t_corrige = (t[:52] + "...") if len(t) > 60 else ((t + " | Service Pro") if t else "Nom de votre activité — Ville | Service")
                 probleme = "Titre manquant" if not t else f"Titre {'trop court' if len(t)<10 else 'trop long'} ({len(t)} caractères)"
-                ajouter_bloc(
-                    "#dc3545",
-                    f"❌ {probleme}<br><span style='font-weight:400;opacity:0.9'>Onglet du navigateur : « {t or '(vide)'} »</span>",
-                    f"✅ Titre corrigé<br><span style='font-weight:400;opacity:0.9'>« {t_corrige} »</span>",
-                    "Rédigez un titre entre 50 et 60 caractères qui décrit clairement votre activité et votre ville.",
-                    selector=None
-                )
+                badge_color, before_text, after_text, conseil = get_issue_texts("balise <title>" if not t else ("titre trop court" if len(t)<10 else "titre trop long"))
+                before_text = f"❌ {probleme}<br><span style='font-weight:400;opacity:0.9'>👉 Regardez l'onglet du navigateur en haut — « {t or '(vide)'} »</span>"
+                after_text = f"✅ Titre corrigé<br><span style='font-weight:400;opacity:0.9'>Ex : « {t_corrige} »</span>"
+                ajouter_bloc(badge_color, before_text, after_text, conseil, selector=None)
 
-            # DESCRIPTION (pas visible non plus)
             if not seo["meta_description"]:
-                desc_corrigee = f"Découvrez {titre[:25] or 'notre service'} — qualité professionnelle, devis gratuit et réponse rapide. Contactez-nous dès aujourd'hui !"
-                ajouter_bloc(
-                    "#dc3545",
-                    "❌ Description Google manquante<br><span style='font-weight:400;opacity:0.9'>Google affichera un texte aléatoire de votre page</span>",
-                    f"✅ Description ajoutée<br><span style='font-weight:400;opacity:0.9'>« {desc_corrigee[:90]}... »</span>",
-                    "Rédigez une description de 120 à 160 caractères qui donne envie de cliquer sur votre site.",
-                    selector=None
-                )
+                desc_corrigee = f"Découvrez {titre[:25] or 'notre service'} — qualité professionnelle, devis gratuit. Contactez-nous dès aujourd'hui !"
+                badge_color, before_text, after_text, conseil = get_issue_texts("meta description")
+                after_text = f"✅ Description ajoutée<br><span style='font-weight:400;opacity:0.9'>Ex : « {desc_corrigee[:80]}... »</span>"
+                ajouter_bloc(badge_color, before_text, after_text, conseil, selector=None)
 
-            # H1 — capture ciblée sur le titre principal
             if seo["h1_count"] != 1:
                 pb = "Aucun titre principal (H1)" if seo["h1_count"] == 0 else f"{seo['h1_count']} titres H1 en doublon"
-                ajouter_bloc(
-                    "#ffc107",
-                    f"⚠️ {pb}<br><span style='font-weight:400;opacity:0.9'>Google ne sait pas identifier le sujet principal de la page</span>",
-                    f"✅ 1 seul titre H1 clair<br><span style='font-weight:400;opacity:0.9'>« {titre or 'Votre activité principale — Ville'} »</span>",
-                    "Mettez exactement 1 grand titre H1 par page qui résume clairement votre activité.",
-                    selector="h1:first-of-type"
-                )
+                badge_color, before_text, after_text, conseil = get_issue_texts("balise h1" if seo["h1_count"] == 0 else "balises h1")
+                before_text = f"❌ {pb}<br><span style='font-weight:400;opacity:0.9'>👉 Regardez la page — {'aucun grand titre ne résume l\'activité' if seo['h1_count']==0 else 'le même grand titre est répété plusieurs fois'}</span>"
+                after_text = f"✅ 1 seul titre H1 clair<br><span style='font-weight:400;opacity:0.9'>Ex : « {titre or 'Votre activité — Ville'} »</span>"
+                ajouter_bloc(badge_color, before_text, after_text, conseil, selector="h1:first-of-type")
 
-            # IMAGES SANS ALT — capture ciblée sur une image précise
             if seo["images_no_alt"] > 0:
-                ajouter_bloc(
-                    "#ffc107",
-                    f"⚠️ {seo['images_no_alt']} image(s) sans description<br><span style='font-weight:400;opacity:0.9'>Google ne peut pas comprendre ce qu'elles montrent</span>",
-                    "✅ Description ajoutée à chaque image<br><span style='font-weight:400;opacity:0.9'>Ex : « Façade de notre commerce à [Ville] »</span>",
-                    "Ajoutez une description courte à chaque image — ex: \"Façade de notre restaurant à Lyon\" ou \"Notre équipe de plombiers\".",
-                    selector="img:not([alt]):first-of-type, img[alt='']:first-of-type, img:first-of-type"
-                )
+                badge_color, before_text, after_text, conseil = get_issue_texts("attribut alt")
+                before_text = f"⚠️ {seo['images_no_alt']} image(s) sans description<br><span style='font-weight:400;opacity:0.9'>👉 Regardez les images — Google voit des photos mais ne sait pas ce qu'elles montrent</span>"
+                ajouter_bloc(badge_color, before_text, after_text, conseil, selector="img:not([alt]):first-of-type, img[alt='']:first-of-type, img:first-of-type")
 
-            # HTTPS (concept invisible, pas de capture ciblée)
             if not perf["is_https"]:
                 url_clean = url_site.replace("https://","").replace("http://","")
-                ajouter_bloc(
-                    "#dc3545",
-                    f"❌ Site non sécurisé<br><span style='font-weight:400;opacity:0.9'>⚠️ http://{url_clean} — alerte « Non sécurisé » dans le navigateur</span>",
-                    f"✅ Connexion sécurisée<br><span style='font-weight:400;opacity:0.9'>🔒 https://{url_clean}</span>",
-                    "Activez le certificat SSL chez votre hébergeur — c'est gratuit (Let's Encrypt) et prend 5 minutes.",
-                    selector=None
-                )
+                badge_color, before_text, after_text, conseil = get_issue_texts("https")
+                before_text = f"❌ Site non sécurisé<br><span style='font-weight:400;opacity:0.9'>👉 Regardez la barre d'adresse — « http://{url_clean} » sans cadenas 🔒</span>"
+                after_text = f"✅ Connexion sécurisée<br><span style='font-weight:400;opacity:0.9'>🔒 https://{url_clean} — vos visiteurs auront confiance</span>"
+                ajouter_bloc(badge_color, before_text, after_text, conseil, selector=None)
 
-            # VITESSE (invisible)
             if rt > 2:
-                ajouter_bloc(
-                    "#dc3545",
-                    f"❌ Site trop lent : {rt}s<br><span style='font-weight:400;opacity:0.9'>53% des visiteurs partent après 3 secondes</span>",
-                    "✅ Objectif : moins de 2 secondes<br><span style='font-weight:400;opacity:0.9'>Compressez vos images et limitez les plugins inutiles</span>",
-                    "Compressez vos images sur tinypng.com et désactivez les extensions inutiles sur votre CMS.",
-                    selector=None
-                )
+                badge_color, before_text, after_text, conseil = get_issue_texts("temps de réponse")
+                before_text = f"❌ Site trop lent : {rt} secondes<br><span style='font-weight:400;opacity:0.9'>👉 Votre page met {rt}s à charger — 53% des visiteurs partent avant 3 secondes</span>"
+                ajouter_bloc(badge_color, before_text, after_text, conseil, selector=None)
 
-            # MENU — capture ciblée sur le nav
             if not ux["has_nav"]:
-                ajouter_bloc(
-                    "#dc3545",
-                    "❌ Pas de menu de navigation<br><span style='font-weight:400;opacity:0.9'>Le visiteur ne sait pas où aller et repart</span>",
-                    "✅ Menu clair ajouté<br><span style='font-weight:400;opacity:0.9'>Accueil · Services · À propos · Contact</span>",
-                    "Ajoutez un menu avec 5 à 7 liens : Accueil, Services, À propos, Blog, Contact.",
-                    selector="nav:first-of-type"
-                )
+                badge_color, before_text, after_text, conseil = get_issue_texts("balise <nav>")
+                ajouter_bloc(badge_color, before_text, after_text, conseil, selector="nav:first-of-type")
 
-            # OG TAGS (invisible, balise meta)
             if not design["has_og_tags"]:
-                ajouter_bloc(
-                    "#ffc107",
-                    "⚠️ Aperçu réseaux sociaux non configuré<br><span style='font-weight:400;opacity:0.9'>Lien brut sans image ni description quand on le partage</span>",
-                    f"✅ Aperçu configuré<br><span style='font-weight:400;opacity:0.9'>Image + « {titre or 'Titre de votre site'} »</span>",
-                    "Ajoutez les balises Open Graph dans le <head> de votre site — votre CMS le fait souvent en 1 clic.",
-                    selector=None
-                )
+                badge_color, before_text, after_text, conseil = get_issue_texts("og:title")
+                ajouter_bloc(badge_color, before_text, after_text, conseil, selector=None)
 
-            # ── TOUTES LES AUTRES ERREURS DÉTECTÉES (génériques, depuis all_issues) ──
+            # ── TOUTES LES AUTRES ERREURS (depuis all_issues) ──
             deja_couverts = [
                 "balise <title>", "titre trop court", "titre trop long",
                 "meta description", "balise h1", "balises h1",
@@ -1258,10 +1215,9 @@ def render_result(result, idx=0):
 
             for item in result["all_issues"]:
                 msg = item["message"]
-                msg_lower = msg.lower()
-                if any(fragment in msg_lower for fragment in deja_couverts):
+                if any(fragment in msg.lower() for fragment in deja_couverts):
                     continue
-                badge_color, before_text, after_text, conseil = generic_before_after(msg)
+                badge_color, before_text, after_text, conseil = get_issue_texts(msg)
                 selector = get_selector_for_issue(msg)
                 ajouter_bloc(badge_color, before_text, after_text, conseil, selector=selector)
 
@@ -1272,7 +1228,7 @@ def render_result(result, idx=0):
 <style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:'Inter',Arial,sans-serif;background:#09090f;color:#e8e8f0;padding:16px}}</style>
 </head><body>
 <div style="margin-bottom:20px;padding:12px 16px;background:#1a1a2e;border-radius:10px;font-size:13px;color:#888">
-  SITRA a détecté <b style="color:#e8e8f0">{nb_erreurs} point(s) à corriger</b> sur votre site — toutes les erreurs détectées sont listées ci-dessous, avec la zone exacte capturée quand c'est possible.
+  SITRA a détecté <b style="color:#e8e8f0">{nb_erreurs} point(s) à corriger</b> sur votre site — toutes les erreurs sont listées ci-dessous avec la zone exacte capturée quand c'est possible.
 </div>
 {blocs_html}
 </body></html>"""
