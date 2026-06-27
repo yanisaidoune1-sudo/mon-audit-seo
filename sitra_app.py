@@ -1440,9 +1440,20 @@ if launch:
     else:
         results_list = []
         for url in urls_to_analyze:
-            with st.spinner(f"Analyse de {url} en cours..."):
-                result = cached_full_analysis(url)
+            # Cle unique pour cette URL
+            cache_key = f"result_cache_{url.strip().lower()}"
+
+            # Reutilise le resultat stocke si l'URL est la meme
+            if cache_key in st.session_state:
+                result = st.session_state[cache_key]
+            else:
+                with st.spinner(f"Analyse de {url} en cours..."):
+                    result = cached_full_analysis(url)
+                # Stocke le resultat - il ne changera plus pour cette URL
+                st.session_state[cache_key] = result
+
             results_list.append(result)
+
         st.session_state["results"] = results_list
         st.session_state["mode_comp"] = mode_comparaison
         increment_analyses_count()
