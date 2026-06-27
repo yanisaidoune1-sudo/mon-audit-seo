@@ -1115,7 +1115,7 @@ def render_result(result, idx=0):
         tab_corriger_idx = tabs_list.index("Optimiser mon site")
         with tabs[tab_corriger_idx]:
             st.markdown("### Optimiser mon site")
-            st.caption("SITRA affiche votre site en direct et repere exactement la zone a corriger. Chaque bloc montre le probleme et la correction proposee.")
+            st.caption("SITRA identifie les 5 corrections les plus importantes pour votre site. La zone encadree en rouge indique exactement ou se trouve l'erreur.")
 
             seo = result["seo"]
             ux = result["ux"]
@@ -1127,143 +1127,174 @@ def render_result(result, idx=0):
             nom_site = titre.split("—")[0].split("|")[0].strip() if titre else url_site.replace("https://","").replace("www.","").split("/")[0]
             url_clean = url_site.replace("https://","").replace("http://","").rstrip("/")
 
+            # ── CONSTRUCTION DE LA LISTE D'ERREURS PRIORITAIRES ──
+            # Ordre de priorite : HTTPS > titre > H1 > description > images alt
+            # > vitesse > menu > og tags > reste (max 5 affichees)
+            erreurs_prioritaires = []
+
+            # 1. HTTPS — priorite maximale
+            if not perf["is_https"]:
+                erreurs_prioritaires.append({
+                    "badge_color": "#dc3545",
+                    "before_text": nom_site + " n'est pas securise. La barre d'adresse affiche http://" + url_clean + " — les navigateurs affichent une alerte 'Site non securise' qui fait peur aux visiteurs.",
+                    "after_text": "Activez le HTTPS. La barre d'adresse affichera un cadenas devant https://" + url_clean + " — vos visiteurs auront confiance.",
+                    "conseil": "Le HTTPS est gratuit (certificat Let's Encrypt). Activez-le depuis votre hebergeur. Google penalise aussi les sites sans HTTPS.",
+                    "selector": None
+                })
+
+            # 2. TITRE
+            if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70:
+                t = seo["title"] or ""
+                if not t:
+                    before = "Votre site n'a pas de titre. L'onglet du navigateur est vide — Google ne sait pas comment s'appelle votre site ni ce que vous faites."
+                    after = "Ajoutez un titre qui decrit votre activite et votre ville — ex : " + nom_site + " | Votre activite — Ville"
+                elif len(t) < 10:
+                    before = "Titre trop court : " + t + ". Trop vague pour Google — il ne comprend pas votre activite."
+                    after = "Allongez le titre en ajoutant votre activite et votre ville : " + t + " — Ville | Service"
+                else:
+                    before = "Titre trop long : " + t[:40] + "... Google le coupe — la fin ne s'affiche pas dans les resultats."
+                    after = "Raccourcissez le titre a moins de 60 caracteres en gardant l'essentiel."
+                erreurs_prioritaires.append({
+                    "badge_color": "#dc3545",
+                    "before_text": before,
+                    "after_text": after,
+                    "conseil": "Redigez un titre de 50-60 caracteres qui decrit clairement " + nom_site + " et votre ville.",
+                    "selector": None
+                })
+
+            # 3. H1
+            if seo["h1_count"] != 1:
+                if seo["h1_count"] == 0:
+                    before = "Pas de titre principal sur la page. Le grand texte visible ici n'est pas reconnu comme titre par Google — il faut le baliser correctement dans le code."
+                    after = "Balisez votre texte principal comme titre H1. Google saura ainsi de quoi parle " + nom_site + "."
+                else:
+                    before = str(seo["h1_count"]) + " titres H1 en doublon. Le meme titre est repete " + str(seo["h1_count"]) + " fois — Google ne sait lequel prendre en compte."
+                    after = "Gardez un seul titre H1 sur la page. Supprimez les doublons."
+                erreurs_prioritaires.append({
+                    "badge_color": "#ffc107",
+                    "before_text": before,
+                    "after_text": after,
+                    "conseil": "Le titre H1 dit a Google de quoi parle " + nom_site + ". Sans lui, Google ne sait pas quel mot-cle associer a votre page.",
+                    "selector": "h1:first-of-type"
+                })
+
+            # 4. DESCRIPTION
+            if not seo["meta_description"]:
+                desc_prop = "Decouvrez " + nom_site + " — " + (titre[:50] if titre else "qualite et professionnalisme") + ". Contactez-nous pour en savoir plus !"
+                erreurs_prioritaires.append({
+                    "badge_color": "#dc3545",
+                    "before_text": "Pas de description sous votre lien Google. Quand quelqu'un cherche " + nom_site + ", il voit du texte aleatoire peu attractif — ca donne moins envie de cliquer.",
+                    "after_text": "Ajoutez cette description : " + desc_prop[:120],
+                    "conseil": "La description s'affiche sous votre lien dans Google. Elle doit donner envie de cliquer en 1-2 phrases.",
+                    "selector": None
+                })
+
+            # 5. IMAGES SANS ALT
+            if seo["images_no_alt"] > 0:
+                erreurs_prioritaires.append({
+                    "badge_color": "#ffc107",
+                    "before_text": str(seo["images_no_alt"]) + " photo(s) sans description sur " + nom_site + ". Google voit ces photos mais ne sait pas ce qu'elles montrent — il ne peut pas les indexer dans Google Images.",
+                    "after_text": "Decrivez chaque photo en quelques mots — ex : 'Interieur de " + nom_site + "'. Court et precis, ca suffit.",
+                    "conseil": "Pour chaque photo, ajoutez une courte description dans le code (attribut alt). C'est aussi utile pour les personnes malvoyantes.",
+                    "selector": "img:not([alt]):first-of-type, img[alt='']:first-of-type"
+                })
+
+            # 6. VITESSE
+            if rt > 2:
+                erreurs_prioritaires.append({
+                    "badge_color": "#dc3545",
+                    "before_text": nom_site + " met " + str(rt) + " secondes a charger. C'est trop long — plus d'1 visiteur sur 2 repart avant que la page s'affiche completement.",
+                    "after_text": "Objectif : moins de 2 secondes. Compressez les photos de " + nom_site + " sur tinypng.com (gratuit) avant de les mettre en ligne.",
+                    "conseil": "La lenteur vient souvent des photos trop lourdes. Compressez-les sur tinypng.com — ca change tout.",
+                    "selector": None
+                })
+
+            # 7. MENU
+            if not ux["has_nav"]:
+                erreurs_prioritaires.append({
+                    "badge_color": "#dc3545",
+                    "before_text": "Pas de menu de navigation detecte sur " + nom_site + ". Les visiteurs ne savent pas ou aller — ils repartent.",
+                    "after_text": "Creez un menu clair avec 5 liens maximum : Accueil, Services, A propos, Contact.",
+                    "conseil": "Un menu bien structure aide Google a explorer toutes vos pages et aide vos visiteurs a trouver rapidement ce qu'ils cherchent.",
+                    "selector": "nav:first-of-type"
+                })
+
+            # 8. OG TAGS
+            if not design["has_og_tags"]:
+                erreurs_prioritaires.append({
+                    "badge_color": "#ffc107",
+                    "before_text": nom_site + " n'a pas d'apercu sur les reseaux sociaux. Quand quelqu'un partage votre lien sur WhatsApp ou Facebook, rien ne s'affiche — juste une URL brute.",
+                    "after_text": "Configurez l'apercu de " + nom_site + ". Une belle photo + votre titre s'afficheront automatiquement a chaque partage.",
+                    "conseil": "L'apercu de partage (Open Graph) multiplie les clics quand votre lien est partage. Votre CMS peut le configurer en quelques clics.",
+                    "selector": None
+                })
+
+            # Limite a 5 erreurs maximum
+            erreurs_a_afficher = erreurs_prioritaires[:5]
+
+            # ── AFFICHAGE ──
             blocs_html = ""
             nb_erreurs = 0
-            derniere_image_url = [None]
+            images_deja_utilisees = set()
 
             def ajouter_bloc(badge_color, before_text, after_text, conseil, selector=None):
                 nonlocal blocs_html, nb_erreurs
                 nb_erreurs += 1
                 try:
-                    # Essai 1 : Playwright avec cadre rouge pixel-precis
+                    # Essai Playwright avec cadre rouge precis
+                    img_url = None
+                    was_targeted = False
                     if selector:
                         try:
                             from playwright_capture import get_screenshot_with_highlight
-                            data_uri, was_targeted = get_screenshot_with_highlight(url_site, selector)
-                            if data_uri:
-                                is_dup = (data_uri == derniere_image_url[0])
-                                derniere_image_url[0] = data_uri
-                                blocs_html += render_before_after_block(data_uri, nb_erreurs, badge_color, before_text, after_text, conseil, was_targeted=True, img_uid=f"pw_{id(result)}_{nb_erreurs}", is_duplicate=is_dup)
-                                return
+                            data_uri, targeted = get_screenshot_with_highlight(url_site, selector)
+                            if data_uri and data_uri not in images_deja_utilisees:
+                                img_url = data_uri
+                                was_targeted = targeted
+                                images_deja_utilisees.add(data_uri)
                         except Exception:
                             pass
 
-                    # Essai 2 : Iframe avec cadre zone approximative
-                    try:
-                        from iframe_highlight import render_iframe_before_after
-                        blocs_html += render_iframe_before_after(url_site, nb_erreurs, badge_color, before_text, after_text, conseil, selector=selector, img_uid=f"ifr_{id(result)}_{nb_erreurs}")
-                        return
-                    except Exception:
-                        pass
+                    # Fallback Microlink si pas d'image Playwright ou doublon
+                    if not img_url:
+                        ml_url, ml_targeted = get_screenshot_zone(url_site, selector) if selector else (get_screenshot(url_site), False)
+                        if ml_url and ml_url not in images_deja_utilisees:
+                            img_url = ml_url
+                            was_targeted = ml_targeted
+                            images_deja_utilisees.add(ml_url)
+                        elif ml_url:
+                            # Image deja utilisee : affichage texte seul
+                            blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
+                            return
 
-                    # Essai 3 : Microlink capture
-                    img_url, was_targeted = get_screenshot_zone(url_site, selector) if selector else (get_screenshot(url_site), False)
                     if img_url:
-                        is_dup = (img_url == derniere_image_url[0])
-                        derniere_image_url[0] = img_url
-                        blocs_html += render_before_after_block(img_url, nb_erreurs, badge_color, before_text, after_text, conseil, was_targeted=was_targeted, img_uid=f"ml_{id(result)}_{nb_erreurs}", is_duplicate=is_dup)
+                        blocs_html += render_before_after_block(img_url, nb_erreurs, badge_color, before_text, after_text, conseil, was_targeted=was_targeted, img_uid=f"sitra_{id(result)}_{nb_erreurs}", is_duplicate=False)
                     else:
                         blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
                 except Exception:
                     blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
 
-            # TITRE
-            if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70:
-                t = seo["title"] or ""
-                if not t:
-                    t_corrige = nom_site + " — Votre activite | Ville"
-                    before_text = "Votre site n'a pas de titre. L'onglet du navigateur est vide — Google ne sait pas comment s'appelle votre site ni ce que vous faites."
-                    after_text = "Ajoutez un titre comme : " + t_corrige
-                elif len(t) < 10:
-                    t_corrige = t + " — " + nom_site + " | Votre ville"
-                    before_text = "Titre trop court : " + t + ". Trop vague pour Google — il ne comprend pas votre activite."
-                    after_text = "Allongez le titre : " + t_corrige
-                else:
-                    t_corrige = t[:55] + "..."
-                    before_text = "Titre trop long : " + t[:40] + "... Google le coupe — la fin ne s'affiche pas dans les resultats."
-                    after_text = "Raccourcissez a : " + t_corrige
-                conseil = "Redigez un titre de 50-60 caracteres qui decrit clairement " + nom_site + " et votre ville."
-                ajouter_bloc("#dc3545", before_text, after_text, conseil, selector=None)
-
-            # DESCRIPTION
-            if not seo["meta_description"]:
-                desc_prop = "Decouvrez " + nom_site + " — " + (titre[:50] if titre else "qualite et professionnalisme") + ". Contactez-nous pour en savoir plus !"
-                before_text = "Pas de description sous votre lien Google. Quand quelqu'un cherche " + nom_site + " sur Google, il voit du texte aleatoire peu attractif — ca donne moins envie de cliquer."
-                after_text = "Ajoutez cette description : " + desc_prop[:120]
-                conseil = "La description s'affiche sous votre lien dans Google. Elle doit donner envie de cliquer sur " + nom_site + " en 1-2 phrases maximum."
-                ajouter_bloc("#dc3545", before_text, after_text, conseil, selector=None)
-
-            # H1
-            if seo["h1_count"] != 1:
-                if seo["h1_count"] == 0:
-                    before_text = "Pas de titre principal sur la page. Le grand texte visible ici n'est pas reconnu comme titre par Google — il faut le baliser correctement dans le code pour que Google le lise."
-                    after_text = "Balisez votre texte principal comme titre H1 dans le code. Google saura ainsi de quoi parle " + nom_site + "."
-                    conseil = "Le titre H1 dit a Google de quoi parle " + nom_site + ". Sans lui, Google ne sait pas quel mot-cle associer a votre page."
-                else:
-                    before_text = str(seo["h1_count"]) + " titres H1 identiques sur la page. Le meme titre est repete " + str(seo["h1_count"]) + " fois — Google ne sait lequel prendre en compte."
-                    after_text = "Gardez un seul titre H1 sur la page — le plus important pour " + nom_site + ". Supprimez les doublons."
-                    conseil = "Une page ne doit avoir qu'un seul titre H1. Les doublons perturbent Google qui ne sait pas lequel mettre en avant."
-                ajouter_bloc("#ffc107", before_text, after_text, conseil, selector="h1:first-of-type")
-
-            # IMAGES SANS ALT
-            if seo["images_no_alt"] > 0:
-                nb = seo["images_no_alt"]
-                before_text = str(nb) + " photo(s) sans description sur " + nom_site + ". Google voit ces photos mais ne sait pas ce qu'elles montrent — il ne peut pas les indexer ni les afficher dans Google Images."
-                after_text = "Decrivez chaque photo en quelques mots — par exemple : 'Interieur de " + nom_site + "' ou 'Notre equipe'. Court et precis, ca suffit."
-                conseil = "Pour chaque photo, ajoutez une courte description dans le code (attribut alt). C'est aussi utile pour les personnes malvoyantes."
-                ajouter_bloc("#ffc107", before_text, after_text, conseil, selector="img:not([alt]):first-of-type, img[alt='']:first-of-type, img:first-of-type")
-
-            # HTTPS
-            if not perf["is_https"]:
-                before_text = nom_site + " n'est pas securise. La barre d'adresse affiche http://" + url_clean + " — les navigateurs affichent une alerte 'Site non securise' qui fait peur aux visiteurs."
-                after_text = "Activez le HTTPS. La barre d'adresse affichera un cadenas devant https://" + url_clean + " — vos visiteurs auront confiance et resteront."
-                conseil = "Le HTTPS est gratuit (certificat Let's Encrypt). Activez-le depuis votre hebergeur. Google penalise aussi les sites sans HTTPS."
-                ajouter_bloc("#dc3545", before_text, after_text, conseil, selector=None)
-
-            # VITESSE
-            if rt > 2:
-                before_text = nom_site + " met " + str(rt) + " secondes a charger. C'est trop long — plus d'1 visiteur sur 2 repart avant que la page s'affiche completement."
-                after_text = "Objectif : moins de 2 secondes. En compressant les photos de " + nom_site + ", la page chargera bien plus vite."
-                conseil = "La lenteur vient souvent des photos trop lourdes. Compressez-les sur tinypng.com (gratuit) avant de les mettre en ligne."
-                ajouter_bloc("#dc3545", before_text, after_text, conseil, selector=None)
-
-            # MENU
-            if not ux["has_nav"]:
-                before_text = "Pas de menu de navigation detecte sur " + nom_site + ". Google ne trouve pas la structure du site, et les visiteurs ne savent pas ou aller — ils repartent."
-                after_text = "Creez un menu clair avec 5 liens maximum : Accueil, Services, A propos, Contact."
-                conseil = "Un menu bien structure aide Google a explorer toutes vos pages et aide vos visiteurs a trouver rapidement ce qu'ils cherchent."
-                ajouter_bloc("#dc3545", before_text, after_text, conseil, selector="nav:first-of-type")
-
-            # OG TAGS
-            if not design["has_og_tags"]:
-                before_text = nom_site + " n'a pas d'apercu sur les reseaux sociaux. Quand quelqu'un partage votre lien sur WhatsApp ou Facebook, rien ne s'affiche — juste une URL brute."
-                after_text = "Configurez l'apercu de " + nom_site + ". Une belle photo + votre titre s'afficheront automatiquement a chaque partage."
-                conseil = "L'apercu de partage (Open Graph) multiplie les clics quand votre lien est partage. Votre CMS peut le configurer en quelques clics."
-                ajouter_bloc("#ffc107", before_text, after_text, conseil, selector=None)
-
-            # TOUTES LES AUTRES ERREURS
-            deja_couverts = [
-                "balise <title>", "titre trop court", "titre trop long",
-                "meta description", "balise h1", "balises h1",
-                "attribut alt", "https", "temps de r",
-                "balise <nav>", "og:title", "og:image",
-            ]
-            for item in result["all_issues"]:
-                msg = item["message"]
-                if any(fragment in msg.lower() for fragment in deja_couverts):
-                    continue
-                badge_color, before_text, after_text, conseil = get_issue_texts(msg)
-                selector = get_selector_for_issue(msg)
-                ajouter_bloc(badge_color, before_text, after_text, conseil, selector=selector)
+            for erreur in erreurs_a_afficher:
+                ajouter_bloc(
+                    erreur["badge_color"],
+                    erreur["before_text"],
+                    erreur["after_text"],
+                    erreur["conseil"],
+                    selector=erreur.get("selector")
+                )
 
             if not blocs_html:
                 blocs_html = '<div style="background:rgba(40,167,69,0.1);border:2px solid #28a745;border-radius:12px;padding:24px;text-align:center;color:#7ddf96;font-size:15px;font-weight:600">Aucune erreur detectee — votre site est bien optimise !</div>'
 
+            total_issues = result.get("total_issues", 0)
+            nb_restantes = max(0, total_issues - len(erreurs_a_afficher))
+
             html_corrections = f"""<!DOCTYPE html><html><head><meta charset="UTF-8">
-<style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:'Inter',Arial,sans-serif;background:#09090f;color:#e8e8f0;padding:16px}}iframe{{display:block}}</style>
+<style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:'Inter',Arial,sans-serif;background:#09090f;color:#e8e8f0;padding:16px}}</style>
 </head><body>
 <div style="margin-bottom:20px;padding:12px 16px;background:#1a1a2e;border-radius:10px;font-size:13px;color:#888">
-  SITRA a detecte <b style="color:#e8e8f0">{nb_erreurs} point(s) a corriger</b> — la zone encadree en rouge indique exactement ou se trouve l'erreur sur votre site.
+  Voici les <b style="color:#e8e8f0">5 corrections les plus importantes</b> pour votre site.
+  {"<span style='color:#666'> (" + str(nb_restantes) + " points secondaires disponibles dans l'onglet Résumé)</span>" if nb_restantes > 0 else ""}
 </div>
 {blocs_html}
 </body></html>"""
