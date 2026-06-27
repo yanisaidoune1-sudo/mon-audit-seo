@@ -293,10 +293,28 @@ def get_screenshot(url: str):
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_screenshot_zone(url: str, selector: str):
+    """
+    Essaie d'abord Playwright (cadre rouge precis sur l'element).
+    Si Playwright echoue, retombe sur Microlink (capture ciblee).
+    Si Microlink echoue aussi, retombe sur la capture pleine page.
+    """
+    # Essai 1 : Playwright avec cadre rouge precis
+    if selector:
+        try:
+            from playwright_capture import get_screenshot_with_highlight
+            data_uri, was_targeted = get_screenshot_with_highlight(url, selector)
+            if data_uri:
+                return data_uri, True
+        except Exception:
+            pass
+
+    # Essai 2 : Microlink avec selecteur CSS
     if selector:
         targeted = _microlink_screenshot(url, element=selector)
         if targeted:
             return targeted, True
+
+    # Essai 3 : capture pleine page
     fallback = get_screenshot(url)
     return fallback, False
 
