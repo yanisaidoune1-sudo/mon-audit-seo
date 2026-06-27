@@ -1,9 +1,9 @@
 """
 Sitra - Module de capture precise via Playwright
-Prend une capture de la page et dessine un cadre rouge autour de l'element concerne.
+Scrolle jusqu'a l'element concerne, le centre dans la capture,
+et dessine un cadre rouge autour pour montrer exactement ou est l'erreur.
 """
 
-import os
 import io
 import base64
 import streamlit as st
@@ -12,8 +12,10 @@ import streamlit as st
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_screenshot_with_highlight(url: str, selector: str = None):
     """
-    Prend une capture de la page via Playwright.
-    Si selector est fourni, dessine un cadre rouge autour de l'element.
+    1. Charge la page
+    2. Scrolle jusqu'a l'element concerne
+    3. Prend une capture centree sur cet element
+    4. Dessine un cadre rouge autour
     Retourne (data_uri, was_targeted) ou (None, False) si echec.
     """
     try:
@@ -28,7 +30,6 @@ def get_screenshot_with_highlight(url: str, selector: str = None):
                     "--no-sandbox",
                     "--disable-setuid-sandbox",
                     "--disable-dev-shm-usage",
-                    "--disable-blink-features=AutomationControlled",
                 ]
             )
             context = browser.new_context(
@@ -44,22 +45,39 @@ def get_screenshot_with_highlight(url: str, selector: str = None):
                 browser.close()
                 return None, False
 
-            screenshot_bytes = page.screenshot(full_page=False)
+            # Ferme les popups/cookies si presents
+            try:
+                for sel in ["button[id*='accept']", "button[id*='cookie']", "button[class*='close']", "button[aria-label*='close']", "button[aria-label*='fermer']"]:
+                    btn = page.query_selector(sel)
+                    if btn:
+                        btn.click()
+                        page.wait_for_timeout(500)
+                        break
+            except Exception:
+                pass
 
             bbox = None
+            was_targeted = False
+
             if selector:
                 selectors = [s.strip() for s in selector.split(",")]
                 for sel in selectors:
                     try:
                         element = page.query_selector(sel)
                         if element:
+                            # Scrolle jusqu'a l'element pour le centrer dans le viewport
+                            element.scroll_into_view_if_needed()
+                            page.wait_for_timeout(500)
                             box = element.bounding_box()
                             if box and box["width"] > 0 and box["height"] > 0:
                                 bbox = box
+                                was_targeted = True
                                 break
                     except Exception:
                         continue
 
+            # Capture du viewport apres scroll
+            screenshot_bytes = page.screenshot(full_page=False)
             browser.close()
 
         img = PIL.Image.open(io.BytesIO(screenshot_bytes))
@@ -67,41 +85,36 @@ def get_screenshot_with_highlight(url: str, selector: str = None):
 
         if bbox:
             draw = PIL.ImageDraw.Draw(img)
-            pad = 8
+            pad = 10
 
-            # Calcul des coordonnees avec clamp strict dans les limites de l'image
+            # Recalcule la position de l'element dans le viewport apres scroll
+            # (bounding_box() retourne la position dans le viewport courant)
             x1 = max(0, int(bbox["x"]) - pad)
             y1 = max(0, int(bbox["y"]) - pad)
             x2 = min(img_w - 1, int(bbox["x"] + bbox["width"]) + pad)
             y2 = min(img_h - 1, int(bbox["y"] + bbox["height"]) + pad)
 
-            # Securite : s'assurer que x2 > x1 et y2 > y1
+            # Securite coordonnees
             if x2 <= x1:
-                x2 = min(img_w - 1, x1 + 10)
+                x2 = min(img_w - 1, x1 + 50)
             if y2 <= y1:
-                y2 = min(img_h - 1, y1 + 10)
+                y2 = min(img_h - 1, y1 + 50)
 
-            # Cadre rouge epais
+            # Cadre rouge epais (4 rectangles concentriques)
             for i in range(4):
-                x1i = max(0, x1 - i)
-                y1i = max(0, y1 - i)
-                x2i = min(img_w - 1, x2 + i)
-                y2i = min(img_h - 1, y2 + i)
-                if x2i > x1i and y2i > y1i:
-                    draw.rectangle([x1i, y1i, x2i, y2i], outline=(220, 53, 69), width=2)
+                rx1 = max(0, x1 - i)
+                ry1 = max(0, y1 - i)
+                rx2 = min(img_w - 1, x2 + i)
+                ry2 = min(img_h - 1, y2 + i)
+                if rx2 > rx1 and ry2 > ry1:
+                    draw.rectangle([rx1, ry1, rx2, ry2], outline=(220, 53, 69), width=2)
 
-            # Triangle rouge indicateur en haut a gauche
-            tri_size = 20
-            tx1 = x1
-            ty1 = y1
-            tx2 = min(img_w - 1, x1 + tri_size)
-            ty2 = min(img_h - 1, y1 + tri_size)
-            if tx2 > tx1 and ty2 > ty1:
-                draw.polygon([(tx1, ty1), (tx2, ty1), (tx1, ty2)], fill=(220, 53, 69))
-
-            was_targeted = True
-        else:
-            was_targeted = False
+            # Triangle rouge en haut a gauche du cadre
+            tri = 22
+            tx2 = min(img_w - 1, x1 + tri)
+            ty2 = min(img_h - 1, y1 + tri)
+            if tx2 > x1 and ty2 > y1:
+                draw.polygon([(x1, y1), (tx2, y1), (x1, ty2)], fill=(220, 53, 69))
 
         buf = io.BytesIO()
         img.save(buf, format="PNG", optimize=True)
@@ -109,5 +122,5 @@ def get_screenshot_with_highlight(url: str, selector: str = None):
 
         return data_uri, was_targeted
 
-    except Exception as e:
+    except Exception:
         return None, False
