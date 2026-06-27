@@ -1,6 +1,6 @@
 """
 Sitra - Module de capture precise via Playwright
-Scrolle jusqu'a l'element concerne, le centre dans la capture,
+Bloque les widgets tiers, scrolle jusqu'a l'element,
 et dessine un cadre rouge autour pour montrer exactement ou est l'erreur.
 """
 
@@ -11,14 +11,6 @@ import streamlit as st
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_screenshot_with_highlight(url: str, selector: str = None):
-    """
-    1. Charge la page
-    2. Ferme les popups/cookies
-    3. Scrolle jusqu'a l'element concerne
-    4. Prend une capture centree sur cet element
-    5. Dessine un cadre rouge autour
-    Retourne (data_uri, was_targeted) ou (None, False) si echec.
-    """
     try:
         from playwright.sync_api import sync_playwright
         import PIL.Image
@@ -37,68 +29,86 @@ def get_screenshot_with_highlight(url: str, selector: str = None):
                 viewport={"width": 1280, "height": 800},
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             )
+
+            # Bloque les domaines de widgets tiers qui affichent des popups
+            blocked_domains = [
+                "zenchef.com", "thefork.com", "lafourchette.com",
+                "widget.zenchef.com", "booking.zenchef.com",
+                "cookiebot.com", "onetrust.com", "cookiepro.com",
+                "intercom.io", "zendesk.com", "crisp.chat",
+                "tawk.to", "livechat.com", "drift.com",
+                "hotjar.com", "clarity.ms"
+            ]
+
+            def block_route(route):
+                url_r = route.request.url
+                if any(d in url_r for d in blocked_domains):
+                    route.abort()
+                else:
+                    route.continue_()
+
             page = context.new_page()
+            page.route("**/*", block_route)
 
             try:
                 page.goto(url, timeout=20000, wait_until="domcontentloaded")
-                page.wait_for_timeout(2000)
+                page.wait_for_timeout(1500)
             except Exception:
                 browser.close()
                 return None, False
 
-            # Ferme les popups et widgets tiers
+            # Masque aussi via CSS les elements qui restent
             try:
-                for sel in [
-                    "button[id*='accept']", "button[id*='cookie']",
-                    "button[class*='close']", "button[aria-label*='close']",
-                    "button[aria-label*='fermer']", "button[aria-label*='Close']",
-                    "[class*='zenchef'] button", "[id*='zenchef'] button",
-                    "[class*='widget'] .close", "[class*='popup'] .close",
-                    "[class*='modal'] .close", "[class*='overlay'] .close"
-                ]:
-                    try:
-                        btn = page.query_selector(sel)
-                        if btn and btn.is_visible():
-                            btn.click()
-                            page.wait_for_timeout(300)
-                    except Exception:
-                        continue
+                page.add_style_tag(content="""
+                    [class*="zenchef"], [id*="zenchef"],
+                    [class*="widget"], [class*="popup"],
+                    [class*="modal"]:not(nav), [class*="overlay"],
+                    [class*="cookie"], [id*="cookie"],
+                    [class*="chat"], [id*="chat"],
+                    [class*="intercom"], [id*="intercom"],
+                    iframe[src*="zenchef"], iframe[src*="booking"],
+                    iframe[src*="widget"] {
+                        display: none !important;
+                        visibility: hidden !important;
+                    }
+                """)
+                page.wait_for_timeout(300)
             except Exception:
                 pass
-
-            # Attend que les widgets tiers disparaissent
-            page.wait_for_timeout(500)
 
             bbox = None
             was_targeted = False
 
             if selector:
-                # Pour les images : on exclut les logos (petites images en haut)
-                # en cherchant la plus grande image visible sur la page
+                # Cas special images : cherche la plus grande image sans alt
                 if "img" in selector.lower():
                     try:
                         images = page.query_selector_all("img")
                         best = None
                         best_area = 0
+                        # D'abord cherche une grande image sans attribut alt
                         for img_el in images:
                             try:
+                                if not img_el.is_visible():
+                                    continue
                                 box = img_el.bounding_box()
-                                if box and box["width"] > 100 and box["height"] > 80:
+                                if box and box["width"] > 150 and box["height"] > 100:
                                     area = box["width"] * box["height"]
-                                    if area > best_area:
-                                        # Verifie que l'image n'a pas d'attribut alt
-                                        alt = img_el.get_attribute("alt") or ""
-                                        if not alt.strip():
-                                            best_area = area
-                                            best = (img_el, box)
+                                    alt = img_el.get_attribute("alt") or ""
+                                    if not alt.strip() and area > best_area:
+                                        best_area = area
+                                        best = (img_el, box)
                             except Exception:
                                 continue
-                        # Si aucune sans alt, prend la plus grande quand meme
+                        # Si aucune sans alt, prend la plus grande visible
                         if not best:
+                            best_area = 0
                             for img_el in images:
                                 try:
+                                    if not img_el.is_visible():
+                                        continue
                                     box = img_el.bounding_box()
-                                    if box and box["width"] > 100 and box["height"] > 80:
+                                    if box and box["width"] > 150 and box["height"] > 100:
                                         area = box["width"] * box["height"]
                                         if area > best_area:
                                             best_area = area
@@ -107,20 +117,20 @@ def get_screenshot_with_highlight(url: str, selector: str = None):
                                     continue
                         if best:
                             best[0].scroll_into_view_if_needed()
-                            page.wait_for_timeout(500)
+                            page.wait_for_timeout(400)
                             bbox = best[0].bounding_box()
                             was_targeted = True
                     except Exception:
                         pass
                 else:
-                    # Pour les autres elements
+                    # Autres elements
                     selectors = [s.strip() for s in selector.split(",")]
                     for sel in selectors:
                         try:
                             element = page.query_selector(sel)
                             if element and element.is_visible():
                                 element.scroll_into_view_if_needed()
-                                page.wait_for_timeout(500)
+                                page.wait_for_timeout(400)
                                 box = element.bounding_box()
                                 if box and box["width"] > 0 and box["height"] > 0:
                                     bbox = box
@@ -129,7 +139,6 @@ def get_screenshot_with_highlight(url: str, selector: str = None):
                         except Exception:
                             continue
 
-            # Capture du viewport apres scroll
             screenshot_bytes = page.screenshot(full_page=False)
             browser.close()
 
@@ -139,37 +148,27 @@ def get_screenshot_with_highlight(url: str, selector: str = None):
         if bbox:
             draw = PIL.ImageDraw.Draw(img)
             pad = 10
-
             x1 = max(0, int(bbox["x"]) - pad)
             y1 = max(0, int(bbox["y"]) - pad)
             x2 = min(img_w - 1, int(bbox["x"] + bbox["width"]) + pad)
             y2 = min(img_h - 1, int(bbox["y"] + bbox["height"]) + pad)
+            if x2 <= x1: x2 = min(img_w - 1, x1 + 50)
+            if y2 <= y1: y2 = min(img_h - 1, y1 + 50)
 
-            if x2 <= x1:
-                x2 = min(img_w - 1, x1 + 50)
-            if y2 <= y1:
-                y2 = min(img_h - 1, y1 + 50)
-
-            # Cadre rouge epais
             for i in range(4):
-                rx1 = max(0, x1 - i)
-                ry1 = max(0, y1 - i)
-                rx2 = min(img_w - 1, x2 + i)
-                ry2 = min(img_h - 1, y2 + i)
+                rx1, ry1 = max(0, x1-i), max(0, y1-i)
+                rx2, ry2 = min(img_w-1, x2+i), min(img_h-1, y2+i)
                 if rx2 > rx1 and ry2 > ry1:
                     draw.rectangle([rx1, ry1, rx2, ry2], outline=(220, 53, 69), width=2)
 
-            # Triangle rouge indicateur
             tri = 22
-            tx2 = min(img_w - 1, x1 + tri)
-            ty2 = min(img_h - 1, y1 + tri)
+            tx2, ty2 = min(img_w-1, x1+tri), min(img_h-1, y1+tri)
             if tx2 > x1 and ty2 > y1:
                 draw.polygon([(x1, y1), (tx2, y1), (x1, ty2)], fill=(220, 53, 69))
 
         buf = io.BytesIO()
         img.save(buf, format="PNG", optimize=True)
         data_uri = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
-
         return data_uri, was_targeted
 
     except Exception:
