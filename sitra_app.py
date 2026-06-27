@@ -1125,14 +1125,16 @@ def render_result(result, idx=0):
             rt = perf.get("response_time", 0) or 0
             url_site = result["final_url"]
             titre = seo["title"] or ""
+            nom_site = titre.split("—")[0].split("|")[0].strip() if titre else url_site.replace("https://","").replace("www.","").split("/")[0]
+            url_clean = url_site.replace("https://","").replace("http://","").rstrip("/")
 
             with st.spinner("Capture de votre site en cours..."):
                 screenshot_fallback = get_screenshot(url_site)
 
             if screenshot_fallback:
-                st.caption("✅ Capture du site récupérée")
+                st.caption("Capture du site recuperee")
             else:
-                st.caption("⚠️ Capture indisponible pour ce site — affichage en mode texte")
+                st.caption("Capture indisponible pour ce site - affichage en mode texte")
 
             blocs_html = ""
             nb_erreurs = 0
@@ -1158,61 +1160,85 @@ def render_result(result, idx=0):
                 except Exception:
                     blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
 
-            # ── ERREURS SUR-MESURE ──
-
+            # TITRE
             if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70:
                 t = seo["title"] or ""
-                t_corrige = (t[:52] + "...") if len(t) > 60 else ((t + " | Service Pro") if t else "Nom de votre activité — Ville | Service")
-                probleme = "Titre manquant" if not t else f"Titre {'trop court' if len(t)<10 else 'trop long'} ({len(t)} caractères)"
-                badge_color, before_text, after_text, conseil = get_issue_texts("balise <title>" if not t else ("titre trop court" if len(t)<10 else "titre trop long"))
-                before_text = f"❌ {probleme}<br><span style='font-weight:400;opacity:0.9'>👉 Regardez l'onglet du navigateur en haut — « {t or '(vide)'} »</span>"
-                after_text = f"✅ Titre corrigé<br><span style='font-weight:400;opacity:0.9'>Ex : « {t_corrige} »</span>"
-                ajouter_bloc(badge_color, before_text, after_text, conseil, selector=None)
+                if not t:
+                    t_corrige = nom_site + " — Votre activite | Ville"
+                    before_text = "Votre site n'a pas de titre. L'onglet du navigateur est vide — Google ne sait pas comment s'appelle votre site ni ce que vous faites."
+                    after_text = "Ajoutez un titre comme : " + t_corrige
+                elif len(t) < 10:
+                    t_corrige = t + " — " + nom_site + " | Votre ville"
+                    before_text = "Titre trop court : " + t + ". Trop vague pour Google — il ne comprend pas votre activite."
+                    after_text = "Allongez le titre : " + t_corrige
+                else:
+                    t_corrige = t[:55] + "..."
+                    before_text = "Titre trop long : " + t[:40] + "... Google le coupe — la fin ne s'affiche pas dans les resultats."
+                    after_text = "Raccourcissez a : " + t_corrige
+                conseil = "Redigez un titre de 50-60 caracteres qui decrit clairement " + nom_site + " et votre ville."
+                ajouter_bloc("#dc3545", before_text, after_text, conseil, selector=None)
 
+            # DESCRIPTION
             if not seo["meta_description"]:
-                desc_corrigee = f"Découvrez {titre[:25] or 'notre service'} — qualité professionnelle, devis gratuit. Contactez-nous dès aujourd'hui !"
-                badge_color, before_text, after_text, conseil = get_issue_texts("meta description")
-                after_text = f"✅ Description ajoutée<br><span style='font-weight:400;opacity:0.9'>Ex : « {desc_corrigee[:80]}... »</span>"
-                ajouter_bloc(badge_color, before_text, after_text, conseil, selector=None)
+                desc_prop = "Decouvrez " + nom_site + " — " + (titre[:50] if titre else "qualite et professionnalisme") + ". Contactez-nous pour en savoir plus !"
+                before_text = "Pas de description sous votre lien Google. Quand quelqu'un cherche " + nom_site + " sur Google, il voit du texte aleatoire peu attractif sous votre lien — ca donne moins envie de cliquer."
+                after_text = "Ajoutez cette description : " + desc_prop[:120]
+                conseil = "La description s'affiche sous votre lien dans Google. Elle doit donner envie de cliquer sur " + nom_site + " en 1-2 phrases maximum."
+                ajouter_bloc("#dc3545", before_text, after_text, conseil, selector=None)
 
+            # H1
             if seo["h1_count"] != 1:
-                pb = "Aucun titre principal (H1)" if seo["h1_count"] == 0 else f"{seo['h1_count']} titres H1 en doublon"
-                badge_color, before_text, after_text, conseil = get_issue_texts("balise h1" if seo["h1_count"] == 0 else "balises h1")
-                detail_h1 = "aucun grand titre ne résume l'activité" if seo["h1_count"] == 0 else "le même grand titre est répété plusieurs fois"
-                before_text = f"❌ {pb}<br><span style='font-weight:400;opacity:0.9'>👉 Regardez la page — {detail_h1}</span>"
-                after_text = f"✅ 1 seul titre H1 clair<br><span style='font-weight:400;opacity:0.9'>Ex : « {titre or 'Votre activité — Ville'} »</span>"
-                ajouter_bloc(badge_color, before_text, after_text, conseil, selector="h1:first-of-type")
+                if seo["h1_count"] == 0:
+                    before_text = "Pas de titre principal sur la page. Le grand texte visible ici n'est pas reconnu comme titre par Google — il faut le baliser correctement dans le code pour que Google le lise."
+                    after_text = "Balisez votre texte principal comme titre H1 dans le code. Google saura ainsi de quoi parle " + nom_site + "."
+                    conseil = "Le titre H1 dit a Google de quoi parle " + nom_site + ". Sans lui, Google ne sait pas quel mot-cle associer a votre page."
+                else:
+                    before_text = str(seo["h1_count"]) + " titres H1 identiques sur la page. Le meme titre est repete " + str(seo["h1_count"]) + " fois — Google ne sait lequel prendre en compte."
+                    after_text = "Gardez un seul titre H1 sur la page — le plus important pour " + nom_site + ". Supprimez les doublons."
+                    conseil = "Une page ne doit avoir qu'un seul titre H1. Les doublons perturbent Google qui ne sait pas lequel mettre en avant."
+                ajouter_bloc("#ffc107", before_text, after_text, conseil, selector="h1:first-of-type")
 
+            # IMAGES SANS ALT
             if seo["images_no_alt"] > 0:
-                badge_color, before_text, after_text, conseil = get_issue_texts("attribut alt")
-                before_text = f"⚠️ {seo['images_no_alt']} image(s) sans description<br><span style='font-weight:400;opacity:0.9'>👉 Regardez les images — Google voit des photos mais ne sait pas ce qu'elles montrent</span>"
-                ajouter_bloc(badge_color, before_text, after_text, conseil, selector="img:not([alt]):first-of-type, img[alt='']:first-of-type, img:first-of-type")
+                nb = seo["images_no_alt"]
+                before_text = str(nb) + " photo(s) sans description sur " + nom_site + ". Google voit ces photos mais ne sait pas ce qu'elles montrent — il ne peut pas les indexer ni les afficher dans Google Images."
+                after_text = "Decrivez chaque photo en quelques mots — par exemple : 'Interieur de " + nom_site + "' ou 'Notre equipe'. Court et precis, ca suffit."
+                conseil = "Pour chaque photo, ajoutez une courte description dans le code (attribut alt). C'est aussi utile pour les personnes malvoyantes qui utilisent un lecteur d'ecran."
+                ajouter_bloc("#ffc107", before_text, after_text, conseil, selector="img:not([alt]):first-of-type, img[alt='']:first-of-type, img:first-of-type")
 
+            # HTTPS
             if not perf["is_https"]:
-                url_clean = url_site.replace("https://","").replace("http://","")
-                badge_color, before_text, after_text, conseil = get_issue_texts("https")
-                before_text = f"❌ Site non sécurisé<br><span style='font-weight:400;opacity:0.9'>👉 Regardez la barre d'adresse — « http://{url_clean} » sans cadenas 🔒</span>"
-                after_text = f"✅ Connexion sécurisée<br><span style='font-weight:400;opacity:0.9'>🔒 https://{url_clean} — vos visiteurs auront confiance</span>"
-                ajouter_bloc(badge_color, before_text, after_text, conseil, selector=None)
+                before_text = nom_site + " n'est pas securise. La barre d'adresse affiche http://" + url_clean + " sans cadenas — les navigateurs affichent une alerte 'Site non securise' qui fait peur aux visiteurs."
+                after_text = "Activez le HTTPS. La barre d'adresse affichera un cadenas devant https://" + url_clean + " — vos visiteurs auront confiance et resteront."
+                conseil = "Le HTTPS est gratuit (certificat Let's Encrypt). Activez-le depuis votre hebergeur. Google penalise aussi les sites sans HTTPS dans ses resultats."
+                ajouter_bloc("#dc3545", before_text, after_text, conseil, selector=None)
 
+            # VITESSE
             if rt > 2:
-                badge_color, before_text, after_text, conseil = get_issue_texts("temps de réponse")
-                before_text = f"❌ Site trop lent : {rt} secondes<br><span style='font-weight:400;opacity:0.9'>👉 Votre page met {rt}s à charger — 53% des visiteurs partent avant 3 secondes</span>"
-                ajouter_bloc(badge_color, before_text, after_text, conseil, selector=None)
+                before_text = nom_site + " met " + str(rt) + " secondes a charger. C'est trop long — plus d'1 visiteur sur 2 repart avant que la page s'affiche completement."
+                after_text = "Objectif : moins de 2 secondes. En compressant les photos de " + nom_site + ", la page chargera bien plus vite et vous perdrez moins de visiteurs."
+                conseil = "La lenteur vient souvent des photos trop lourdes. Compressez-les sur tinypng.com (gratuit) avant de les mettre en ligne — ca change tout."
+                ajouter_bloc("#dc3545", before_text, after_text, conseil, selector=None)
 
+            # MENU
             if not ux["has_nav"]:
-                badge_color, before_text, after_text, conseil = get_issue_texts("balise <nav>")
-                ajouter_bloc(badge_color, before_text, after_text, conseil, selector="nav:first-of-type")
+                before_text = "Pas de menu de navigation detecte sur " + nom_site + ". Google ne trouve pas la structure de votre site, et les visiteurs ne savent pas ou aller — ils repartent."
+                after_text = "Creez un menu clair avec 5 liens maximum : Accueil, Services, A propos, Contact, et eventuellement une page specifique a " + nom_site + "."
+                conseil = "Un menu bien structure aide Google a explorer toutes vos pages et aide vos visiteurs a trouver rapidement ce qu'ils cherchent."
+                ajouter_bloc("#dc3545", before_text, after_text, conseil, selector="nav:first-of-type")
 
+            # OG TAGS
             if not design["has_og_tags"]:
-                badge_color, before_text, after_text, conseil = get_issue_texts("og:title")
-                ajouter_bloc(badge_color, before_text, after_text, conseil, selector=None)
+                before_text = nom_site + " n'a pas d'apercu sur les reseaux sociaux. Quand quelqu'un partage votre lien sur WhatsApp ou Facebook, rien ne s'affiche — juste une URL brute sans image ni description."
+                after_text = "Configurez l'apercu de " + nom_site + ". Une belle photo + votre titre s'afficheront automatiquement a chaque partage — ca donne envie de cliquer."
+                conseil = "L'apercu de partage (Open Graph) multiplie les clics quand votre lien est partage. Votre CMS peut le configurer en quelques clics dans les parametres."
+                ajouter_bloc("#ffc107", before_text, after_text, conseil, selector=None)
 
-            # ── TOUTES LES AUTRES ERREURS (depuis all_issues) ──
+            # TOUTES LES AUTRES ERREURS
             deja_couverts = [
                 "balise <title>", "titre trop court", "titre trop long",
                 "meta description", "balise h1", "balises h1",
-                "attribut alt", "https", "temps de réponse",
+                "attribut alt", "https", "temps de reponse",
                 "balise <nav>", "og:title", "og:image",
             ]
 
@@ -1225,13 +1251,13 @@ def render_result(result, idx=0):
                 ajouter_bloc(badge_color, before_text, after_text, conseil, selector=selector)
 
             if not blocs_html:
-                blocs_html = '<div style="background:rgba(40,167,69,0.1);border:2px solid #28a745;border-radius:12px;padding:24px;text-align:center;color:#7ddf96;font-size:15px;font-weight:600">✅ Aucune erreur détectée — votre site est bien optimisé !</div>'
+                blocs_html = '<div style="background:rgba(40,167,69,0.1);border:2px solid #28a745;border-radius:12px;padding:24px;text-align:center;color:#7ddf96;font-size:15px;font-weight:600">Aucune erreur detectee — votre site est bien optimise !</div>'
 
             html_corrections = f"""<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:'Inter',Arial,sans-serif;background:#09090f;color:#e8e8f0;padding:16px}}</style>
 </head><body>
 <div style="margin-bottom:20px;padding:12px 16px;background:#1a1a2e;border-radius:10px;font-size:13px;color:#888">
-  SITRA a détecté <b style="color:#e8e8f0">{nb_erreurs} point(s) à corriger</b> sur votre site — toutes les erreurs sont listées ci-dessous avec la zone exacte capturée quand c'est possible.
+  SITRA a detecte <b style="color:#e8e8f0">{nb_erreurs} point(s) a corriger</b> sur votre site — toutes les erreurs sont listees ci-dessous avec la zone exacte capturee quand c'est possible.
 </div>
 {blocs_html}
 </body></html>"""
