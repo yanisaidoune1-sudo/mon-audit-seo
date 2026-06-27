@@ -13,9 +13,10 @@ import streamlit as st
 def get_screenshot_with_highlight(url: str, selector: str = None):
     """
     1. Charge la page
-    2. Scrolle jusqu'a l'element concerne
-    3. Prend une capture centree sur cet element
-    4. Dessine un cadre rouge autour
+    2. Ferme les popups/cookies
+    3. Scrolle jusqu'a l'element concerne
+    4. Prend une capture centree sur cet element
+    5. Dessine un cadre rouge autour
     Retourne (data_uri, was_targeted) ou (None, False) si echec.
     """
     try:
@@ -45,36 +46,88 @@ def get_screenshot_with_highlight(url: str, selector: str = None):
                 browser.close()
                 return None, False
 
-            # Ferme les popups/cookies si presents
+            # Ferme les popups et widgets tiers
             try:
-                for sel in ["button[id*='accept']", "button[id*='cookie']", "button[class*='close']", "button[aria-label*='close']", "button[aria-label*='fermer']"]:
-                    btn = page.query_selector(sel)
-                    if btn:
-                        btn.click()
-                        page.wait_for_timeout(500)
-                        break
+                for sel in [
+                    "button[id*='accept']", "button[id*='cookie']",
+                    "button[class*='close']", "button[aria-label*='close']",
+                    "button[aria-label*='fermer']", "button[aria-label*='Close']",
+                    "[class*='zenchef'] button", "[id*='zenchef'] button",
+                    "[class*='widget'] .close", "[class*='popup'] .close",
+                    "[class*='modal'] .close", "[class*='overlay'] .close"
+                ]:
+                    try:
+                        btn = page.query_selector(sel)
+                        if btn and btn.is_visible():
+                            btn.click()
+                            page.wait_for_timeout(300)
+                    except Exception:
+                        continue
             except Exception:
                 pass
+
+            # Attend que les widgets tiers disparaissent
+            page.wait_for_timeout(500)
 
             bbox = None
             was_targeted = False
 
             if selector:
-                selectors = [s.strip() for s in selector.split(",")]
-                for sel in selectors:
+                # Pour les images : on exclut les logos (petites images en haut)
+                # en cherchant la plus grande image visible sur la page
+                if "img" in selector.lower():
                     try:
-                        element = page.query_selector(sel)
-                        if element:
-                            # Scrolle jusqu'a l'element pour le centrer dans le viewport
-                            element.scroll_into_view_if_needed()
+                        images = page.query_selector_all("img")
+                        best = None
+                        best_area = 0
+                        for img_el in images:
+                            try:
+                                box = img_el.bounding_box()
+                                if box and box["width"] > 100 and box["height"] > 80:
+                                    area = box["width"] * box["height"]
+                                    if area > best_area:
+                                        # Verifie que l'image n'a pas d'attribut alt
+                                        alt = img_el.get_attribute("alt") or ""
+                                        if not alt.strip():
+                                            best_area = area
+                                            best = (img_el, box)
+                            except Exception:
+                                continue
+                        # Si aucune sans alt, prend la plus grande quand meme
+                        if not best:
+                            for img_el in images:
+                                try:
+                                    box = img_el.bounding_box()
+                                    if box and box["width"] > 100 and box["height"] > 80:
+                                        area = box["width"] * box["height"]
+                                        if area > best_area:
+                                            best_area = area
+                                            best = (img_el, box)
+                                except Exception:
+                                    continue
+                        if best:
+                            best[0].scroll_into_view_if_needed()
                             page.wait_for_timeout(500)
-                            box = element.bounding_box()
-                            if box and box["width"] > 0 and box["height"] > 0:
-                                bbox = box
-                                was_targeted = True
-                                break
+                            bbox = best[0].bounding_box()
+                            was_targeted = True
                     except Exception:
-                        continue
+                        pass
+                else:
+                    # Pour les autres elements
+                    selectors = [s.strip() for s in selector.split(",")]
+                    for sel in selectors:
+                        try:
+                            element = page.query_selector(sel)
+                            if element and element.is_visible():
+                                element.scroll_into_view_if_needed()
+                                page.wait_for_timeout(500)
+                                box = element.bounding_box()
+                                if box and box["width"] > 0 and box["height"] > 0:
+                                    bbox = box
+                                    was_targeted = True
+                                    break
+                        except Exception:
+                            continue
 
             # Capture du viewport apres scroll
             screenshot_bytes = page.screenshot(full_page=False)
@@ -87,20 +140,17 @@ def get_screenshot_with_highlight(url: str, selector: str = None):
             draw = PIL.ImageDraw.Draw(img)
             pad = 10
 
-            # Recalcule la position de l'element dans le viewport apres scroll
-            # (bounding_box() retourne la position dans le viewport courant)
             x1 = max(0, int(bbox["x"]) - pad)
             y1 = max(0, int(bbox["y"]) - pad)
             x2 = min(img_w - 1, int(bbox["x"] + bbox["width"]) + pad)
             y2 = min(img_h - 1, int(bbox["y"] + bbox["height"]) + pad)
 
-            # Securite coordonnees
             if x2 <= x1:
                 x2 = min(img_w - 1, x1 + 50)
             if y2 <= y1:
                 y2 = min(img_h - 1, y1 + 50)
 
-            # Cadre rouge epais (4 rectangles concentriques)
+            # Cadre rouge epais
             for i in range(4):
                 rx1 = max(0, x1 - i)
                 ry1 = max(0, y1 - i)
@@ -109,7 +159,7 @@ def get_screenshot_with_highlight(url: str, selector: str = None):
                 if rx2 > rx1 and ry2 > ry1:
                     draw.rectangle([rx1, ry1, rx2, ry2], outline=(220, 53, 69), width=2)
 
-            # Triangle rouge en haut a gauche du cadre
+            # Triangle rouge indicateur
             tri = 22
             tx2 = min(img_w - 1, x1 + tri)
             ty2 = min(img_h - 1, y1 + tri)
