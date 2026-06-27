@@ -1115,7 +1115,7 @@ def render_result(result, idx=0):
         tab_corriger_idx = tabs_list.index("Optimiser mon site")
         with tabs[tab_corriger_idx]:
             st.markdown("### Optimiser mon site")
-            st.caption("SITRA identifie les 5 corrections les plus importantes pour votre site. La zone encadree en rouge indique exactement ou se trouve l'erreur.")
+            st.caption("Les 5 corrections les plus importantes pour votre site, dans l'ordre de priorite.")
 
             seo = result["seo"]
             ux = result["ux"]
@@ -1127,180 +1127,284 @@ def render_result(result, idx=0):
             nom_site = titre.split("—")[0].split("|")[0].strip() if titre else url_site.replace("https://","").replace("www.","").split("/")[0]
             url_clean = url_site.replace("https://","").replace("http://","").rstrip("/")
 
-            # ── CONSTRUCTION DE LA LISTE D'ERREURS PRIORITAIRES ──
-            # Ordre de priorite : HTTPS > titre > H1 > description > images alt
-            # > vitesse > menu > og tags > reste (max 5 affichees)
-            erreurs_prioritaires = []
+            erreurs = []
 
-            # 1. HTTPS — priorite maximale
             if not perf["is_https"]:
-                erreurs_prioritaires.append({
-                    "badge_color": "#dc3545",
-                    "before_text": nom_site + " n'est pas securise. La barre d'adresse affiche http://" + url_clean + " — les navigateurs affichent une alerte 'Site non securise' qui fait peur aux visiteurs.",
-                    "after_text": "Activez le HTTPS. La barre d'adresse affichera un cadenas devant https://" + url_clean + " — vos visiteurs auront confiance.",
-                    "conseil": "Le HTTPS est gratuit (certificat Let's Encrypt). Activez-le depuis votre hebergeur. Google penalise aussi les sites sans HTTPS.",
-                    "selector": None
+                erreurs.append({
+                    "niveau": "critique",
+                    "icone": "ti-shield-x",
+                    "titre": "Site non securise (HTTPS manquant)",
+                    "avant_icone": "ti-lock-open",
+                    "avant_label": "http://" + url_clean,
+                    "avant_couleur": "danger",
+                    "avant_texte": "Votre site affiche une alerte rouge dans tous les navigateurs. Vos visiteurs voient \"Non securise\" et repartent immediatement.",
+                    "apres_icone": "ti-lock",
+                    "apres_label": "https://" + url_clean,
+                    "apres_couleur": "success",
+                    "apres_texte": "Cadenas vert visible — vos visiteurs ont confiance et restent sur votre site.",
+                    "conseil": "Activez le HTTPS depuis votre hebergeur. C'est gratuit (Let's Encrypt) et prend 5 minutes.",
+                    "selector": None,
+                    "use_icon": True
                 })
 
-            # 2. TITRE
             if not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70:
                 t = seo["title"] or ""
                 if not t:
-                    before = "Votre site n'a pas de titre. L'onglet du navigateur est vide — Google ne sait pas comment s'appelle votre site ni ce que vous faites."
-                    after = "Ajoutez un titre qui decrit votre activite et votre ville — ex : " + nom_site + " | Votre activite — Ville"
+                    avant_t = "(vide — Google invente quelque chose)"
+                    apres_t = nom_site + " | Votre activite — Ville"
                 elif len(t) < 10:
-                    before = "Titre trop court : " + t + ". Trop vague pour Google — il ne comprend pas votre activite."
-                    after = "Allongez le titre en ajoutant votre activite et votre ville : " + t + " — Ville | Service"
+                    avant_t = t + " (trop court)"
+                    apres_t = t + " — " + nom_site + " | Votre ville"
                 else:
-                    before = "Titre trop long : " + t[:40] + "... Google le coupe — la fin ne s'affiche pas dans les resultats."
-                    after = "Raccourcissez le titre a moins de 60 caracteres en gardant l'essentiel."
-                erreurs_prioritaires.append({
-                    "badge_color": "#dc3545",
-                    "before_text": before,
-                    "after_text": after,
-                    "conseil": "Redigez un titre de 50-60 caracteres qui decrit clairement " + nom_site + " et votre ville.",
-                    "selector": None
+                    avant_t = t[:45] + "... (coupe par Google)"
+                    apres_t = t[:52] + "..."
+                erreurs.append({
+                    "niveau": "critique",
+                    "icone": "ti-tag",
+                    "titre": "Titre de page manquant ou incorrect",
+                    "avant_icone": "ti-search",
+                    "avant_label": avant_t,
+                    "avant_couleur": "danger",
+                    "avant_texte": "Quand quelqu'un cherche votre activite sur Google, votre lien apparait sans titre clair — ca ne donne pas envie de cliquer.",
+                    "apres_icone": "ti-search",
+                    "apres_label": apres_t,
+                    "apres_couleur": "success",
+                    "apres_texte": "Un titre clair et precis — Google comprend votre activite et vos futurs clients cliquent sur votre lien.",
+                    "conseil": "Redigez un titre de 50-60 caracteres : nom de votre activite + ville. Ex : " + nom_site + " | Coiffeur — Paris 15.",
+                    "selector": None,
+                    "use_icon": True
                 })
 
-            # 3. H1
             if seo["h1_count"] != 1:
                 if seo["h1_count"] == 0:
-                    before = "Pas de titre principal sur la page. Le grand texte visible ici n'est pas reconnu comme titre par Google — il faut le baliser correctement dans le code."
-                    after = "Balisez votre texte principal comme titre H1. Google saura ainsi de quoi parle " + nom_site + "."
+                    t_avant = "Pas de titre principal sur la page"
+                    t_apres = "Le texte principal balisé comme titre H1"
                 else:
-                    before = str(seo["h1_count"]) + " titres H1 en doublon. Le meme titre est repete " + str(seo["h1_count"]) + " fois — Google ne sait lequel prendre en compte."
-                    after = "Gardez un seul titre H1 sur la page. Supprimez les doublons."
-                erreurs_prioritaires.append({
-                    "badge_color": "#ffc107",
-                    "before_text": before,
-                    "after_text": after,
-                    "conseil": "Le titre H1 dit a Google de quoi parle " + nom_site + ". Sans lui, Google ne sait pas quel mot-cle associer a votre page.",
-                    "selector": "h1:first-of-type"
+                    t_avant = str(seo["h1_count"]) + " titres H1 en doublon sur la page"
+                    t_apres = "Un seul titre H1 — le plus important"
+                erreurs.append({
+                    "niveau": "important",
+                    "icone": "ti-heading",
+                    "titre": "Titre principal (H1) " + ("absent" if seo["h1_count"] == 0 else "en doublon"),
+                    "avant_icone": "ti-heading-off",
+                    "avant_label": t_avant,
+                    "avant_couleur": "warning",
+                    "avant_texte": "Le grand texte visible sur votre page n'est pas reconnu comme titre par Google — il faut le baliser correctement dans le code.",
+                    "apres_icone": "ti-heading",
+                    "apres_label": t_apres,
+                    "apres_couleur": "success",
+                    "apres_texte": "Google sait exactement de quoi parle " + nom_site + " et associe les bons mots-cles a votre page.",
+                    "conseil": "Le titre H1 dit a Google de quoi parle votre page. Sans lui, Google ne sait pas quel mot-cle associer a " + nom_site + ".",
+                    "selector": "h1:first-of-type",
+                    "use_icon": False
                 })
 
-            # 4. DESCRIPTION
             if not seo["meta_description"]:
-                desc_prop = "Decouvrez " + nom_site + " — " + (titre[:50] if titre else "qualite et professionnalisme") + ". Contactez-nous pour en savoir plus !"
-                erreurs_prioritaires.append({
-                    "badge_color": "#dc3545",
-                    "before_text": "Pas de description sous votre lien Google. Quand quelqu'un cherche " + nom_site + ", il voit du texte aleatoire peu attractif — ca donne moins envie de cliquer.",
-                    "after_text": "Ajoutez cette description : " + desc_prop[:120],
-                    "conseil": "La description s'affiche sous votre lien dans Google. Elle doit donner envie de cliquer en 1-2 phrases.",
-                    "selector": None
+                desc_prop = "Decouvrez " + nom_site + " — " + (titre[:40] if titre else "qualite et professionnalisme") + ". Contactez-nous !"
+                erreurs.append({
+                    "niveau": "important",
+                    "icone": "ti-align-left",
+                    "titre": "Description Google manquante",
+                    "avant_icone": "ti-search",
+                    "avant_label": "(texte aleatoire pris par Google)",
+                    "avant_couleur": "warning",
+                    "avant_texte": "Sous votre lien Google, un texte aleatoire s'affiche — peu attractif et peu convaincant pour cliquer.",
+                    "apres_icone": "ti-search",
+                    "apres_label": desc_prop[:60] + "...",
+                    "apres_couleur": "success",
+                    "apres_texte": "Un texte accrocheur sous votre lien — vos futurs clients ont envie de cliquer sur " + nom_site + ".",
+                    "conseil": "Redigez 1-2 phrases qui donnent envie de visiter votre site. Visez 120-160 caracteres.",
+                    "selector": None,
+                    "use_icon": True
                 })
 
-            # 5. IMAGES SANS ALT
             if seo["images_no_alt"] > 0:
-                erreurs_prioritaires.append({
-                    "badge_color": "#ffc107",
-                    "before_text": str(seo["images_no_alt"]) + " photo(s) sans description sur " + nom_site + ". Google voit ces photos mais ne sait pas ce qu'elles montrent — il ne peut pas les indexer dans Google Images.",
-                    "after_text": "Decrivez chaque photo en quelques mots — ex : 'Interieur de " + nom_site + "'. Court et precis, ca suffit.",
-                    "conseil": "Pour chaque photo, ajoutez une courte description dans le code (attribut alt). C'est aussi utile pour les personnes malvoyantes.",
-                    "selector": "img:not([alt]):first-of-type, img[alt='']:first-of-type"
+                erreurs.append({
+                    "niveau": "important",
+                    "icone": "ti-photo-x",
+                    "titre": str(seo["images_no_alt"]) + " photo(s) sans description",
+                    "avant_icone": "ti-photo-x",
+                    "avant_label": str(seo["images_no_alt"]) + " photo(s) invisibles pour Google",
+                    "avant_couleur": "warning",
+                    "avant_texte": "Google voit ces photos mais ne sait pas ce qu'elles montrent — impossible de les trouver dans Google Images.",
+                    "apres_icone": "ti-photo-check",
+                    "apres_label": "Photos decrites et indexees",
+                    "apres_couleur": "success",
+                    "apres_texte": "Chaque photo est comprise par Google et peut apparaitre dans Google Images — plus de visibilite pour " + nom_site + ".",
+                    "conseil": "Pour chaque photo, ajoutez une courte description dans le code (attribut alt). Ex : 'Salle de " + nom_site + "'.",
+                    "selector": "img:not([alt]):first-of-type, img[alt='']:first-of-type",
+                    "use_icon": False
                 })
 
-            # 6. VITESSE
             if rt > 2:
-                erreurs_prioritaires.append({
-                    "badge_color": "#dc3545",
-                    "before_text": nom_site + " met " + str(rt) + " secondes a charger. C'est trop long — plus d'1 visiteur sur 2 repart avant que la page s'affiche completement.",
-                    "after_text": "Objectif : moins de 2 secondes. Compressez les photos de " + nom_site + " sur tinypng.com (gratuit) avant de les mettre en ligne.",
-                    "conseil": "La lenteur vient souvent des photos trop lourdes. Compressez-les sur tinypng.com — ca change tout.",
-                    "selector": None
+                erreurs.append({
+                    "niveau": "important",
+                    "icone": "ti-clock-x",
+                    "titre": "Site trop lent (" + str(rt) + " secondes)",
+                    "avant_icone": "ti-clock-x",
+                    "avant_label": str(rt) + "s — trop lent",
+                    "avant_couleur": "danger",
+                    "avant_texte": "Plus d'1 visiteur sur 2 repart si votre site met plus de 3 secondes a charger. Vous perdez des clients sans le savoir.",
+                    "apres_icone": "ti-clock-check",
+                    "apres_label": "Objectif : moins de 2s",
+                    "apres_couleur": "success",
+                    "apres_texte": "Un site rapide retient vos visiteurs et est mieux classe par Google.",
+                    "conseil": "Compressez vos photos sur tinypng.com (gratuit) avant de les mettre en ligne — c'est souvent la cause principale.",
+                    "selector": None,
+                    "use_icon": True
                 })
 
-            # 7. MENU
             if not ux["has_nav"]:
-                erreurs_prioritaires.append({
-                    "badge_color": "#dc3545",
-                    "before_text": "Pas de menu de navigation detecte sur " + nom_site + ". Les visiteurs ne savent pas ou aller — ils repartent.",
-                    "after_text": "Creez un menu clair avec 5 liens maximum : Accueil, Services, A propos, Contact.",
-                    "conseil": "Un menu bien structure aide Google a explorer toutes vos pages et aide vos visiteurs a trouver rapidement ce qu'ils cherchent.",
-                    "selector": "nav:first-of-type"
+                erreurs.append({
+                    "niveau": "important",
+                    "icone": "ti-menu-2",
+                    "titre": "Pas de menu de navigation",
+                    "avant_icone": "ti-menu-off",
+                    "avant_label": "Aucun menu detecte",
+                    "avant_couleur": "danger",
+                    "avant_texte": "Vos visiteurs arrivent sur votre site mais ne savent pas ou aller — ils repartent sans avoir trouve ce qu'ils cherchent.",
+                    "apres_icone": "ti-menu-2",
+                    "apres_label": "Accueil · Services · Contact",
+                    "apres_couleur": "success",
+                    "apres_texte": "Un menu clair guide vos visiteurs et aide Google a explorer toutes vos pages.",
+                    "conseil": "Creez un menu avec 5 liens maximum : Accueil, Services, A propos, Contact.",
+                    "selector": "nav:first-of-type",
+                    "use_icon": True
                 })
 
-            # 8. OG TAGS
             if not design["has_og_tags"]:
-                erreurs_prioritaires.append({
-                    "badge_color": "#ffc107",
-                    "before_text": nom_site + " n'a pas d'apercu sur les reseaux sociaux. Quand quelqu'un partage votre lien sur WhatsApp ou Facebook, rien ne s'affiche — juste une URL brute.",
-                    "after_text": "Configurez l'apercu de " + nom_site + ". Une belle photo + votre titre s'afficheront automatiquement a chaque partage.",
-                    "conseil": "L'apercu de partage (Open Graph) multiplie les clics quand votre lien est partage. Votre CMS peut le configurer en quelques clics.",
-                    "selector": None
+                erreurs.append({
+                    "niveau": "a_corriger",
+                    "icone": "ti-share",
+                    "titre": "Pas d'apercu sur les reseaux sociaux",
+                    "avant_icone": "ti-share-off",
+                    "avant_label": "Lien brut sans image ni titre",
+                    "avant_couleur": "warning",
+                    "avant_texte": "Quand quelqu'un partage votre lien sur WhatsApp ou Facebook, rien ne s'affiche — juste une URL peu attractive.",
+                    "apres_icone": "ti-share",
+                    "apres_label": "Photo + titre automatiques",
+                    "apres_couleur": "success",
+                    "apres_texte": "Une belle image et votre titre s'affichent automatiquement — ca donne envie de cliquer sur " + nom_site + ".",
+                    "conseil": "Les balises Open Graph controlent l'apercu de partage. Votre CMS peut les configurer en quelques clics.",
+                    "selector": None,
+                    "use_icon": True
                 })
 
-            # Limite a 5 erreurs maximum
-            erreurs_a_afficher = erreurs_prioritaires[:5]
+            erreurs_affichees = erreurs[:5]
+            nb_restantes = max(0, result.get("total_issues", 0) - len(erreurs_affichees))
 
-            # ── AFFICHAGE ──
-            blocs_html = ""
-            nb_erreurs = 0
-            images_deja_utilisees = set()
+            niveau_couleur = {"critique": "danger", "important": "warning", "a_corriger": "info"}
+            niveau_label = {"critique": "Critique", "important": "Important", "a_corriger": "A corriger"}
 
-            def ajouter_bloc(badge_color, before_text, after_text, conseil, selector=None):
-                nonlocal blocs_html, nb_erreurs
-                nb_erreurs += 1
-                try:
-                    # Essai Playwright avec cadre rouge precis
-                    img_url = None
-                    was_targeted = False
-                    if selector:
+            blocs = ""
+            for i, e in enumerate(erreurs_affichees):
+                n = i + 1
+                couleur = niveau_couleur.get(e["niveau"], "warning")
+                label = niveau_label.get(e["niveau"], "A corriger")
+                av_c = e["avant_couleur"]
+                ap_c = e["apres_couleur"]
+
+                # Contenu avant/apres
+                if e["use_icon"]:
+                    avant_content = f"""
+<div style="background:var(--color-background-{av_c});border-radius:var(--border-radius-md);height:90px;display:flex;align-items:center;justify-content:center;border:0.5px solid var(--color-border-{av_c});margin-bottom:8px">
+  <div style="text-align:center">
+    <i class="ti {e['avant_icone']}" style="font-size:26px;color:var(--color-text-{av_c})" aria-hidden="true"></i>
+    <p style="font-size:11px;color:var(--color-text-{av_c});margin:4px 0 0;padding:0 8px">{e['avant_label']}</p>
+  </div>
+</div>"""
+                    apres_content = f"""
+<div style="background:var(--color-background-{ap_c});border-radius:var(--border-radius-md);height:90px;display:flex;align-items:center;justify-content:center;border:0.5px solid var(--color-border-{ap_c});margin-bottom:8px">
+  <div style="text-align:center">
+    <i class="ti {e['apres_icone']}" style="font-size:26px;color:var(--color-text-{ap_c})" aria-hidden="true"></i>
+    <p style="font-size:11px;color:var(--color-text-{ap_c});margin:4px 0 0;padding:0 8px">{e['apres_label']}</p>
+  </div>
+</div>"""
+                else:
+                    # Vraie capture Playwright ou Microlink
+                    img_data = None
+                    try:
+                        from playwright_capture import get_screenshot_with_highlight
+                        img_data, _ = get_screenshot_with_highlight(url_site, e["selector"])
+                    except Exception:
+                        pass
+                    if not img_data:
                         try:
-                            from playwright_capture import get_screenshot_with_highlight
-                            data_uri, targeted = get_screenshot_with_highlight(url_site, selector)
-                            if data_uri and data_uri not in images_deja_utilisees:
-                                img_url = data_uri
-                                was_targeted = targeted
-                                images_deja_utilisees.add(data_uri)
+                            img_data, _ = get_screenshot_zone(url_site, e["selector"])
                         except Exception:
                             pass
-
-                    # Fallback Microlink si pas d'image Playwright ou doublon
-                    if not img_url:
-                        ml_url, ml_targeted = get_screenshot_zone(url_site, selector) if selector else (get_screenshot(url_site), False)
-                        if ml_url and ml_url not in images_deja_utilisees:
-                            img_url = ml_url
-                            was_targeted = ml_targeted
-                            images_deja_utilisees.add(ml_url)
-                        elif ml_url:
-                            # Image deja utilisee : affichage texte seul
-                            blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
-                            return
-
-                    if img_url:
-                        blocs_html += render_before_after_block(img_url, nb_erreurs, badge_color, before_text, after_text, conseil, was_targeted=was_targeted, img_uid=f"sitra_{id(result)}_{nb_erreurs}", is_duplicate=False)
+                    if img_data:
+                        avant_content = f'<div style="border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid var(--color-border-{av_c});margin-bottom:8px;height:90px;position:relative"><img src="{img_data}" style="width:100%;height:90px;object-fit:cover;object-position:top"/></div>'
+                        apres_content = f'<div style="border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid var(--color-border-{ap_c});margin-bottom:8px;height:90px;position:relative"><img src="{img_data}" style="width:100%;height:90px;object-fit:cover;object-position:top;filter:brightness(0.7)"/><div style="position:absolute;top:0;left:0;right:0;padding:6px 8px;background:linear-gradient(180deg,var(--color-background-{ap_c}),transparent);font-size:11px;font-weight:500;color:var(--color-text-{ap_c})">{e["apres_label"]}</div></div>'
                     else:
-                        blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
-                except Exception:
-                    blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
+                        avant_content = f'<div style="background:var(--color-background-{av_c});border-radius:var(--border-radius-md);height:90px;display:flex;align-items:center;justify-content:center;border:0.5px solid var(--color-border-{av_c});margin-bottom:8px"><p style="font-size:12px;color:var(--color-text-{av_c});padding:0 12px;text-align:center">{e["avant_label"]}</p></div>'
+                        apres_content = f'<div style="background:var(--color-background-{ap_c});border-radius:var(--border-radius-md);height:90px;display:flex;align-items:center;justify-content:center;border:0.5px solid var(--color-border-{ap_c});margin-bottom:8px"><p style="font-size:12px;color:var(--color-text-{ap_c});padding:0 12px;text-align:center">{e["apres_label"]}</p></div>'
 
-            for erreur in erreurs_a_afficher:
-                ajouter_bloc(
-                    erreur["badge_color"],
-                    erreur["before_text"],
-                    erreur["after_text"],
-                    erreur["conseil"],
-                    selector=erreur.get("selector")
-                )
+                blocs += f"""
+<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:12px">
+  <div style="padding:10px 16px;background:var(--color-background-{couleur});border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:10px">
+    <div style="width:26px;height:26px;border-radius:50%;background:var(--color-background-{couleur});border:2px solid var(--color-border-{couleur});display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--color-text-{couleur});flex-shrink:0">{n}</div>
+    <i class="ti {e['icone']}" style="font-size:16px;color:var(--color-text-{couleur})" aria-hidden="true"></i>
+    <span style="font-size:13px;font-weight:500;color:var(--color-text-{couleur});flex:1">{e['titre']}</span>
+    <span style="font-size:11px;background:var(--color-background-{couleur});color:var(--color-text-{couleur});padding:2px 8px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-{couleur})">{label}</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 32px 1fr">
+    <div style="padding:12px 14px">
+      <p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 8px;text-transform:uppercase;letter-spacing:0.5px">Avant</p>
+      {avant_content}
+      <p style="font-size:12px;color:var(--color-text-primary);margin:0;line-height:1.5">{e['avant_texte']}</p>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;color:var(--color-text-secondary)">
+      <i class="ti ti-arrow-right" style="font-size:16px" aria-hidden="true"></i>
+    </div>
+    <div style="padding:12px 14px">
+      <p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 8px;text-transform:uppercase;letter-spacing:0.5px">Apres</p>
+      {apres_content}
+      <p style="font-size:12px;color:var(--color-text-primary);margin:0;line-height:1.5">{e['apres_texte']}</p>
+    </div>
+  </div>
+  <div style="padding:8px 16px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary)">
+    <p style="font-size:12px;color:var(--color-text-secondary);margin:0"><i class="ti ti-bulb" style="font-size:13px;vertical-align:-1px;margin-right:4px" aria-hidden="true"></i>{e['conseil']}</p>
+  </div>
+</div>"""
 
-            if not blocs_html:
-                blocs_html = '<div style="background:rgba(40,167,69,0.1);border:2px solid #28a745;border-radius:12px;padding:24px;text-align:center;color:#7ddf96;font-size:15px;font-weight:600">Aucune erreur detectee — votre site est bien optimise !</div>'
+            if not blocs:
+                blocs = '<div style="background:var(--color-background-success);border:0.5px solid var(--color-border-success);border-radius:var(--border-radius-lg);padding:24px;text-align:center"><i class="ti ti-circle-check" style="font-size:32px;color:var(--color-text-success)" aria-hidden="true"></i><p style="font-size:15px;font-weight:500;color:var(--color-text-success);margin:8px 0 0">Aucune erreur majeure — votre site est bien optimise !</p></div>'
 
-            total_issues = result.get("total_issues", 0)
-            nb_restantes = max(0, total_issues - len(erreurs_a_afficher))
-
-            html_corrections = f"""<!DOCTYPE html><html><head><meta charset="UTF-8">
-<style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:'Inter',Arial,sans-serif;background:#09090f;color:#e8e8f0;padding:16px}}</style>
+            html_final = f"""<!DOCTYPE html><html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--color-background-tertiary,#f5f5f3);color:var(--color-text-primary,#1a1a1a);padding:16px}}
+:root{{
+--color-background-primary:#ffffff;--color-background-secondary:#f5f5f3;--color-background-tertiary:#efefed;
+--color-background-danger:#fcebeb;--color-background-warning:#faeeda;--color-background-success:#eaf3de;--color-background-info:#e6f1fb;
+--color-text-primary:#1a1a1a;--color-text-secondary:#666660;--color-text-danger:#a32d2d;--color-text-warning:#854f0b;--color-text-success:#3b6d11;--color-text-info:#185fa5;
+--color-border-tertiary:rgba(0,0,0,0.12);--color-border-danger:#f09595;--color-border-warning:#ef9f27;--color-border-success:#97c459;--color-border-info:#85b7eb;
+--border-radius-md:8px;--border-radius-lg:12px
+}}
+@media(prefers-color-scheme:dark){{
+:root{{
+--color-background-primary:#1e1e1c;--color-background-secondary:#2c2c2a;--color-background-tertiary:#111110;
+--color-background-danger:#501313;--color-background-warning:#412402;--color-background-success:#173404;--color-background-info:#042c53;
+--color-text-primary:#e8e8e0;--color-text-secondary:#a0a09a;--color-text-danger:#f09595;--color-text-warning:#fac775;--color-text-success:#c0dd97;--color-text-info:#b5d4f4;
+--color-border-tertiary:rgba(255,255,255,0.12);--color-border-danger:#791f1f;--color-border-warning:#633806;--color-border-success:#27500a;--color-border-info:#0c447c
+}}
+}}
+</style>
 </head><body>
-<div style="margin-bottom:20px;padding:12px 16px;background:#1a1a2e;border-radius:10px;font-size:13px;color:#888">
-  Voici les <b style="color:#e8e8f0">5 corrections les plus importantes</b> pour votre site.
-  {"<span style='color:#666'> (" + str(nb_restantes) + " points secondaires disponibles dans l'onglet Résumé)</span>" if nb_restantes > 0 else ""}
+<div style="margin-bottom:16px;padding:12px 16px;background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:10px">
+  <i class="ti ti-list-check" style="font-size:18px;color:var(--color-text-secondary)" aria-hidden="true"></i>
+  <div>
+    <p style="font-size:13px;font-weight:500;margin:0;color:var(--color-text-primary)">Les {len(erreurs_affichees)} corrections prioritaires pour {nom_site}</p>
+    {"<p style='font-size:12px;color:var(--color-text-secondary);margin:2px 0 0'>" + str(nb_restantes) + " points secondaires supplementaires dans l'onglet Resume</p>" if nb_restantes > 0 else ""}
+  </div>
 </div>
-{blocs_html}
+{blocs}
 </body></html>"""
 
             import streamlit.components.v1 as components
-            components.html(html_corrections, height=max(500, nb_erreurs * 500), scrolling=True)
+            components.html(html_final, height=max(400, len(erreurs_affichees) * 320), scrolling=True)
             st.divider()
                         
     # ── ONGLET GÉNÉRATION DE CONTENU ──
