@@ -1115,7 +1115,7 @@ def render_result(result, idx=0):
         tab_corriger_idx = tabs_list.index("Optimiser mon site")
         with tabs[tab_corriger_idx]:
             st.markdown("### Optimiser mon site")
-            st.caption("SITRA capture la zone concernée par chaque erreur et vous explique exactement quoi corriger. Cliquez sur une image pour zoomer.")
+            st.caption("SITRA affiche votre site en direct et repere exactement la zone a corriger. Chaque bloc montre le probleme et la correction proposee.")
 
             seo = result["seo"]
             ux = result["ux"]
@@ -1127,14 +1127,6 @@ def render_result(result, idx=0):
             nom_site = titre.split("—")[0].split("|")[0].strip() if titre else url_site.replace("https://","").replace("www.","").split("/")[0]
             url_clean = url_site.replace("https://","").replace("http://","").rstrip("/")
 
-            with st.spinner("Capture de votre site en cours..."):
-                screenshot_fallback = get_screenshot(url_site)
-
-            if screenshot_fallback:
-                st.caption("Capture du site recuperee")
-            else:
-                st.caption("Capture indisponible pour ce site - affichage en mode texte")
-
             blocs_html = ""
             nb_erreurs = 0
             derniere_image_url = [None]
@@ -1143,17 +1135,33 @@ def render_result(result, idx=0):
                 nonlocal blocs_html, nb_erreurs
                 nb_erreurs += 1
                 try:
-                    if screenshot_fallback:
-                        if selector:
-                            img_url, was_targeted = get_screenshot_zone(url_site, selector)
-                        else:
-                            img_url, was_targeted = screenshot_fallback, False
-                        if img_url:
-                            is_duplicate = (img_url == derniere_image_url[0])
-                            derniere_image_url[0] = img_url
-                            blocs_html += render_before_after_block(img_url, nb_erreurs, badge_color, before_text, after_text, conseil, was_targeted=was_targeted, img_uid=f"sitra_{id(result)}_{nb_erreurs}", is_duplicate=is_duplicate)
-                        else:
-                            blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
+                    # Essai 1 : Playwright avec cadre rouge pixel-precis
+                    if selector:
+                        try:
+                            from playwright_capture import get_screenshot_with_highlight
+                            data_uri, was_targeted = get_screenshot_with_highlight(url_site, selector)
+                            if data_uri:
+                                is_dup = (data_uri == derniere_image_url[0])
+                                derniere_image_url[0] = data_uri
+                                blocs_html += render_before_after_block(data_uri, nb_erreurs, badge_color, before_text, after_text, conseil, was_targeted=True, img_uid=f"pw_{id(result)}_{nb_erreurs}", is_duplicate=is_dup)
+                                return
+                        except Exception:
+                            pass
+
+                    # Essai 2 : Iframe avec cadre zone approximative
+                    try:
+                        from iframe_highlight import render_iframe_before_after
+                        blocs_html += render_iframe_before_after(url_site, nb_erreurs, badge_color, before_text, after_text, conseil, selector=selector, img_uid=f"ifr_{id(result)}_{nb_erreurs}")
+                        return
+                    except Exception:
+                        pass
+
+                    # Essai 3 : Microlink capture
+                    img_url, was_targeted = get_screenshot_zone(url_site, selector) if selector else (get_screenshot(url_site), False)
+                    if img_url:
+                        is_dup = (img_url == derniere_image_url[0])
+                        derniere_image_url[0] = img_url
+                        blocs_html += render_before_after_block(img_url, nb_erreurs, badge_color, before_text, after_text, conseil, was_targeted=was_targeted, img_uid=f"ml_{id(result)}_{nb_erreurs}", is_duplicate=is_dup)
                     else:
                         blocs_html += render_fallback_block(nb_erreurs, badge_color, before_text, after_text, conseil)
                 except Exception:
@@ -1180,7 +1188,7 @@ def render_result(result, idx=0):
             # DESCRIPTION
             if not seo["meta_description"]:
                 desc_prop = "Decouvrez " + nom_site + " — " + (titre[:50] if titre else "qualite et professionnalisme") + ". Contactez-nous pour en savoir plus !"
-                before_text = "Pas de description sous votre lien Google. Quand quelqu'un cherche " + nom_site + " sur Google, il voit du texte aleatoire peu attractif sous votre lien — ca donne moins envie de cliquer."
+                before_text = "Pas de description sous votre lien Google. Quand quelqu'un cherche " + nom_site + " sur Google, il voit du texte aleatoire peu attractif — ca donne moins envie de cliquer."
                 after_text = "Ajoutez cette description : " + desc_prop[:120]
                 conseil = "La description s'affiche sous votre lien dans Google. Elle doit donner envie de cliquer sur " + nom_site + " en 1-2 phrases maximum."
                 ajouter_bloc("#dc3545", before_text, after_text, conseil, selector=None)
@@ -1202,45 +1210,44 @@ def render_result(result, idx=0):
                 nb = seo["images_no_alt"]
                 before_text = str(nb) + " photo(s) sans description sur " + nom_site + ". Google voit ces photos mais ne sait pas ce qu'elles montrent — il ne peut pas les indexer ni les afficher dans Google Images."
                 after_text = "Decrivez chaque photo en quelques mots — par exemple : 'Interieur de " + nom_site + "' ou 'Notre equipe'. Court et precis, ca suffit."
-                conseil = "Pour chaque photo, ajoutez une courte description dans le code (attribut alt). C'est aussi utile pour les personnes malvoyantes qui utilisent un lecteur d'ecran."
+                conseil = "Pour chaque photo, ajoutez une courte description dans le code (attribut alt). C'est aussi utile pour les personnes malvoyantes."
                 ajouter_bloc("#ffc107", before_text, after_text, conseil, selector="img:not([alt]):first-of-type, img[alt='']:first-of-type, img:first-of-type")
 
             # HTTPS
             if not perf["is_https"]:
-                before_text = nom_site + " n'est pas securise. La barre d'adresse affiche http://" + url_clean + " sans cadenas — les navigateurs affichent une alerte 'Site non securise' qui fait peur aux visiteurs."
+                before_text = nom_site + " n'est pas securise. La barre d'adresse affiche http://" + url_clean + " — les navigateurs affichent une alerte 'Site non securise' qui fait peur aux visiteurs."
                 after_text = "Activez le HTTPS. La barre d'adresse affichera un cadenas devant https://" + url_clean + " — vos visiteurs auront confiance et resteront."
-                conseil = "Le HTTPS est gratuit (certificat Let's Encrypt). Activez-le depuis votre hebergeur. Google penalise aussi les sites sans HTTPS dans ses resultats."
+                conseil = "Le HTTPS est gratuit (certificat Let's Encrypt). Activez-le depuis votre hebergeur. Google penalise aussi les sites sans HTTPS."
                 ajouter_bloc("#dc3545", before_text, after_text, conseil, selector=None)
 
             # VITESSE
             if rt > 2:
                 before_text = nom_site + " met " + str(rt) + " secondes a charger. C'est trop long — plus d'1 visiteur sur 2 repart avant que la page s'affiche completement."
-                after_text = "Objectif : moins de 2 secondes. En compressant les photos de " + nom_site + ", la page chargera bien plus vite et vous perdrez moins de visiteurs."
-                conseil = "La lenteur vient souvent des photos trop lourdes. Compressez-les sur tinypng.com (gratuit) avant de les mettre en ligne — ca change tout."
+                after_text = "Objectif : moins de 2 secondes. En compressant les photos de " + nom_site + ", la page chargera bien plus vite."
+                conseil = "La lenteur vient souvent des photos trop lourdes. Compressez-les sur tinypng.com (gratuit) avant de les mettre en ligne."
                 ajouter_bloc("#dc3545", before_text, after_text, conseil, selector=None)
 
             # MENU
             if not ux["has_nav"]:
-                before_text = "Pas de menu de navigation detecte sur " + nom_site + ". Google ne trouve pas la structure de votre site, et les visiteurs ne savent pas ou aller — ils repartent."
-                after_text = "Creez un menu clair avec 5 liens maximum : Accueil, Services, A propos, Contact, et eventuellement une page specifique a " + nom_site + "."
+                before_text = "Pas de menu de navigation detecte sur " + nom_site + ". Google ne trouve pas la structure du site, et les visiteurs ne savent pas ou aller — ils repartent."
+                after_text = "Creez un menu clair avec 5 liens maximum : Accueil, Services, A propos, Contact."
                 conseil = "Un menu bien structure aide Google a explorer toutes vos pages et aide vos visiteurs a trouver rapidement ce qu'ils cherchent."
                 ajouter_bloc("#dc3545", before_text, after_text, conseil, selector="nav:first-of-type")
 
             # OG TAGS
             if not design["has_og_tags"]:
-                before_text = nom_site + " n'a pas d'apercu sur les reseaux sociaux. Quand quelqu'un partage votre lien sur WhatsApp ou Facebook, rien ne s'affiche — juste une URL brute sans image ni description."
-                after_text = "Configurez l'apercu de " + nom_site + ". Une belle photo + votre titre s'afficheront automatiquement a chaque partage — ca donne envie de cliquer."
-                conseil = "L'apercu de partage (Open Graph) multiplie les clics quand votre lien est partage. Votre CMS peut le configurer en quelques clics dans les parametres."
+                before_text = nom_site + " n'a pas d'apercu sur les reseaux sociaux. Quand quelqu'un partage votre lien sur WhatsApp ou Facebook, rien ne s'affiche — juste une URL brute."
+                after_text = "Configurez l'apercu de " + nom_site + ". Une belle photo + votre titre s'afficheront automatiquement a chaque partage."
+                conseil = "L'apercu de partage (Open Graph) multiplie les clics quand votre lien est partage. Votre CMS peut le configurer en quelques clics."
                 ajouter_bloc("#ffc107", before_text, after_text, conseil, selector=None)
 
             # TOUTES LES AUTRES ERREURS
             deja_couverts = [
                 "balise <title>", "titre trop court", "titre trop long",
                 "meta description", "balise h1", "balises h1",
-                "attribut alt", "https", "temps de reponse",
+                "attribut alt", "https", "temps de r",
                 "balise <nav>", "og:title", "og:image",
             ]
-
             for item in result["all_issues"]:
                 msg = item["message"]
                 if any(fragment in msg.lower() for fragment in deja_couverts):
@@ -1253,16 +1260,16 @@ def render_result(result, idx=0):
                 blocs_html = '<div style="background:rgba(40,167,69,0.1);border:2px solid #28a745;border-radius:12px;padding:24px;text-align:center;color:#7ddf96;font-size:15px;font-weight:600">Aucune erreur detectee — votre site est bien optimise !</div>'
 
             html_corrections = f"""<!DOCTYPE html><html><head><meta charset="UTF-8">
-<style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:'Inter',Arial,sans-serif;background:#09090f;color:#e8e8f0;padding:16px}}</style>
+<style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:'Inter',Arial,sans-serif;background:#09090f;color:#e8e8f0;padding:16px}}iframe{{display:block}}</style>
 </head><body>
 <div style="margin-bottom:20px;padding:12px 16px;background:#1a1a2e;border-radius:10px;font-size:13px;color:#888">
-  SITRA a detecte <b style="color:#e8e8f0">{nb_erreurs} point(s) a corriger</b> sur votre site — toutes les erreurs sont listees ci-dessous avec la zone exacte capturee quand c'est possible.
+  SITRA a detecte <b style="color:#e8e8f0">{nb_erreurs} point(s) a corriger</b> — la zone encadree en rouge indique exactement ou se trouve l'erreur sur votre site.
 </div>
 {blocs_html}
 </body></html>"""
 
             import streamlit.components.v1 as components
-            components.html(html_corrections, height=max(500, nb_erreurs * 460), scrolling=True)
+            components.html(html_corrections, height=max(500, nb_erreurs * 500), scrolling=True)
             st.divider()
                         
     # ── ONGLET GÉNÉRATION DE CONTENU ──
