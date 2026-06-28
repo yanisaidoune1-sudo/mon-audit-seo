@@ -1334,8 +1334,17 @@ def render_result(result, idx=0):
                         except Exception:
                             pass
                     if img_data:
-                        avant_content = f'<div style="border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid var(--color-border-{av_c});margin-bottom:8px;height:90px;position:relative"><img src="{img_data}" style="width:100%;height:90px;object-fit:cover;object-position:top"/></div>'
-                        apres_content = f'<div style="border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid var(--color-border-{ap_c});margin-bottom:8px;height:90px;position:relative"><img src="{img_data}" style="width:100%;height:90px;object-fit:cover;object-position:top;filter:brightness(0.7)"/><div style="position:absolute;top:0;left:0;right:0;padding:6px 8px;background:linear-gradient(180deg,var(--color-background-{ap_c}),transparent);font-size:11px;font-weight:500;color:var(--color-text-{ap_c})">{e["apres_label"]}</div></div>'
+                        avant_content = f'''<div style="border-radius:var(--border-radius-md);overflow:hidden;border:2px solid var(--color-border-{av_c});margin-bottom:8px;height:90px;position:relative">
+<img src="{img_data}" style="width:100%;height:90px;object-fit:cover;object-position:top"/>
+<div style="position:absolute;top:6px;left:6px;background:var(--color-background-{av_c});color:var(--color-text-{av_c});font-size:10px;font-weight:600;padding:2px 7px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-{av_c})">Erreur ici</div>
+</div>'''
+                        apres_content = f'''<div style="border-radius:var(--border-radius-md);overflow:hidden;border:2px solid var(--color-border-{ap_c});margin-bottom:8px;height:90px;position:relative">
+<img src="{img_data}" style="width:100%;height:90px;object-fit:cover;object-position:top;filter:brightness(0.45) saturate(0.3)"/>
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:rgba(0,0,0,0.15)">
+<i class="ti ti-circle-check" style="font-size:28px;color:var(--color-text-{ap_c})"></i>
+<p style="font-size:11px;font-weight:600;color:var(--color-text-{ap_c});text-align:center;padding:0 8px;margin:0;text-shadow:0 1px 3px rgba(0,0,0,0.8)">{e["apres_label"]}</p>
+</div>
+</div>'''
                     else:
                         avant_content = f'<div style="background:var(--color-background-{av_c});border-radius:var(--border-radius-md);height:90px;display:flex;align-items:center;justify-content:center;border:0.5px solid var(--color-border-{av_c});margin-bottom:8px"><p style="font-size:12px;color:var(--color-text-{av_c});padding:0 12px;text-align:center">{e["avant_label"]}</p></div>'
                         apres_content = f'<div style="background:var(--color-background-{ap_c});border-radius:var(--border-radius-md);height:90px;display:flex;align-items:center;justify-content:center;border:0.5px solid var(--color-border-{ap_c});margin-bottom:8px"><p style="font-size:12px;color:var(--color-text-{ap_c});padding:0 12px;text-align:center">{e["apres_label"]}</p></div>'
