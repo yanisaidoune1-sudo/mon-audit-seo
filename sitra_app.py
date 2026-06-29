@@ -20,7 +20,7 @@ def cached_contenu_marque(final_url, title, meta, score, word_count, type_conten
 # ── SHOPIFY AUTO-FIX ─────────────────────────────────────────────────────────
 def shopify_fix_seo(shop_url, access_token, result):
     """Applique TOUTES les corrections détectées par SITRA sur Shopify"""
-    import requests as req
+    import requests as reqf
     corrections = []
     erreurs = []
 
@@ -1416,141 +1416,143 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgro
             components.html(html_final, height=max(400, len(erreurs_affichees) * 320), scrolling=True)
             st.divider()
                         
-    # ── ONGLET GÉNÉRATION DE CONTENU ──
-    if show_contenu_marque:
-        tab_cm_idx = tabs_list.index("Génération de contenu")
-        with tabs[tab_cm_idx]:
-            st.markdown("### Génération de contenu pour votre marque")
-            st.caption("SITRA a analysé votre site. Il connaît votre secteur et votre style. Choisissez ce que vous voulez créer — le contenu est généré en quelques secondes, prêt à publier.")
+  # ── ONGLET TEXTES CORRIGÉS ──
+    if show_textes:
+        tab_textes_idx = tabs_list.index("Textes corrigés")
+        with tabs[tab_textes_idx]:
+            st.markdown("### Textes corrigés prêts à copier-coller")
+            st.caption("SITRA génère uniquement les textes manquants ou à corriger sur votre site — copiez-les directement.")
 
-            st.markdown("""
-            <div style="background:linear-gradient(135deg,rgba(102,126,234,0.15),rgba(240,124,247,0.1));border:1px solid rgba(102,126,234,0.4);border-radius:12px;padding:1.2rem 1.5rem;margin-bottom:1.5rem">
-                <div style="font-weight:700;color:#4a40c0;margin-bottom:0.8rem;font-size:0.95rem;">Comment utiliser ce contenu ?</div>
-                <div style="color:#1a1a1a;font-size:0.88rem;line-height:1.8">
-                • <b>Posts Instagram / Facebook / LinkedIn</b> : copiez le texte généré, ajoutez une photo de votre choix ou utilisez l'animation HTML fournie directement dans votre story ou publicité.<br>
-                • <b>Animations publicitaires</b> : SITRA génère une animation HTML prête à l'emploi. Téléchargez-la et importez-la dans Canva, Meta Ads ou votre site.<br>
-                • <b>Email marketing</b> : copiez le contenu dans votre outil d'emailing (Mailchimp, Brevo…).<br>
-                • <b>Publicités Google / Meta</b> : les textes sont déjà calibrés aux limites de caractères publicitaires.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            seo = result["seo"]
+            url_site = result["final_url"]
+            titre = seo["title"] or ""
+            desc = seo["meta_description"] or ""
+            nom_site = titre.split("—")[0].split("|")[0].strip() if titre else url_site.replace("https://","").replace("www.","").split("/")[0]
 
-            col_cm1, col_cm2 = st.columns(2)
-            with col_cm1:
-                type_contenu = st.selectbox(
-                    "Type de contenu :",
-                    ["Post Instagram", "Post LinkedIn", "Post Facebook", "Email marketing", "Texte publicitaire Google Ads"],
-                    key=f"type_contenu_{idx}"
-                )
-            with col_cm2:
-                objectif = st.text_input(
-                    "Objectif de la campagne :",
-                    placeholder="Ex : Promouvoir ma nouvelle offre, Attirer des clients locaux...",
-                    key=f"objectif_cm_{idx}"
-                )
+            # Vérifie s'il y a des textes à générer
+            need_title = not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70
+            need_desc = not seo["meta_description"]
+            need_h1 = seo["h1_count"] != 1
+            need_alt = seo["images_no_alt"] > 0
 
-            if st.button("Générer le contenu", key=f"gen_cm_{idx}"):
-                if objectif.strip():
-                    with st.spinner("SITRA génère votre contenu..."):
-                        contenu = generer_contenu_marque(result, type_contenu, objectif)
-                    if contenu:
-                        st.session_state[f"contenu_marque_{idx}"] = contenu
-                        st.session_state[f"type_cm_{idx}"] = type_contenu
-                    else:
-                        st.error("Impossible de générer le contenu pour le moment.")
-                else:
-                    st.warning("Merci de décrire l'objectif de votre campagne.")
-
-            if f"contenu_marque_{idx}" in st.session_state:
-                st.divider()
-                type_gen = st.session_state.get(f"type_cm_{idx}", "")
-                contenu_gen = st.session_state[f"contenu_marque_{idx}"]
-                st.markdown("**Contenu généré — copiez et publiez directement :**")
-                sections = contenu_gen.split("\n\n")
-                for section in sections:
-                    if section.strip():
-                        lignes = section.strip().split("\n")
-                        if len(lignes) > 1 and any(kw in lignes[0].upper() for kw in ["POST", "ACCROCHE", "ANNONCE", "OBJET", "EMAIL", "VERSION"]):
-                            st.markdown(f"**{lignes[0]}**")
-                            st.code("\n".join(lignes[1:]), language=None)
-                        else:
-                            st.code(section.strip(), language=None)
-                if st.button("Générer une nouvelle version", key=f"regen_cm_{idx}"):
-                    del st.session_state[f"contenu_marque_{idx}"]
-                    st.rerun()
-
-    if mode_comparaison:
-        tab_comp_idx = tabs_list.index("Mode comparatif")
-        with tabs[tab_comp_idx]:
-            st.markdown("### Mode comparatif")
-            st.caption("Comparez votre site à un concurrent pour voir exactement où vous avez du retard.")
-
-            # Concurrents suggérés selon le secteur détecté
-            url_lower = result['final_url'].lower()
-            titre_lower = (result['seo']['title'] or "").lower()
-            texte = url_lower + " " + titre_lower
-
-            concurrents_sugeres = []
-            if any(w in texte for w in ["nike"]):
-                concurrents_sugeres = ["puma.com", "reebok.com", "asics.com"]
-            elif any(w in texte for w in ["adidas"]):
-                concurrents_sugeres = ["puma.com", "reebok.com", "asics.com"]
-            elif any(w in texte for w in ["amazon"]):
-                concurrents_sugeres = ["cdiscount.com", "fnac.com", "darty.com"]
-            elif any(w in texte for w in ["zara"]):
-                concurrents_sugeres = ["hm.com", "uniqlo.com", "mango.com"]
-            elif any(w in texte for w in ["apple"]):
-                concurrents_sugeres = ["samsung.com", "sony.fr", "microsoft.com"]
-            elif any(w in texte for w in ["sport", "chaussure", "basket", "running", "fitness", "gym"]):
-                concurrents_sugeres = ["decathlon.fr", "intersport.fr", "sport2000.fr"]
-            elif any(w in texte for w in ["restaurant", "brasserie", "bistrot", "pizz", "sushi", "burger", "cuisine"]):
-                concurrents_sugeres = ["lefooding.com", "brasserie-lipp.fr", "lapizzadenicolas.fr"]
-            elif any(w in texte for w in ["coiffeur", "coiffure", "salon", "barbier", "hair"]):
-                concurrents_sugeres = ["coiffure-paris.fr", "jeanlouisdavid.fr", "dessange.com"]
-            elif any(w in texte for w in ["immobilier", "appartement", "maison", "location", "achat", "agence immo"]):
-                concurrents_sugeres = ["orpi.com", "laforet.com", "square-habitat.fr"]
-            elif any(w in texte for w in ["avocat", "notaire", "juridique", "droit", "cabinet", "law"]):
-                concurrents_sugeres = ["notaires.fr", "avocatparis.org", "barreaudeparis.fr"]
-            elif any(w in texte for w in ["medecin", "docteur", "sante", "clinique", "dentiste", "kine"]):
-                concurrents_sugeres = ["doctolib.fr", "ameli.fr", "livi.fr"]
-            elif any(w in texte for w in ["hotel", "hebergement", "chambre", "sejour", "auberge"]):
-                concurrents_sugeres = ["logis-hotels.com", "chateau-hotels.com", "chalet-des-iles.com"]
-            elif any(w in texte for w in ["boulanger", "boulangerie", "patisserie", "gateau", "pain"]):
-                concurrents_sugeres = ["boulangerieparis.com", "laduree.com", "lenotre.fr"]
-            elif any(w in texte for w in ["agence", "marketing", "communication", "publicite", "digital", "web"]):
-                concurrents_sugeres = ["havas.com", "publicisgroupe.com", "valtech.com"]
-            elif any(w in texte for w in ["boutique", "shop", "mode", "vetement", "luxe"]):
-                concurrents_sugeres = ["galerieslafayette.com", "printemps.com", "monoprix.fr"]
-            elif any(w in texte for w in ["voiture", "auto", "garage", "moto", "concession"]):
-                concurrents_sugeres = ["renault.fr", "peugeot.fr", "citroen.fr"]
-            elif any(w in texte for w in ["voyage", "tourisme", "vacances", "tour operator"]):
-                concurrents_sugeres = ["clubmed.fr", "tui.fr", "nouvelles-frontieres.fr"]
-            elif any(w in texte for w in ["photo", "photographe", "studio", "portrait"]):
-                concurrents_sugeres = ["studio-harcourt.com", "magnum-photos.com", "gettyimages.fr"]
-            elif any(w in texte for w in ["architecte", "architecture", "design", "interieur"]):
-                concurrents_sugeres = ["wilmotte.com", "pca-stream.com", "valode-pistre.com"]
-            elif any(w in texte for w in ["relais", "chateaux", "domaine", "manoir"]):
-                concurrents_sugeres = ["relais-chateaux.com", "relaischateaux.com", "chateauhotels.com"]
+            if not any([need_title, need_desc, need_h1, need_alt]):
+                st.success("✅ Tous vos textes sont déjà bien renseignés — rien à corriger !")
             else:
-                score = result['global_score']
-                if score < 50:
-                    concurrents_sugeres = ["airbnb.fr", "leboncoin.fr", "doctolib.fr"]
-                else:
-                    concurrents_sugeres = []
+                if st.button("Générer mes textes corrigés", key=f"gen_textes_{idx}"):
+                    with st.spinner("Rédaction en cours avec l'IA..."):
+                        try:
+                            import requests as req
+                            headers_m = {
+                                "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
+                                "Content-Type": "application/json"
+                            }
 
-            if concurrents_sugeres:
-                st.markdown("**💡 Concurrents suggérés dans votre secteur :**")
-                cols = st.columns(len(concurrents_sugeres))
-                for i, concurrent in enumerate(concurrents_sugeres):
-                    with cols[i]:
-                        if st.button(f"Analyser {concurrent}", key=f"comp_suggest_{i}_{idx}"):
-                            st.session_state["url2_suggestion"] = concurrent
-                            st.info(f"Entrez **{concurrent}** dans le champ 'Site concurrent' en haut et relancez l'analyse en mode comparatif.")
+                            # Construction du prompt selon les erreurs détectées
+                            erreurs_a_corriger = []
+                            if need_title:
+                                erreurs_a_corriger.append(f"TITRE actuel : '{titre or 'manquant'}' ({len(titre)} caractères) — doit faire 50-60 caractères")
+                            if need_desc:
+                                erreurs_a_corriger.append(f"META DESCRIPTION : manquante — doit faire 120-160 caractères")
+                            if need_h1:
+                                erreurs_a_corriger.append(f"H1 : {'absent' if seo['h1_count'] == 0 else str(seo['h1_count']) + ' doublons'}")
+                            if need_alt:
+                                erreurs_a_corriger.append(f"IMAGES ALT : {seo['images_no_alt']} image(s) sans description")
 
-                st.markdown("")
+                            prompt = f"""Tu es un expert en rédaction web et SEO pour les petites entreprises françaises.
 
-            st.info("Lancez une nouvelle analyse en mode comparatif depuis la barre de recherche — entrez votre site ET le site concurrent pour comparer les scores côte à côte.")
+Site à optimiser : {url_site}
+Nom/titre actuel : {titre or 'non défini'}
+Description actuelle : {desc or 'non définie'}
+Nombre de mots sur le site : {result['content']['word_count']}
 
+Corrections nécessaires :
+{chr(10).join('- ' + e for e in erreurs_a_corriger)}
+
+Génère UNIQUEMENT les textes manquants ou à corriger, dans cet ordre exact si applicable :
+
+{"TITRE DE PAGE (exactement 50-60 caractères, activité + ville si possible) :" if need_title else ""}
+{"[rédige ici]" if need_title else ""}
+
+{"META DESCRIPTION (exactement 120-155 caractères, accrocheur, avec appel à l'action) :" if need_desc else ""}
+{"[rédige ici]" if need_desc else ""}
+
+{"TITRE PRINCIPAL H1 (court, clair, résume l'activité en une phrase) :" if need_h1 else ""}
+{"[rédige ici]" if need_h1 else ""}
+
+{"DESCRIPTIONS D'IMAGES (une description par ligne, courte et descriptive, adaptée au secteur d'activité du site) :" if need_alt else ""}
+{"- Image 1 : [rédige ici]" if need_alt else ""}
+{"- Image 2 : [rédige ici]" if need_alt and seo['images_no_alt'] > 1 else ""}
+{"- Image 3 : [rédige ici]" if need_alt and seo['images_no_alt'] > 2 else ""}
+
+Règles absolues :
+- Textes en français, professionnels, directs
+- PAS d'explication, PAS de commentaire — juste les textes
+- Adapte le ton au secteur détecté (coiffeur, restaurant, artisan...)
+- Les textes doivent être prêts à copier-coller TELS QUELS"""
+
+                            data = {
+                                "model": "mistral-small-latest",
+                                "messages": [{"role": "user", "content": prompt}],
+                                "max_tokens": 600
+                            }
+                            r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers_m, json=data, timeout=30)
+                            textes_generes = r.json()["choices"][0]["message"]["content"]
+                            st.session_state[f"textes_v2_{idx}"] = textes_generes
+                        except Exception:
+                            st.error("Impossible de générer les textes pour le moment. Réessayez dans quelques secondes.")
+
+                # Affichage des textes générés
+                if f"textes_v2_{idx}" in st.session_state:
+                    textes = st.session_state[f"textes_v2_{idx}"]
+
+                    # Parse et affiche chaque section avec un bouton copier
+                    sections = []
+                    current_titre = ""
+                    current_contenu = []
+
+                    for ligne in textes.split("\n"):
+                        ligne = ligne.strip()
+                        if not ligne:
+                            if current_titre and current_contenu:
+                                sections.append((current_titre, "\n".join(current_contenu).strip()))
+                                current_titre = ""
+                                current_contenu = []
+                            continue
+
+                        # Détecte si c'est un titre de section
+                        is_section = any(mot in ligne.upper() for mot in ["TITRE", "META", "DESCRIPTION", "H1", "IMAGES", "IMAGE"])
+                        if is_section and ligne.endswith(":"):
+                            if current_titre and current_contenu:
+                                sections.append((current_titre, "\n".join(current_contenu).strip()))
+                            current_titre = ligne.rstrip(":")
+                            current_contenu = []
+                        else:
+                            current_contenu.append(ligne)
+
+                    if current_titre and current_contenu:
+                        sections.append((current_titre, "\n".join(current_contenu).strip()))
+
+                    if sections:
+                        for section_titre, section_contenu in sections:
+                            if section_contenu and section_contenu != "[rédige ici]":
+                                with st.container():
+                                    st.markdown(f"**{section_titre}**")
+                                    st.code(section_contenu, language=None)
+                    else:
+                        # Fallback si le parsing échoue : affiche tout d'un bloc
+                        for bloc in textes.split("\n\n"):
+                            if bloc.strip():
+                                lignes = bloc.strip().split("\n")
+                                if len(lignes) > 1:
+                                    st.markdown(f"**{lignes[0]}**")
+                                    st.code("\n".join(lignes[1:]).strip(), language=None)
+                                else:
+                                    st.code(bloc.strip(), language=None)
+
+                    if st.button("Régénérer", key=f"regen_textes_{idx}"):
+                        del st.session_state[f"textes_v2_{idx}"]
+                        st.rerun()
+    
 # ── HERO ─────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero-header">
