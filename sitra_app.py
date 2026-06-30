@@ -1416,12 +1416,12 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgro
             components.html(html_final, height=max(400, len(erreurs_affichees) * 320), scrolling=True)
             st.divider()
                         
-  # ── ONGLET TEXTES CORRIGÉS ──
+# ── ONGLET TEXTES CORRIGÉS ──
     if show_textes:
         tab_textes_idx = tabs_list.index("Textes corrigés")
         with tabs[tab_textes_idx]:
             st.markdown("### Textes corrigés prêts à copier-coller")
-            st.caption("SITRA génère uniquement les textes manquants ou à corriger sur votre site — copiez-les directement.")
+            st.caption("SITRA analyse le contenu réel de votre site et génère des textes personnalisés — copiez-les directement.")
 
             seo = result["seo"]
             url_site = result["final_url"]
@@ -1429,128 +1429,165 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgro
             desc = seo["meta_description"] or ""
             nom_site = titre.split("—")[0].split("|")[0].strip() if titre else url_site.replace("https://","").replace("www.","").split("/")[0]
 
-            # Vérifie s'il y a des textes à générer
             need_title = not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70
             need_desc = not seo["meta_description"]
             need_h1 = seo["h1_count"] != 1
             need_alt = seo["images_no_alt"] > 0
 
             if not any([need_title, need_desc, need_h1, need_alt]):
-                st.success("✅ Tous vos textes sont déjà bien renseignés — rien à corriger !")
+                st.success("Tous vos textes sont déjà bien renseignés — rien à corriger !")
             else:
+                st.markdown("**Ce que SITRA va générer pour vous :**")
+                if need_title:
+                    st.markdown("- ✅ Un titre de page optimisé pour Google (50-60 caractères)")
+                if need_desc:
+                    st.markdown("- ✅ Une description Google accrocheuse (120-160 caractères)")
+                if need_h1:
+                    st.markdown("- ✅ Un titre principal H1 clair et percutant")
+                if need_alt:
+                    st.markdown(f"- ✅ Des descriptions pour vos {seo['images_no_alt']} photo(s)")
+                st.markdown("")
+
                 if st.button("Générer mes textes corrigés", key=f"gen_textes_{idx}"):
-                    with st.spinner("Rédaction en cours avec l'IA..."):
+                    with st.spinner("L'IA analyse votre site et rédige vos textes..."):
                         try:
                             import requests as req
+
+                            # Recuperer le vrai contenu du site pour contextualiser
+                            contenu_site = ""
+                            try:
+                                import requests as req2
+                                from bs4 import BeautifulSoup
+                                r_site = req2.get(url_site, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+                                if r_site.status_code == 200:
+                                    soup = BeautifulSoup(r_site.text, "lxml")
+                                    # Extraire le texte visible (premiers 1500 caracteres)
+                                    for tag in soup(["script", "style", "nav", "footer"]):
+                                        tag.decompose()
+                                    texte_brut = soup.get_text(" ", strip=True)
+                                    contenu_site = texte_brut[:1500]
+                            except Exception:
+                                contenu_site = ""
+
                             headers_m = {
                                 "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
                                 "Content-Type": "application/json"
                             }
 
-                            # Construction du prompt selon les erreurs détectées
-                            erreurs_a_corriger = []
+                            sections_a_generer = []
                             if need_title:
-                                erreurs_a_corriger.append(f"TITRE actuel : '{titre or 'manquant'}' ({len(titre)} caractères) — doit faire 50-60 caractères")
+                                sections_a_generer.append("TITRE DE PAGE (exactement 50-60 caractères, activité principale + ville si détectable, percutant)")
                             if need_desc:
-                                erreurs_a_corriger.append(f"META DESCRIPTION : manquante — doit faire 120-160 caractères")
+                                sections_a_generer.append("META DESCRIPTION (exactement 130-155 caractères, donne envie de cliquer, avec appel à l'action naturel)")
                             if need_h1:
-                                erreurs_a_corriger.append(f"H1 : {'absent' if seo['h1_count'] == 0 else str(seo['h1_count']) + ' doublons'}")
+                                sections_a_generer.append("TITRE PRINCIPAL H1 (court, direct, résume l'activité en une seule phrase forte)")
                             if need_alt:
-                                erreurs_a_corriger.append(f"IMAGES ALT : {seo['images_no_alt']} image(s) sans description")
+                                nb = seo["images_no_alt"]
+                                for i in range(min(nb, 5)):
+                                    sections_a_generer.append(f"DESCRIPTION IMAGE {i+1} (15-20 mots max, décrit ce qu'on voit probablement sur cette photo selon l'activité du site)")
 
-                            prompt = f"""Tu es un expert en rédaction web et SEO pour les petites entreprises françaises.
+                            prompt = f"""Tu es un expert SEO et copywriter français qui rédige des textes pour aider des petites entreprises à être mieux référencées sur Google.
 
-Site à optimiser : {url_site}
-Nom/titre actuel : {titre or 'non défini'}
-Description actuelle : {desc or 'non définie'}
-Nombre de mots sur le site : {result['content']['word_count']}
+SITE A OPTIMISER : {url_site}
+TITRE ACTUEL : {titre or "(aucun titre défini)"}
+DESCRIPTION ACTUELLE : {desc or "(aucune description)"}
+NOMBRE DE MOTS SUR LE SITE : {result["content"]["word_count"]}
 
-Corrections nécessaires :
-{chr(10).join('- ' + e for e in erreurs_a_corriger)}
+CONTENU RÉEL DU SITE (extrait) :
+{contenu_site if contenu_site else "(contenu non disponible — base-toi sur l'URL et le titre)"}
 
-Génère UNIQUEMENT les textes manquants ou à corriger, dans cet ordre exact si applicable :
+CORRECTIONS À GÉNÉRER :
+{chr(10).join(f"→ {s}" for s in sections_a_generer)}
 
-{"TITRE DE PAGE (exactement 50-60 caractères, activité + ville si possible) :" if need_title else ""}
-{"[rédige ici]" if need_title else ""}
+RÈGLES ABSOLUES :
+1. Utilise UNIQUEMENT les informations réelles du site — NE JAMAIS inventer des détails (fauteuils en cuir, miroirs élégants, etc.)
+2. Si tu ne connais pas un détail précis, reste vague mais accrocheur (ex: "Découvrez notre salon" plutôt que "fauteuils en cuir")
+3. Chaque texte doit être immédiatement utilisable tel quel — pas de crochets [à compléter]
+4. Adapte le ton au secteur d'activité réel détecté dans le contenu
+5. Pour les titres : inclure le nom du business ET la ville si détectable dans le contenu
+6. Pour les descriptions d'images : décris ce qu'on verrait typiquement sur ce type de site, sans inventer de détails spécifiques
 
-{"META DESCRIPTION (exactement 120-155 caractères, accrocheur, avec appel à l'action) :" if need_desc else ""}
-{"[rédige ici]" if need_desc else ""}
-
-{"TITRE PRINCIPAL H1 (court, clair, résume l'activité en une phrase) :" if need_h1 else ""}
-{"[rédige ici]" if need_h1 else ""}
-
-{"DESCRIPTIONS D'IMAGES (une description par ligne, courte et descriptive, adaptée au secteur d'activité du site) :" if need_alt else ""}
-{"- Image 1 : [rédige ici]" if need_alt else ""}
-{"- Image 2 : [rédige ici]" if need_alt and seo['images_no_alt'] > 1 else ""}
-{"- Image 3 : [rédige ici]" if need_alt and seo['images_no_alt'] > 2 else ""}
-
-Règles absolues :
-- Textes en français, professionnels, directs
-- PAS d'explication, PAS de commentaire — juste les textes
-- Adapte le ton au secteur détecté (coiffeur, restaurant, artisan...)
-- Les textes doivent être prêts à copier-coller TELS QUELS"""
+FORMAT DE RÉPONSE (respecte exactement ces titres de sections) :
+{"TITRE DE PAGE :" + chr(10) + "[ta réponse]" + chr(10) + chr(10) if need_title else ""}{"META DESCRIPTION :" + chr(10) + "[ta réponse]" + chr(10) + chr(10) if need_desc else ""}{"TITRE PRINCIPAL H1 :" + chr(10) + "[ta réponse]" + chr(10) + chr(10) if need_h1 else ""}{"DESCRIPTIONS D'IMAGES :" + chr(10) + chr(10).join(f"Image {i+1} : [ta réponse]" for i in range(min(seo["images_no_alt"], 5))) if need_alt else ""}"""
 
                             data = {
                                 "model": "mistral-small-latest",
                                 "messages": [{"role": "user", "content": prompt}],
-                                "max_tokens": 600
+                                "max_tokens": 800
                             }
                             r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers_m, json=data, timeout=30)
                             textes_generes = r.json()["choices"][0]["message"]["content"]
-                            st.session_state[f"textes_v2_{idx}"] = textes_generes
-                        except Exception:
+                            st.session_state[f"textes_v3_{idx}"] = textes_generes
+                        except Exception as e:
                             st.error("Impossible de générer les textes pour le moment. Réessayez dans quelques secondes.")
 
-                # Affichage des textes générés
-                if f"textes_v2_{idx}" in st.session_state:
-                    textes = st.session_state[f"textes_v2_{idx}"]
+                if f"textes_v3_{idx}" in st.session_state:
+                    textes = st.session_state[f"textes_v3_{idx}"]
+                    st.divider()
+                    st.markdown("**Vos textes corrigés — copiez-collez directement sur votre site :**")
+                    st.markdown("")
 
-                    # Parse et affiche chaque section avec un bouton copier
-                    sections = []
-                    current_titre = ""
-                    current_contenu = []
+                    # Sections connues a extraire
+                    sections_connues = [
+                        "TITRE DE PAGE",
+                        "META DESCRIPTION",
+                        "TITRE PRINCIPAL H1",
+                        "DESCRIPTIONS D'IMAGES",
+                    ]
 
-                    for ligne in textes.split("\n"):
-                        ligne = ligne.strip()
-                        if not ligne:
-                            if current_titre and current_contenu:
-                                sections.append((current_titre, "\n".join(current_contenu).strip()))
-                                current_titre = ""
-                                current_contenu = []
-                            continue
+                    # Parse manuel par sections
+                    lignes = textes.split("\n")
+                    current_section = None
+                    current_content = []
+                    sections_trouvees = {}
 
-                        # Détecte si c'est un titre de section
-                        is_section = any(mot in ligne.upper() for mot in ["TITRE", "META", "DESCRIPTION", "H1", "IMAGES", "IMAGE"])
-                        if is_section and ligne.endswith(":"):
-                            if current_titre and current_contenu:
-                                sections.append((current_titre, "\n".join(current_contenu).strip()))
-                            current_titre = ligne.rstrip(":")
-                            current_contenu = []
-                        else:
-                            current_contenu.append(ligne)
+                    for ligne in lignes:
+                        ligne_clean = ligne.strip()
+                        # Detecte un titre de section
+                        est_titre = False
+                        for s in sections_connues:
+                            if ligne_clean.upper().startswith(s) and (":" in ligne_clean or ligne_clean.upper() == s):
+                                if current_section and current_content:
+                                    sections_trouvees[current_section] = "\n".join(current_content).strip()
+                                current_section = s
+                                current_content = []
+                                est_titre = True
+                                break
+                        if not est_titre and current_section:
+                            if ligne_clean:
+                                current_content.append(ligne_clean)
 
-                    if current_titre and current_contenu:
-                        sections.append((current_titre, "\n".join(current_contenu).strip()))
+                    if current_section and current_content:
+                        sections_trouvees[current_section] = "\n".join(current_content).strip()
 
-                    if sections:
-                        for section_titre, section_contenu in sections:
-                            if section_contenu and section_contenu != "[rédige ici]":
-                                with st.container():
-                                    st.markdown(f"**{section_titre}**")
-                                    st.code(section_contenu, language=None)
+                    if sections_trouvees:
+                        labels = {
+                            "TITRE DE PAGE": "Titre de page (à coller dans les paramètres SEO de votre site)",
+                            "META DESCRIPTION": "Description Google (à coller dans les paramètres SEO de votre site)",
+                            "TITRE PRINCIPAL H1": "Titre principal H1 (à mettre en haut de votre page d'accueil)",
+                            "DESCRIPTIONS D'IMAGES": "Descriptions de vos photos (à ajouter dans le code ou votre CMS)",
+                        }
+                        conseils = {
+                            "TITRE DE PAGE": "Sur WordPress : Yoast SEO → Titre. Sur Wix : Paramètres → SEO. Sur Shopify : Boutique en ligne → Préférences.",
+                            "META DESCRIPTION": "Sur WordPress : Yoast SEO → Meta description. Sur Wix : Paramètres → SEO. Sur Shopify : Boutique en ligne → Préférences.",
+                            "TITRE PRINCIPAL H1": "Remplacez le grand titre en haut de votre page d'accueil par ce texte dans votre éditeur de site.",
+                            "DESCRIPTIONS D'IMAGES": "Pour chaque image, ajoutez ce texte dans le champ 'Texte alternatif' ou 'Alt text' de votre CMS.",
+                        }
+                        for section_key in sections_connues:
+                            if section_key in sections_trouvees:
+                                contenu_section = sections_trouvees[section_key]
+                                if contenu_section:
+                                    st.markdown(f"**{labels.get(section_key, section_key)}**")
+                                    st.code(contenu_section, language=None)
+                                    st.caption(f"💡 {conseils.get(section_key, '')}")
+                                    st.markdown("")
                     else:
-                        # Fallback si le parsing échoue : affiche tout d'un bloc
-                        for bloc in textes.split("\n\n"):
-                            if bloc.strip():
-                                lignes = bloc.strip().split("\n")
-                                if len(lignes) > 1:
-                                    st.markdown(f"**{lignes[0]}**")
-                                    st.code("\n".join(lignes[1:]).strip(), language=None)
-                                else:
-                                    st.code(bloc.strip(), language=None)
+                        # Fallback : affichage brut si le parsing echoue
+                        st.code(textes, language=None)
 
+                    st.markdown("")
                     if st.button("Régénérer", key=f"regen_textes_{idx}"):
-                        del st.session_state[f"textes_v2_{idx}"]
+                        del st.session_state[f"textes_v3_{idx}"]
                         st.rerun()
     
 # ── HERO ─────────────────────────────────────────────────────────────────────
