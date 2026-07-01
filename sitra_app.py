@@ -1429,28 +1429,20 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgro
             desc = seo["meta_description"] or ""
             nom_site = titre.split("—")[0].split("|")[0].strip() if titre else url_site.replace("https://","").replace("www.","").split("/")[0]
 
-            need_title = not seo["title"] or len(seo["title"]) < 10 or len(seo["title"]) > 70
-            need_desc = not seo["meta_description"]
-            need_h1 = seo["h1_count"] != 1
-            need_alt = seo["images_no_alt"] > 0
-
             st.markdown("**SITRA va générer pour vous :**")
-            st.markdown("- ✅ Un titre de page optimisé Google")
-            st.markdown("- ✅ Une description Google accrocheuse")
-            st.markdown("- ✅ Un titre principal H1")
-            st.markdown("- ✅ Un texte d'introduction complet pour votre page d'accueil")
-            st.markdown("- ✅ Des textes pour vos sections À propos, Services et Contact")
-            st.markdown("- ✅ Des descriptions pour vos photos")
-            st.markdown("- ✅ Des mots-clés à utiliser sur votre site")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("- ✅ Titre de page Google\n- ✅ Description Google\n- ✅ Titre principal H1\n- ✅ Texte d'introduction")
+            with col2:
+                st.markdown("- ✅ Texte À propos\n- ✅ Texte Services\n- ✅ Texte Contact\n- ✅ Descriptions photos\n- ✅ Mots-clés SEO")
             st.markdown("")
 
             if st.button("Générer tous mes textes", key=f"gen_textes_{idx}"):
-                with st.spinner("L'IA analyse votre site et rédige vos textes... (30 secondes environ)"):
+                with st.spinner("L'IA rédige vos textes personnalisés... (30 secondes environ)"):
                     try:
                         import requests as req
                         from bs4 import BeautifulSoup
 
-                        # Recuperer le vrai contenu du site
                         contenu_site = ""
                         try:
                             r_site = req.get(url_site, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
@@ -1467,77 +1459,75 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgro
                             "Content-Type": "application/json"
                         }
 
-                        prompt = f"""Tu es un expert SEO et copywriter français spécialisé dans les petites entreprises locales.
+                        nb_images = min(seo.get("images_no_alt", 2), 5)
+                        images_section = "\n".join(f"Image {i+1} : (description courte et précise, 10-15 mots)" for i in range(nb_images))
+
+                        prompt = f"""Tu es un copywriter expert en SEO local français. Tu rédiges des textes pour une petite entreprise.
 
 SITE : {url_site}
 TITRE ACTUEL : {titre or "(aucun)"}
-DESCRIPTION ACTUELLE : {desc or "(aucune)"}
 CONTENU RÉEL DU SITE :
-{contenu_site if contenu_site else "(non disponible)"}
+{contenu_site if contenu_site else "(non disponible — déduis l'activité depuis l'URL)"}
 
-RÈGLES ABSOLUES :
-- Utilise UNIQUEMENT les informations réelles du site ci-dessus
-- Ne jamais inventer des détails qui ne sont pas dans le contenu
-- Si un détail manque, reste vague mais professionnel
-- Tous les textes en français, ton professionnel et chaleureux
-- Chaque texte doit être prêt à copier-coller sans modification
-
-Génère exactement ces sections dans cet ordre :
+RÈGLE ABSOLUE : Chaque section doit avoir un TON DIFFÉRENT et des MOTS DIFFÉRENTS.
+Ne répète jamais les mêmes expressions d'une section à l'autre.
+Utilise UNIQUEMENT ce qui est dans le contenu réel — ne jamais inventer.
 
 TITRE DE PAGE :
-(50-60 caractères, activité + ville si visible dans le contenu)
+[50-60 caractères. Direct, factuel. Activité + ville si visible. Ex: "Plombier Paris 15 - Intervention rapide 7j/7"]
 
 META DESCRIPTION :
-(130-155 caractères, accrocheur, avec appel à l'action)
+[130-155 caractères EXACTEMENT. Commence par un verbe d'action. Termine par un appel à l'action concret. Ex: "Réservez votre coupe..."]
 
 TITRE PRINCIPAL H1 :
-(une phrase courte et percutante qui résume l'activité)
+[1 phrase courte, maximum 10 mots. Accrocheur, pas générique. Spécifique à CE business.]
 
 INTRODUCTION PAGE D'ACCUEIL :
-(3-4 phrases qui présentent l'activité, les valeurs et ce qui rend ce business unique, basé sur le contenu réel du site)
+[2-3 phrases. TON : enthousiaste et accueillant. Parle directement au visiteur (vous). Présente CE QUI REND CE BUSINESS UNIQUE selon le contenu réel.]
 
 TEXTE À PROPOS :
-(4-5 phrases qui racontent l'histoire et les valeurs de l'entreprise, basé sur le contenu réel)
+[3-4 phrases. TON : personnel et authentique, comme si le gérant parlait. Raconte pourquoi ce business existe, sa passion, son engagement. Pas de superlatifs vides.]
 
 TEXTE NOS SERVICES :
-(3-4 phrases qui présentent les services principaux détectés sur le site)
+[3-4 phrases. TON : concret et professionnel. Nomme des services SPÉCIFIQUES détectés dans le contenu. Évite les généralités.]
 
 TEXTE CONTACT :
-(2-3 phrases d'invitation au contact, ton chaleureux et professionnel)
+[2 phrases MAX. TON : simple et direct. Une invitation concrète, sans formule bateau.]
 
 DESCRIPTIONS D'IMAGES :
-{chr(10).join(f"Image {i+1} : (15 mots max, décrit une photo typique de ce secteur d'activité)" for i in range(min(seo.get("images_no_alt", 2), 5)))}
+{images_section}
 
 MOTS-CLÉS PRINCIPAUX :
-(liste de 8-10 mots-clés pertinents pour le référencement Google, séparés par des virgules, basés sur l'activité réelle)"""
+[10 mots-clés très spécifiques : activité exacte + ville + quartier + services spécifiques. Pas de termes génériques comme "qualité" ou "professionnel".]"""
 
                         data = {
                             "model": "mistral-small-latest",
                             "messages": [{"role": "user", "content": prompt}],
-                            "max_tokens": 1200
+                            "max_tokens": 1200,
+                            "temperature": 0.7
                         }
                         r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers_m, json=data, timeout=45)
                         textes_generes = r.json()["choices"][0]["message"]["content"]
-                        st.session_state[f"textes_v4_{idx}"] = textes_generes
+                        st.session_state[f"textes_v5_{idx}"] = textes_generes
                     except Exception:
                         st.error("Impossible de générer les textes. Réessayez dans quelques secondes.")
 
-            if f"textes_v4_{idx}" in st.session_state:
-                textes = st.session_state[f"textes_v4_{idx}"]
+            if f"textes_v5_{idx}" in st.session_state:
+                textes = st.session_state[f"textes_v5_{idx}"]
                 st.divider()
-                st.markdown("**Vos textes corrigés — copiez-collez directement sur votre site :**")
+                st.markdown("**Vos textes — copiez-collez directement sur votre site :**")
                 st.markdown("")
 
                 sections_connues = [
-                    ("TITRE DE PAGE", "Titre de page", "Sur WordPress : Yoast SEO → Titre. Sur Wix/Squarespace : Paramètres SEO de la page."),
-                    ("META DESCRIPTION", "Description Google", "Sur WordPress : Yoast SEO → Meta description. Sur Wix : Paramètres → SEO avancé."),
-                    ("TITRE PRINCIPAL H1", "Titre principal (H1)", "Remplacez le grand titre en haut de votre page d'accueil par ce texte."),
-                    ("INTRODUCTION PAGE D'ACCUEIL", "Texte d'introduction — Page d'accueil", "Collez ce texte en haut de votre page d'accueil, juste sous le titre principal."),
-                    ("TEXTE À PROPOS", "Texte — Page À propos", "Collez ce texte sur votre page À propos ou dans la section correspondante."),
-                    ("TEXTE NOS SERVICES", "Texte — Section Services", "Collez ce texte dans votre section ou page Services."),
-                    ("TEXTE CONTACT", "Texte — Page Contact", "Ajoutez ce texte en haut de votre page Contact, avant le formulaire."),
-                    ("DESCRIPTIONS D'IMAGES", "Descriptions de vos photos", "Pour chaque image, ajoutez ce texte dans le champ 'Texte alternatif' de votre CMS."),
-                    ("MOTS-CLÉS PRINCIPAUX", "Mots-clés pour votre référencement", "Utilisez ces mots-clés naturellement dans vos textes, titres et descriptions."),
+                    ("TITRE DE PAGE", "🔵 Titre de page", "Sur WordPress : Yoast SEO → Titre. Sur Wix : Paramètres → SEO. Sur Shopify : Boutique en ligne → Préférences."),
+                    ("META DESCRIPTION", "🔵 Description Google", "Sur WordPress : Yoast SEO → Meta description. Sur Wix : Paramètres → SEO avancé."),
+                    ("TITRE PRINCIPAL H1", "🔵 Titre principal (H1)", "Remplacez le grand titre en haut de votre page d'accueil par ce texte dans votre éditeur."),
+                    ("INTRODUCTION PAGE D'ACCUEIL", "🟢 Texte d'introduction — Page d'accueil", "Collez juste sous le titre principal de votre page d'accueil."),
+                    ("TEXTE À PROPOS", "🟢 Texte — Page À propos", "Collez sur votre page À propos ou dans la section correspondante."),
+                    ("TEXTE NOS SERVICES", "🟢 Texte — Section Services", "Collez dans votre section ou page Services."),
+                    ("TEXTE CONTACT", "🟢 Texte — Page Contact", "Ajoutez en haut de votre page Contact, avant le formulaire."),
+                    ("DESCRIPTIONS D'IMAGES", "🟡 Descriptions de vos photos", "Pour chaque image, ajoutez ce texte dans le champ 'Texte alternatif' de votre CMS."),
+                    ("MOTS-CLÉS PRINCIPAUX", "🟡 Mots-clés pour votre référencement", "Intégrez ces mots-clés naturellement dans vos textes, titres et descriptions de page."),
                 ]
 
                 lignes = textes.split("\n")
@@ -1546,7 +1536,7 @@ MOTS-CLÉS PRINCIPAUX :
                 sections_trouvees = {}
 
                 for ligne in lignes:
-                    ligne_clean = ligne.strip().lstrip("*").rstrip("*").strip()
+                    ligne_clean = ligne.strip().lstrip("*#").rstrip("*#").strip().rstrip(":").strip()
                     est_titre = False
                     for section_key, _, _ in sections_connues:
                         if ligne_clean.upper().startswith(section_key):
@@ -1566,7 +1556,7 @@ MOTS-CLÉS PRINCIPAUX :
                     for section_key, section_label, section_conseil in sections_connues:
                         if section_key in sections_trouvees:
                             contenu = sections_trouvees[section_key]
-                            if contenu:
+                            if contenu and "[" not in contenu:
                                 st.markdown(f"**{section_label}**")
                                 st.code(contenu, language=None)
                                 st.caption(f"💡 {section_conseil}")
@@ -1574,9 +1564,8 @@ MOTS-CLÉS PRINCIPAUX :
                 else:
                     st.code(textes, language=None)
 
-                st.markdown("")
-                if st.button("Régénérer tous les textes", key=f"regen_textes_{idx}"):
-                    del st.session_state[f"textes_v4_{idx}"]
+                if st.button("Régénérer", key=f"regen_textes_{idx}"):
+                    del st.session_state[f"textes_v5_{idx}"]
                     st.rerun()
     
 # ── HERO ─────────────────────────────────────────────────────────────────────
