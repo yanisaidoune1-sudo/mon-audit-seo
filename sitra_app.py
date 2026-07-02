@@ -1421,7 +1421,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgro
         tab_textes_idx = tabs_list.index("Textes corrigés")
         with tabs[tab_textes_idx]:
             st.markdown("### Textes corrigés prêts à copier-coller")
-            st.caption("SITRA génère vos textes corrigés et vous montre la différence avant/après — copiez directement la version corrigée.")
+            st.caption("SITRA génère vos textes corrigés — copiez directement la version verte sur votre site.")
 
             seo = result["seo"]
             url_site = result["final_url"]
@@ -1430,7 +1430,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgro
             nom_site = titre.split("—")[0].split("|")[0].strip() if titre else url_site.replace("https://","").replace("www.","").split("/")[0]
 
             if st.button("Générer mes textes corrigés", key=f"btn_gen_{idx}"):
-                with st.spinner("L'IA analyse votre site et rédige vos textes... (30 secondes environ)"):
+                with st.spinner("Génération en cours..."):
                     try:
                         import requests as req
                         from bs4 import BeautifulSoup
@@ -1452,43 +1452,42 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgro
                         }
 
                         nb_images = min(seo.get("images_no_alt", 2), 5)
-                        images_section = "\n".join(f"Image {i+1} : (description courte, 10-15 mots)" for i in range(nb_images))
 
-                        prompt = f"""Tu es un copywriter expert en SEO local français.
+                        prompt = f"""Tu es un copywriter expert SEO français.
 
 SITE : {url_site}
 TITRE ACTUEL : {titre or "(aucun)"}
 DESCRIPTION ACTUELLE : {desc or "(aucune)"}
-CONTENU RÉEL : {contenu_site if contenu_site else "(déduis depuis l'URL)"}
+CONTENU : {contenu_site if contenu_site else "(déduis depuis l'URL)"}
 
-RÈGLE : Chaque section a un TON DIFFÉRENT. Ne répète jamais les mêmes mots entre sections.
+IMPORTANT : Reponds UNIQUEMENT avec les sections ci-dessous, sans introduction, sans markdown, sans --- ni ###.
+Chaque section commence exactement par son NOM EN MAJUSCULES suivi de deux points, puis le texte sur la ligne suivante.
 
-TITRE DE PAGE :
-[50-60 caractères. Direct, factuel. Activité + ville.]
+TITRE DE PAGE:
+(50-60 caracteres, activite + ville)
 
-META DESCRIPTION :
-[130-155 caractères. Commence par un verbe. Appel à l'action à la fin.]
+META DESCRIPTION:
+(130-155 caracteres, commence par un verbe, appel a l'action a la fin)
 
-TITRE PRINCIPAL H1 :
-[1 phrase, 10 mots max. Accrocheur et spécifique à CE business.]
+TITRE H1:
+(1 phrase courte et accrocheuse, max 10 mots)
 
-INTRODUCTION PAGE D'ACCUEIL :
-[2-3 phrases. TON enthousiaste. Parle au visiteur (vous). Ce qui rend CE business unique.]
+INTRODUCTION:
+(2-3 phrases enthousiaste, parle au visiteur)
 
-TEXTE À PROPOS :
-[3-4 phrases. TON personnel et authentique. Comme si le gérant parlait. Sa passion, son histoire.]
+A PROPOS:
+(3-4 phrases personnelles et authentiques)
 
-TEXTE NOS SERVICES :
-[3-4 phrases. TON concret. Services SPÉCIFIQUES détectés. Pas de généralités.]
+SERVICES:
+(3-4 phrases concretes avec services specifiques du site)
 
-TEXTE CONTACT :
-[2 phrases MAX. TON simple et direct. Invitation concrète sans formule bateau.]
+CONTACT:
+(2 phrases simples et directes)
 
-DESCRIPTIONS D'IMAGES :
-{images_section}
+{chr(10).join(f"IMAGE {i+1}:" + chr(10) + "(description courte 10-15 mots)" for i in range(nb_images))}
 
-MOTS-CLÉS PRINCIPAUX :
-[10 mots-clés spécifiques : activité + ville + services précis. Séparés par virgules.]"""
+MOTS CLES:
+(10 mots-cles specifiques separes par des virgules)"""
 
                         data = {
                             "model": "mistral-small-latest",
@@ -1498,132 +1497,107 @@ MOTS-CLÉS PRINCIPAUX :
                         }
                         r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers_m, json=data, timeout=45)
                         textes_generes = r.json()["choices"][0]["message"]["content"]
+
+                        # Nettoyage : enlever markdown, ##, **, ---
+                        import re
+                        textes_generes = re.sub(r'#{1,6}\s*', '', textes_generes)
+                        textes_generes = re.sub(r'\*{1,2}', '', textes_generes)
+                        textes_generes = re.sub(r'^---+$', '', textes_generes, flags=re.MULTILINE)
+                        textes_generes = re.sub(r'^\[.*?\]$', '', textes_generes, flags=re.MULTILINE)
+
                         st.session_state[f"textes_corriges_{idx}"] = textes_generes
-                    except Exception:
-                        st.error("Impossible de générer les textes. Réessayez dans quelques secondes.")
+                    except Exception as e:
+                        st.error("Erreur lors de la génération. Réessayez dans quelques secondes.")
 
             if f"textes_corriges_{idx}" in st.session_state:
                 textes = st.session_state[f"textes_corriges_{idx}"]
 
-                # Definition des sections avec leur avant (valeur actuelle du site)
+                # Config des sections : cle, label, avant, conseil
                 sections_config = [
-                    {
-                        "key": "TITRE DE PAGE",
-                        "label": "Titre de page Google",
-                        "icone": "🔍",
-                        "avant_val": titre if titre else "(aucun titre — l'onglet du navigateur est vide)",
-                        "conseil": "Sur WordPress : Yoast SEO → Titre. Sur Wix : Paramètres → SEO. Sur Shopify : Boutique en ligne → Préférences."
-                    },
-                    {
-                        "key": "META DESCRIPTION",
-                        "label": "Description Google",
-                        "icone": "📝",
-                        "avant_val": desc if desc else "(aucune description — Google affiche du texte aléatoire sous votre lien)",
-                        "conseil": "Sur WordPress : Yoast SEO → Meta description. Sur Wix : Paramètres → SEO avancé."
-                    },
-                    {
-                        "key": "TITRE PRINCIPAL H1",
-                        "label": "Titre principal (H1)",
-                        "icone": "📌",
-                        "avant_val": "(aucun titre H1 — Google ne sait pas de quoi parle votre page)" if seo["h1_count"] == 0 else (f"{seo['h1_count']} titres H1 en doublon" if seo["h1_count"] > 1 else "✅ Déjà présent"),
-                        "conseil": "Remplacez le grand titre en haut de votre page d'accueil par ce texte dans votre éditeur de site."
-                    },
-                    {
-                        "key": "INTRODUCTION PAGE D'ACCUEIL",
-                        "label": "Introduction — Page d'accueil",
-                        "icone": "🏠",
-                        "avant_val": "(aucun texte d'introduction structuré détecté)",
-                        "conseil": "Collez ce texte juste sous le titre principal de votre page d'accueil."
-                    },
-                    {
-                        "key": "TEXTE À PROPOS",
-                        "label": "Page À propos",
-                        "icone": "👤",
-                        "avant_val": "(aucun texte À propos structuré détecté)",
-                        "conseil": "Collez ce texte sur votre page À propos ou dans la section correspondante."
-                    },
-                    {
-                        "key": "TEXTE NOS SERVICES",
-                        "label": "Section Services",
-                        "icone": "⚙️",
-                        "avant_val": "(aucune section Services structurée détectée)",
-                        "conseil": "Collez ce texte dans votre section ou page Services."
-                    },
-                    {
-                        "key": "TEXTE CONTACT",
-                        "label": "Page Contact",
-                        "icone": "📞",
-                        "avant_val": "(aucun texte d'invitation au contact détecté)",
-                        "conseil": "Ajoutez ce texte en haut de votre page Contact, avant le formulaire."
-                    },
-                    {
-                        "key": "DESCRIPTIONS D'IMAGES",
-                        "label": "Descriptions de vos photos",
-                        "icone": "🖼️",
-                        "avant_val": f"({seo.get('images_no_alt', 0)} photo(s) sans description — Google ne peut pas les indexer)",
-                        "conseil": "Pour chaque image, ajoutez ce texte dans le champ 'Texte alternatif' de votre CMS."
-                    },
-                    {
-                        "key": "MOTS-CLÉS PRINCIPAUX",
-                        "label": "Mots-clés pour le référencement",
-                        "icone": "🎯",
-                        "avant_val": "(aucune stratégie de mots-clés détectée sur le site)",
-                        "conseil": "Intégrez ces mots-clés naturellement dans vos textes, titres et descriptions de page."
-                    },
+                    ("TITRE DE PAGE", "Titre de page Google", titre if titre else "(aucun titre — l'onglet du navigateur est vide)", "Sur WordPress : Yoast SEO → Titre. Sur Wix : Paramètres → SEO."),
+                    ("META DESCRIPTION", "Description Google", desc if desc else "(aucune description — Google affiche du texte aléatoire)", "Sur WordPress : Yoast SEO → Meta description. Sur Wix : SEO avancé."),
+                    ("TITRE H1", "Titre principal (H1)", "(aucun titre H1 détecté)" if seo["h1_count"] == 0 else (f"{seo['h1_count']} titres H1 en doublon" if seo["h1_count"] > 1 else "Titre H1 déjà présent"), "Remplacez le grand titre en haut de votre page d'accueil."),
+                    ("INTRODUCTION", "Introduction — Page d'accueil", "(aucun texte d'introduction structuré)", "Collez ce texte juste sous le titre principal de votre page d'accueil."),
+                    ("A PROPOS", "Page À propos", "(aucun texte À propos structuré)", "Collez ce texte sur votre page À propos."),
+                    ("SERVICES", "Section Services", "(aucune section Services structurée)", "Collez ce texte dans votre section ou page Services."),
+                    ("CONTACT", "Page Contact", "(aucun texte de contact structuré)", "Ajoutez ce texte en haut de votre page Contact, avant le formulaire."),
+                    ("MOTS CLES", "Mots-clés pour votre référencement", "(aucune stratégie de mots-clés)", "Intégrez ces mots-clés naturellement dans vos textes et titres."),
                 ]
+                for i in range(nb_images if 'nb_images' in dir() else min(seo.get("images_no_alt", 2), 5)):
+                    sections_config.insert(-1, (
+                        f"IMAGE {i+1}",
+                        f"Description photo {i+1}",
+                        "(aucune description sur cette photo)",
+                        f"Ajoutez ce texte dans le champ 'Texte alternatif' de votre image {i+1} dans votre CMS."
+                    ))
 
-                # Parse les sections generees
-                lignes = textes.split("\n")
-                current_section = None
-                current_content = []
+                # Parse les sections
                 sections_trouvees = {}
+                current_key = None
+                current_lines = []
+                all_keys = [cfg[0] for cfg in sections_config]
 
-                for ligne in lignes:
-                    ligne_clean = ligne.strip().lstrip("*#[]").rstrip("*#[]").strip().rstrip(":").strip()
-                    est_titre = False
-                    for cfg in sections_config:
-                        if ligne_clean.upper().startswith(cfg["key"]):
-                            if current_section and current_content:
-                                sections_trouvees[current_section] = "\n".join(current_content).strip()
-                            current_section = cfg["key"]
-                            current_content = []
-                            est_titre = True
+                for ligne in textes.split("\n"):
+                    ligne_strip = ligne.strip()
+                    matched = False
+                    for key in all_keys:
+                        if ligne_strip.upper().startswith(key + ":") or ligne_strip.upper() == key:
+                            if current_key and current_lines:
+                                sections_trouvees[current_key] = "\n".join(current_lines).strip()
+                            current_key = key
+                            current_lines = []
+                            # Si le texte est sur la même ligne après ":"
+                            rest = ligne_strip[len(key):].lstrip(":").strip()
+                            if rest:
+                                current_lines.append(rest)
+                            matched = True
                             break
-                    if not est_titre and current_section and ligne_clean:
-                        current_content.append(ligne_clean)
+                    if not matched and current_key and ligne_strip:
+                        current_lines.append(ligne_strip)
 
-                if current_section and current_content:
-                    sections_trouvees[current_section] = "\n".join(current_content).strip()
+                if current_key and current_lines:
+                    sections_trouvees[current_key] = "\n".join(current_lines).strip()
 
-                # Affichage : si le parsing fonctionne on affiche avant/apres, sinon affichage brut
+                # Affichage style "Optimiser mon site"
                 nb_affiche = 0
+                blocs_html = ""
                 for cfg in sections_config:
-                    apres_val = sections_trouvees.get(cfg["key"], "")
-                    if not apres_val or "[" in apres_val:
+                    key, label, avant_val, conseil = cfg
+                    apres_val = sections_trouvees.get(key, "")
+                    if not apres_val:
                         continue
                     nb_affiche += 1
-                    avant = cfg["avant_val"]
-                    label = cfg["label"]
-                    icone = cfg["icone"]
-                    conseil = cfg["conseil"]
-                    col_av, col_fl, col_ap = st.columns([1, 0.1, 1])
-                    with col_av:
-                        st.markdown(f"**{icone} {label}**")
-                        st.markdown(f"**Avant**")
-                        st.markdown(f'<div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:8px;padding:12px;font-size:13px;color:#374151;line-height:1.6">{avant}</div>', unsafe_allow_html=True)
-                    with col_fl:
-                        st.markdown("<div style='text-align:center;padding-top:40px;font-size:20px;color:#9ca3af'>→</div>", unsafe_allow_html=True)
-                    with col_ap:
-                        st.markdown(f"**Après — À copier-coller**")
-                        st.code(apres_val, language=None)
-                    st.caption(f"💡 {conseil}")
-                    st.divider()
+                    blocs_html += f"""
+<div style="margin-bottom:24px">
+  <div style="font-size:11px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">
+    {nb_affiche}. {label}
+  </div>
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:start">
+    <div>
+      <div style="font-size:10px;color:#dc2626;font-weight:700;margin-bottom:6px;text-transform:uppercase">Avant — Texte actuel</div>
+      <div style="background:#fff5f5;border:2px solid #fca5a5;border-radius:10px;padding:14px;font-size:13px;color:#374151;line-height:1.6;min-height:60px">{avant_val}</div>
+    </div>
+    <div style="display:flex;align-items:center;font-size:24px;color:#7c6af7;padding:0 4px;align-self:center">→</div>
+    <div>
+      <div style="font-size:10px;color:#16a34a;font-weight:700;margin-bottom:6px;text-transform:uppercase">Après — À copier-coller sur votre site</div>
+      <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:10px;padding:14px;font-size:13px;color:#374151;line-height:1.6;min-height:60px;font-family:monospace">{apres_val}</div>
+    </div>
+  </div>
+  <div style="margin-top:8px;background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#5b21b6">
+    💡 {conseil}
+  </div>
+</div>"""
 
-                if nb_affiche == 0:
-                    st.info("Voici les textes générés :")
+                if nb_affiche > 0:
+                    import streamlit.components.v1 as components
+                    html_final = f"""<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:8px}}</style>
+</head><body>{blocs_html}</body></html>"""
+                    components.html(html_final, height=max(400, nb_affiche * 180), scrolling=True)
+                else:
+                    st.info("Les textes ont été générés — voici le contenu brut :")
                     st.code(textes, language=None)
 
-                st.markdown("")
                 if st.button("Régénérer", key=f"btn_regen_{idx}"):
                     del st.session_state[f"textes_corriges_{idx}"]
                     st.rerun()
