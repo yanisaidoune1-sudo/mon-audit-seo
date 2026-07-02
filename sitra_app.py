@@ -1595,41 +1595,33 @@ MOTS-CLÉS PRINCIPAUX :
                 if current_section and current_content:
                     sections_trouvees[current_section] = "\n".join(current_content).strip()
 
-                # Affichage avant/apres pour chaque section
-                st.markdown("")
+                # Affichage : si le parsing fonctionne on affiche avant/apres, sinon affichage brut
+                nb_affiche = 0
                 for cfg in sections_config:
                     apres_val = sections_trouvees.get(cfg["key"], "")
                     if not apres_val or "[" in apres_val:
                         continue
-
+                    nb_affiche += 1
                     avant = cfg["avant_val"]
-                    apres = apres_val
                     label = cfg["label"]
                     icone = cfg["icone"]
                     conseil = cfg["conseil"]
+                    col_av, col_fl, col_ap = st.columns([1, 0.1, 1])
+                    with col_av:
+                        st.markdown(f"**{icone} {label}**")
+                        st.markdown(f"**Avant**")
+                        st.markdown(f'<div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:8px;padding:12px;font-size:13px;color:#374151;line-height:1.6">{avant}</div>', unsafe_allow_html=True)
+                    with col_fl:
+                        st.markdown("<div style='text-align:center;padding-top:40px;font-size:20px;color:#9ca3af'>→</div>", unsafe_allow_html=True)
+                    with col_ap:
+                        st.markdown(f"**Après — À copier-coller**")
+                        st.code(apres_val, language=None)
+                    st.caption(f"💡 {conseil}")
+                    st.divider()
 
-                    html_bloc = f"""
-<div style="margin-bottom:24px;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
-  <div style="background:#f9fafb;padding:10px 16px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:8px">
-    <span style="font-size:16px">{icone}</span>
-    <span style="font-weight:600;font-size:14px;color:#111827">{label}</span>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 32px 1fr">
-    <div style="padding:14px 16px;background:#fff5f5;border-right:1px solid #e5e7eb">
-      <p style="font-size:11px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 8px">Avant</p>
-      <p style="font-size:13px;color:#374151;margin:0;line-height:1.6;white-space:pre-wrap">{avant}</p>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:center;background:#f9fafb;color:#9ca3af;font-size:18px">→</div>
-    <div style="padding:14px 16px;background:#f0fdf4">
-      <p style="font-size:11px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 8px">Après — À copier-coller</p>
-      <p style="font-size:13px;color:#374151;margin:0;line-height:1.6;white-space:pre-wrap;font-family:monospace;background:rgba(255,255,255,0.7);padding:8px;border-radius:6px">{apres}</p>
-    </div>
-  </div>
-  <div style="padding:8px 16px;background:#f9fafb;border-top:1px solid #e5e7eb">
-    <p style="font-size:12px;color:#6b7280;margin:0">💡 {conseil}</p>
-  </div>
-</div>"""
-                    st.markdown(html_bloc, unsafe_allow_html=True)
+                if nb_affiche == 0:
+                    st.info("Voici les textes générés :")
+                    st.code(textes, language=None)
 
                 st.markdown("")
                 if st.button("Régénérer", key=f"btn_regen_{idx}"):
