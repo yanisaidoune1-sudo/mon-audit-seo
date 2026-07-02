@@ -1429,7 +1429,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgro
             desc = seo["meta_description"] or ""
             nom_site = titre.split("—")[0].split("|")[0].strip() if titre else url_site.replace("https://","").replace("www.","").split("/")[0]
 
-            if st.button("Générer mes textes corrigés", key=f"gen_textes_{idx}"):
+            if st.button("Générer mes textes corrigés", key=f"btn_gen_{idx}"):
                 with st.spinner("L'IA analyse votre site et rédige vos textes... (30 secondes environ)"):
                     try:
                         import requests as req
@@ -1498,13 +1498,12 @@ MOTS-CLÉS PRINCIPAUX :
                         }
                         r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers_m, json=data, timeout=45)
                         textes_generes = r.json()["choices"][0]["message"]["content"]
-                        st.session_state[f"textes_v7_{idx}"] = textes_generes
-                        st.rerun()
+                        st.session_state[f"textes_corriges_{idx}"] = textes_generes
                     except Exception:
                         st.error("Impossible de générer les textes. Réessayez dans quelques secondes.")
 
-            if f"textes_v7_{idx}" in st.session_state:
-                textes = st.session_state[f"textes_v7_{idx}"]
+            if f"textes_corriges_{idx}" in st.session_state:
+                textes = st.session_state[f"textes_corriges_{idx}"]
 
                 # Definition des sections avec leur avant (valeur actuelle du site)
                 sections_config = [
@@ -1633,8 +1632,8 @@ MOTS-CLÉS PRINCIPAUX :
                     st.markdown(html_bloc, unsafe_allow_html=True)
 
                 st.markdown("")
-                if st.button("Régénérer", key=f"regen_textes_{idx}"):
-                    del st.session_state[f"textes_v7_{idx}"]
+                if st.button("Régénérer", key=f"btn_regen_{idx}"):
+                    del st.session_state[f"textes_corriges_{idx}"]
                     st.rerun()
     
 # ── HERO ─────────────────────────────────────────────────────────────────────
