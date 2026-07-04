@@ -1519,7 +1519,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgro
                                                 "role": "user",
                                                 "content": [
                                                     {"type": "image_url", "image_url": {"url": img_url}},
-                                                    {"type": "text", "text": "Regarde cette image. Si c'est une vraie photo utile (personnes, lieu, produit, service, équipe, intérieur), décris-la en 10-15 mots en français, précis et factuel, sans commencer par 'Une image de'. Si c'est un logo, icône, couleur unie, fond décoratif ou image sans intérêt SEO, réponds uniquement SKIP."}
+                                                    {"type": "text", "text": "Tu es un expert SEO. Analyse cette image. Si c'est un LOGO, une icône, un badge, un watermark, un bouton, une image de fond ou un élément graphique décoratif → réponds uniquement SKIP. Si c'est une VRAIE PHOTO de contenu (intérieur d'un commerce, personnes, produits, équipe, lieu, ambiance) → écris en 10-15 mots maximum une description alt SEO en français, factuelle, qui décrit ce qu'on voit réellement. Commence directement par le sujet sans 'Une image de' ni 'Photo de'."}
                                                 ]
                                             }],
                                             "max_tokens": 60
