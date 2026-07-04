@@ -1435,34 +1435,34 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgro
             h1_ok = seo["h1_count"] == 1
 
             if titre_ok and desc_ok and h1_ok and seo["images_no_alt"] == 0:
-                st.success("✅ Tous vos textes principaux sont déjà bien renseignés — rien à corriger !")
+                st.success(" Tous vos textes principaux sont déjà bien renseignés — rien à corriger !")
             else:
                 # Montre ce qui sera généré vs ce qui est déjà bien
                 col1, col2 = st.columns(2)
                 with col1:
                     st.markdown("**Ce que SITRA va générer :**")
                     if not titre_ok:
-                        st.markdown("- ✅ Titre de page Google")
+                        st.markdown("-  Titre de page Google")
                     if not desc_ok:
-                        st.markdown("- ✅ Description Google")
+                        st.markdown("-  Description Google")
                     if not h1_ok:
-                        st.markdown("- ✅ Titre principal H1")
-                    st.markdown("- ✅ Introduction page d'accueil")
-                    st.markdown("- ✅ Texte À propos")
-                    st.markdown("- ✅ Texte Services")
-                    st.markdown("- ✅ Texte Contact")
+                        st.markdown("-  Titre principal H1")
+                    st.markdown("-  Introduction page d'accueil")
+                    st.markdown("-  Texte À propos")
+                    st.markdown("-  Texte Services")
+                    st.markdown("-  Texte Contact")
                     if seo["images_no_alt"] > 0:
-                        st.markdown(f"- ✅ Descriptions de vos {seo['images_no_alt']} photo(s) (IA vision)")
-                    st.markdown("- ✅ Mots-clés SEO")
+                        st.markdown(f"-  Descriptions de vos {seo['images_no_alt']} photo(s) (IA vision)")
+                    st.markdown("-  Mots-clés SEO")
                 with col2:
                     if titre_ok or desc_ok or h1_ok:
                         st.markdown("**Déjà bien renseigné :**")
                         if titre_ok:
-                            st.markdown(f"- 👍 Titre : « {titre[:40]}... »" if len(titre) > 40 else f"- 👍 Titre : « {titre} »")
+                            st.markdown(f"-  Titre : « {titre[:40]}... »" if len(titre) > 40 else f"-  Titre : « {titre} »")
                         if desc_ok:
-                            st.markdown(f"- 👍 Description déjà présente")
+                            st.markdown(f"-  Description déjà présente")
                         if h1_ok:
-                            st.markdown(f"- 👍 Titre H1 déjà présent")
+                            st.markdown(f"-  Titre H1 déjà présent")
 
                 st.markdown("")
 
@@ -1519,14 +1519,17 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgro
                                                 "role": "user",
                                                 "content": [
                                                     {"type": "image_url", "image_url": {"url": img_url}},
-                                                    {"type": "text", "text": "Décris cette image en 10-15 mots maximum en français. Sois précis et factuel sur ce que tu vois vraiment. Ne commence pas par 'Une image de' ou 'Photo de'."}
+                                                    {"type": "text", "text": "Regarde cette image. Si c'est une vraie photo utile (personnes, lieu, produit, service, équipe, intérieur), décris-la en 10-15 mots en français, précis et factuel, sans commencer par 'Une image de'. Si c'est un logo, icône, couleur unie, fond décoratif ou image sans intérêt SEO, réponds uniquement SKIP."}
                                                 ]
                                             }],
                                             "max_tokens": 60
                                         }
                                         r_vision = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers_m, json=vision_data, timeout=20)
                                         desc_img = r_vision.json()["choices"][0]["message"]["content"].strip()
-                                        descriptions_images.append(desc_img)
+                                        if "SKIP" in desc_img.upper() or len(desc_img) < 10:
+                                            descriptions_images.append("")
+                                        else:
+                                            descriptions_images.append(desc_img)
                                     except Exception:
                                         descriptions_images.append("")
 
@@ -1651,7 +1654,7 @@ Reponds UNIQUEMENT avec les sections, sans introduction ni markdown.
       <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:10px;padding:14px;font-size:13px;color:#374151;line-height:1.6;min-height:60px;font-family:monospace">{apres_val}</div>
     </div>
   </div>
-  <div style="margin-top:8px;background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#5b21b6">💡 {conseil}</div>
+  <div style="margin-top:8px;background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#5b21b6"> {conseil}</div>
 </div>"""
 
                 # Descriptions photos avec vision (affichage texte simple)
@@ -1673,7 +1676,7 @@ Reponds UNIQUEMENT avec les sections, sans introduction ni markdown.
       <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:10px;padding:14px;font-size:13px;color:#374151;line-height:1.6;min-height:60px;font-family:monospace">{desc_img}</div>
     </div>
   </div>
-  <div style="margin-top:8px;background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#5b21b6">💡 Ajoutez ce texte dans le champ 'Texte alternatif' de cette image dans votre CMS.</div>
+  <div style="margin-top:8px;background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#5b21b6"> Ajoutez ce texte dans le champ 'Texte alternatif' de cette image dans votre CMS.</div>
 </div>"""
 
                 if nb_affiche > 0:
