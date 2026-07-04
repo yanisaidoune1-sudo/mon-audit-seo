@@ -1654,8 +1654,8 @@ Reponds UNIQUEMENT avec les sections, sans introduction ni markdown.
   <div style="margin-top:8px;background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#5b21b6">💡 {conseil}</div>
 </div>"""
 
-                # Descriptions photos avec vision
-                for i, (desc_img, img_url) in enumerate(zip(descriptions_images, images_urls)):
+                # Descriptions photos avec vision (affichage texte simple)
+                for i, desc_img in enumerate(descriptions_images):
                     if not desc_img:
                         continue
                     nb_affiche += 1
@@ -1664,19 +1664,13 @@ Reponds UNIQUEMENT avec les sections, sans introduction ni markdown.
   <div style="font-size:11px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">{nb_affiche}. Description photo {i+1}</div>
   <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:start">
     <div>
-      <div style="font-size:10px;color:#dc2626;font-weight:700;margin-bottom:6px;text-transform:uppercase">Avant — Photo sans description</div>
-      <div style="border:2px solid #fca5a5;border-radius:10px;overflow:hidden">
-        <img src="{img_url}" style="width:100%;height:120px;object-fit:cover;display:block"/>
-        <div style="background:#fff5f5;padding:8px;font-size:12px;color:#dc2626;text-align:center">(aucune description — Google ne peut pas indexer cette photo)</div>
-      </div>
+      <div style="font-size:10px;color:#dc2626;font-weight:700;margin-bottom:6px;text-transform:uppercase">Avant — Texte actuel</div>
+      <div style="background:#fff5f5;border:2px solid #fca5a5;border-radius:10px;padding:14px;font-size:13px;color:#dc2626;line-height:1.6;min-height:60px">(aucune description — Google ne peut pas indexer cette photo)</div>
     </div>
     <div style="display:flex;align-items:center;font-size:24px;color:#7c6af7;padding:0 4px;align-self:center">→</div>
     <div>
-      <div style="font-size:10px;color:#16a34a;font-weight:700;margin-bottom:6px;text-transform:uppercase">Après — Description générée par IA vision</div>
-      <div style="border:2px solid #86efac;border-radius:10px;overflow:hidden">
-        <img src="{img_url}" style="width:100%;height:120px;object-fit:cover;display:block;filter:brightness(0.85)"/>
-        <div style="background:#f0fdf4;padding:8px;font-size:13px;color:#374151;font-family:monospace;text-align:center">{desc_img}</div>
-      </div>
+      <div style="font-size:10px;color:#16a34a;font-weight:700;margin-bottom:6px;text-transform:uppercase">Après — À copier-coller</div>
+      <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:10px;padding:14px;font-size:13px;color:#374151;line-height:1.6;min-height:60px;font-family:monospace">{desc_img}</div>
     </div>
   </div>
   <div style="margin-top:8px;background:rgba(124,106,247,0.1);border-left:3px solid #7c6af7;padding:7px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#5b21b6">💡 Ajoutez ce texte dans le champ 'Texte alternatif' de cette image dans votre CMS.</div>
