@@ -1610,22 +1610,36 @@ Reponds UNIQUEMENT avec les sections, sans introduction ni markdown.
                 current_lines = []
                 all_keys = [cfg[0] for cfg in sections_config]
 
+                import unicodedata
+                def normalize(s):
+                    s = s.upper().strip().rstrip(":")
+                    s = unicodedata.normalize("NFD", s)
+                    s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+                    import re
+                    s = re.sub(r"[*#\[\]\-]", "", s).strip()
+                    return s
+
                 for ligne in textes.split("\n"):
-                    ligne_strip = ligne.strip().rstrip(":")
+                    ligne_strip = ligne.strip()
+                    ligne_norm = normalize(ligne_strip)
                     matched = False
                     for key in all_keys:
-                        if ligne_strip.upper().startswith(key):
+                        key_norm = normalize(key)
+                        if ligne_norm.startswith(key_norm):
                             if current_key and current_lines:
                                 sections_trouvees[current_key] = "\n".join(current_lines).strip()
                             current_key = key
                             current_lines = []
                             rest = ligne_strip[len(key):].lstrip(":").strip()
+                            rest = rest.lstrip("*#").strip()
                             if rest:
                                 current_lines.append(rest)
                             matched = True
                             break
                     if not matched and current_key and ligne_strip:
-                        current_lines.append(ligne_strip)
+                        clean = ligne_strip.lstrip("*#-").strip()
+                        if clean:
+                            current_lines.append(clean)
 
                 if current_key and current_lines:
                     sections_trouvees[current_key] = "\n".join(current_lines).strip()
