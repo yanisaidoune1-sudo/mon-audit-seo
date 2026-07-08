@@ -1706,6 +1706,192 @@ Reponds UNIQUEMENT avec les sections demandees, sans introduction ni markdown ni
                         if k in st.session_state:
                             del st.session_state[k]
                     st.rerun()
+                    
+# ── DÉTECTION : EST-CE UN PRODUIT WEB ? ──
+    def is_produit_web(result):
+        """
+        Detecte si le site est un vrai produit web (SaaS, app, outil en ligne)
+        plutot qu'un site vitrine (restaurant, coiffeur, artisan...).
+        Retourne True si c'est un produit web, False sinon.
+        """
+        import requests as req
+        from bs4 import BeautifulSoup
+
+        url = result["final_url"]
+        titre = (result["seo"]["title"] or "").lower()
+        desc = (result["seo"]["meta_description"] or "").lower()
+
+        # Signaux forts d'un produit web
+        mots_produit = [
+            "abonnement", "subscription", "pricing", "tarif", "plan",
+            "essai gratuit", "free trial", "dashboard", "tableau de bord",
+            "connexion", "login", "sign up", "inscription", "register",
+            "api", "integration", "saas", "logiciel", "software", "app",
+            "automatiser", "automatisation", "automation", "workflow",
+            "crm", "erp", "analytics", "rapport", "reporting"
+        ]
+
+        # Signaux forts d'un site vitrine physique
+        mots_vitrine = [
+            "restaurant", "brasserie", "bistrot", "menu", "carte", "reservation",
+            "coiffeur", "barbier", "salon", "coiffure", "esthetique",
+            "plombier", "electricien", "artisan", "devis", "chantier",
+            "medecin", "docteur", "cabinet", "clinique", "pharmacie",
+            "hotel", "chambre", "nuit", "sejour", "gite", "airbnb",
+            "boulangerie", "patisserie", "boucherie", "epicerie",
+            "garage", "carrosserie", "mecanique", "reparation auto"
+        ]
+
+        texte_complet = titre + " " + desc
+        try:
+            r = req.get(url, timeout=8, headers={"User-Agent": "Mozilla/5.0"})
+            if r.status_code == 200:
+                soup = BeautifulSoup(r.text, "lxml")
+                texte_complet += " " + soup.get_text(" ", strip=True)[:3000].lower()
+        except Exception:
+            pass
+
+        score_produit = sum(1 for mot in mots_produit if mot in texte_complet)
+        score_vitrine = sum(1 for mot in mots_vitrine if mot in texte_complet)
+
+        # Produit web si beaucoup de mots produit et peu de mots vitrine
+        return score_produit >= 3 and score_produit > score_vitrine
+
+    # ── ONGLET POTENTIEL DE CROISSANCE ──
+    if show_potentiel:
+        tab_potentiel_idx = tabs_list.index("Potentiel de croissance")
+        with tabs[tab_potentiel_idx]:
+
+            seo = result["seo"]
+            perf = result["performance"]
+            ux = result["ux"]
+            design = result["design"]
+            url_site = result["final_url"]
+            titre = seo["title"] or ""
+            global_score = result.get("global_score", 50)
+
+            # Verification que c'est bien un produit web
+            with st.spinner("Analyse du potentiel de croissance..."):
+                site_est_produit = is_produit_web(result)
+
+            if not site_est_produit:
+                st.info("Cette analyse est conçue pour les sites qui sont eux-mêmes un produit (SaaS, outil en ligne, application). Pour un site vitrine (restaurant, artisan, commerce local), consultez plutôt l'onglet **Optimiser mon site** pour améliorer votre référencement local.")
+            else:
+                st.markdown("### Potentiel de croissance de votre site")
+                st.caption("SITRA analyse votre situation actuelle et estime votre potentiel si vous appliquez les corrections recommandées.")
+
+                rt = perf.get("response_time", 0) or 0
+                nom_site = titre.split("—")[0].split("|")[0].strip() if titre else url_site.replace("https://","").replace("www.","").split("/")[0]
+
+                # Calcul du potentiel
+                facteurs = []
+                potentiel_total = 0
+
+                if not perf["is_https"]:
+                    potentiel_total += 20
+                    facteurs.append(("Securite HTTPS manquante", "Les navigateurs affichent une alerte — vos prospects repartent avant meme d'essayer votre produit.", "+20% de conversions", "#dc2626", "critique"))
+
+                if not seo["title"] or len(seo["title"]) < 10:
+                    potentiel_total += 25
+                    facteurs.append(("Titre Google absent ou trop court", "Sans titre clair, Google ne sait pas quand montrer votre produit — vous ratez des prospects qualifies.", "+25% de trafic organique", "#dc2626", "critique"))
+
+                if not seo["meta_description"]:
+                    potentiel_total += 15
+                    facteurs.append(("Description Google manquante", "Un bon texte sous votre lien peut doubler votre taux de clic depuis Google.", "+15% de clics depuis Google", "#f59e0b", "important"))
+
+                if seo["h1_count"] != 1:
+                    potentiel_total += 15
+                    facteurs.append(("Titre principal mal structure", "Google utilise le H1 pour comprendre votre produit et le positionner sur les bons mots-cles.", "+15% de pertinence SEO", "#f59e0b", "important"))
+
+                if seo["images_no_alt"] > 0:
+                    potentiel_total += 8
+                    facteurs.append(("Captures d'ecran sans description", "Les screenshots de votre produit peuvent apparaitre dans Google Images — une source de trafic ignoree.", "+8% de visibilite", "#f59e0b", "important"))
+
+                if rt > 2:
+                    potentiel_total += 20
+                    facteurs.append((f"Produit trop lent ({rt}s)", "Un SaaS lent fait fuir les utilisateurs — 53% repartent si ca met plus de 3 secondes.", "+20% de retention", "#dc2626", "critique"))
+
+                if not ux["has_nav"]:
+                    potentiel_total += 10
+                    facteurs.append(("Navigation mal structuree", "Sans menu clair, vos prospects ne trouvent pas la page de pricing ou d'inscription.", "+10% de conversions", "#f59e0b", "important"))
+
+                if not design["has_og_tags"]:
+                    potentiel_total += 7
+                    facteurs.append(("Partage sur les reseaux non configure", "Quand quelqu'un partage votre outil, rien ne s'affiche — vous perdez de la visibilite virale.", "+7% de trafic viral", "#6d28d9", "secondaire"))
+
+                potentiel_total = min(potentiel_total, 95)
+                score_apres = min(global_score + potentiel_total, 95)
+
+                if potentiel_total >= 50:
+                    couleur = "#16a34a"; fond = "#f0fdf4"; bordure = "#86efac"
+                    niveau = "Tres fort potentiel de croissance"
+                    message = f"Votre produit a un tres fort potentiel inexploite. En corrigeant les points identifies, vous pourriez augmenter votre trafic organique de jusqu'a {potentiel_total}% et ameliorer significativement votre taux de conversion."
+                elif potentiel_total >= 25:
+                    couleur = "#d97706"; fond = "#fffbeb"; bordure = "#fcd34d"
+                    niveau = "Bon potentiel d'amelioration"
+                    message = f"Votre produit est bien positionne mais laisse de la croissance sur la table. Quelques corrections ciblees pourraient vous apporter {potentiel_total}% de trafic supplementaire."
+                else:
+                    couleur = "#2563eb"; fond = "#eff6ff"; bordure = "#93c5fd"
+                    niveau = "Site deja bien optimise"
+                    message = f"Votre produit est bien optimise. Des ajustements mineurs pourraient encore ameliorer votre visibilite de {potentiel_total}%."
+
+                couleur_label = {"critique": "#dc2626", "important": "#f59e0b", "secondaire": "#6d28d9"}
+                fond_label = {"critique": "#fef2f2", "important": "#fffbeb", "secondaire": "#faf5ff"}
+
+                blocs = f"""
+<div style="background:{fond};border:2px solid {bordure};border-radius:14px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;gap:20px">
+  <div style="text-align:center;flex-shrink:0">
+    <div style="font-size:52px;font-weight:700;color:{couleur};line-height:1">+{potentiel_total}%</div>
+    <div style="font-size:12px;color:{couleur};font-weight:600;margin-top:4px">de croissance potentielle</div>
+  </div>
+  <div style="flex:1;border-left:2px solid {bordure};padding-left:20px">
+    <div style="font-size:16px;font-weight:700;color:{couleur};margin-bottom:8px">{niveau}</div>
+    <div style="font-size:13px;color:#374151;line-height:1.6">{message}</div>
+  </div>
+</div>
+
+<div style="margin-bottom:16px;font-size:14px;font-weight:600;color:#111827">Ce qui freine votre croissance :</div>"""
+
+                for f_item in facteurs:
+                    nom, explication, impact, color, niveau_f = f_item
+                    blocs += f"""
+<div style="margin-bottom:10px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
+  <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:12px 16px;gap:12px">
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:11px;font-weight:600;background:{fond_label[niveau_f]};color:{couleur_label[niveau_f]};padding:2px 8px;border-radius:20px;text-transform:uppercase">{niveau_f}</span>
+        <span style="font-size:13px;font-weight:600;color:#111827">{nom}</span>
+      </div>
+      <div style="font-size:12px;color:#6b7280;line-height:1.5">{explication}</div>
+    </div>
+    <div style="text-align:right;flex-shrink:0">
+      <div style="font-size:13px;font-weight:700;color:{color};white-space:nowrap">{impact}</div>
+    </div>
+  </div>
+</div>"""
+
+                blocs += f"""
+<div style="margin-top:20px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:center">
+    <div>
+      <div style="font-size:28px;font-weight:700;color:#dc2626">{global_score}<span style="font-size:16px">/100</span></div>
+      <div style="font-size:12px;color:#6b7280;margin-top:4px">Score actuel de votre site</div>
+    </div>
+    <div>
+      <div style="font-size:28px;font-weight:700;color:#16a34a">{score_apres}<span style="font-size:16px">/100</span></div>
+      <div style="font-size:12px;color:#6b7280;margin-top:4px">Score apres corrections</div>
+    </div>
+  </div>
+  <div style="margin-top:12px;background:#e5e7eb;border-radius:99px;height:8px;overflow:hidden">
+    <div style="background:linear-gradient(90deg,#dc2626,#f59e0b,#16a34a);width:{score_apres}%;height:100%;border-radius:99px;transition:width 1s"></div>
+  </div>
+</div>"""
+
+                import streamlit.components.v1 as components
+                html_final = f"""<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>*{{box-sizing:border-box;margin:0;padding:0}}body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:8px}}</style>
+</head><body>{blocs}</body></html>"""
+                components.html(html_final, height=max(500, 280 + len(facteurs) * 85), scrolling=True)
     
 # ── HERO ─────────────────────────────────────────────────────────────────────
 st.markdown("""
