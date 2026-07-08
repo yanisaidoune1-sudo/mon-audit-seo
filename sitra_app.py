@@ -1706,6 +1706,7 @@ Reponds UNIQUEMENT avec les sections demandees, sans introduction ni markdown ni
                         if k in st.session_state:
                             del st.session_state[k]
                     st.rerun()
+                    
 # ── HERO ─────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero-header">
