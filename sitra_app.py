@@ -727,6 +727,7 @@ with st.sidebar:
             "Optimiser mon site",
             "Textes corrigés prêts à copier",
             "Génération de contenu pour votre marque",
+            "Potentiel de croissance",
         ],
         key="menu_choix",
         label_visibility="collapsed"
@@ -739,6 +740,7 @@ mode_comparaison     = (st.session_state.get("menu_choix") == "Mode comparatif")
 show_corriger        = (st.session_state.get("menu_choix") == "Optimiser mon site")
 show_textes          = (st.session_state.get("menu_choix") == "Textes corrigés prêts à copier")
 show_contenu_marque  = (st.session_state.get("menu_choix") == "Génération de contenu pour votre marque")
+show_potentiel       = (st.session_state.get("menu_choix") == "Potentiel de croissance")
 
 st.markdown("""
 <script>
@@ -881,6 +883,8 @@ def render_result(result, idx=0):
         tabs_list.append("Textes corrigés")
     if show_contenu_marque:
         tabs_list.append("Génération de contenu")
+    if show_potentiel:
+        tabs_list.append("Potentiel de croissance")   
     if mode_comparaison:
         tabs_list.append("Mode comparatif")
 
