@@ -689,3 +689,31 @@ def get_pagespeed(url: str) -> dict:
         result["error"] = str(e)
 
     return result
+
+def is_produit_web(result: dict) -> bool:
+    """
+    Devine si le site analyse est un produit web (SaaS, appli, outil en ligne)
+    ou un site vitrine classique (restaurant, artisan, commerce local).
+    """
+    titre = (result.get("seo", {}).get("title") or "").lower()
+    meta = (result.get("seo", {}).get("meta_description") or "").lower()
+    url = (result.get("final_url") or result.get("url") or "").lower()
+    texte = f"{titre} {meta} {url}"
+
+    mots_cles_produit = [
+        "saas", "app", "application", "dashboard", "tableau de bord",
+        "essai gratuit", "free trial", "pricing", "tarifs", "abonnement",
+        "api", "plateforme", "outil en ligne", "logiciel", "software",
+        "login", "connexion", "sign up", "s'inscrire", "demo", "démo",
+    ]
+    mots_cles_vitrine = [
+        "restaurant", "menu", "reservation", "réservation", "coiffeur",
+        "salon", "artisan", "plombier", "electricien", "électricien",
+        "boulangerie", "cabinet", "clinique", "medecin", "médecin",
+        "avocat", "notaire", "boutique", "magasin", "commerce", "atelier",
+    ]
+
+    score_produit = sum(1 for mot in mots_cles_produit if mot in texte)
+    score_vitrine = sum(1 for mot in mots_cles_vitrine if mot in texte)
+
+    return score_produit > score_vitrine
