@@ -705,6 +705,8 @@ def is_produit_web(result: dict) -> bool:
         "essai gratuit", "free trial", "pricing", "tarifs", "abonnement",
         "api", "plateforme", "outil en ligne", "logiciel", "software",
         "login", "connexion", "sign up", "s'inscrire", "demo", "démo",
+        "analyse", "analyseur", "audit", "scanner", "générateur", "generateur",
+        "intelligence artificielle", "automatis",
     ]
     mots_cles_vitrine = [
         "restaurant", "menu", "reservation", "réservation", "coiffeur",
@@ -716,4 +718,8 @@ def is_produit_web(result: dict) -> bool:
     score_produit = sum(1 for mot in mots_cles_produit if mot in texte)
     score_vitrine = sum(1 for mot in mots_cles_vitrine if mot in texte)
 
-    return score_produit > score_vitrine
+    # En cas d'egalite (y compris 0-0, aucun mot trouve), on penche vers
+    # "produit web" plutot que "vitrine" — un vrai site vitrine (restaurant,
+    # coiffeur...) mentionne presque toujours son metier, alors qu'un outil
+    # ne se decrit pas toujours avec des mots evidents.
+    return score_produit >= score_vitrine
