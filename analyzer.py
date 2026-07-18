@@ -723,3 +723,52 @@ def is_produit_web(result: dict) -> bool:
     # coiffeur...) mentionne presque toujours son metier, alors qu'un outil
     # ne se decrit pas toujours avec des mots evidents.
     return score_produit >= score_vitrine
+
+def estimer_potentiel_croissance(result: dict, secteur: str = "Autre") -> dict:
+    """
+    Demande a l'IA une estimation approximative du potentiel de croissance
+    de l'entreprise (pas juste du site techniquement). C'est une approximation
+    d'expert, pas une prediction garantie.
+    """
+    try:
+        import requests as req
+        import os
+        api_key = os.environ.get("MISTRAL_API_KEY", "")
+        if not api_key:
+            return {"score": None, "analyse": None, "error": "Cle API manquante"}
+
+        titre = result.get("seo", {}).get("title", "") or ""
+        meta = result.get("seo", {}).get("meta_description", "") or ""
+        url = result.get("final_url", "") or ""
+
+        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+        prompt = f"""Tu es un investisseur experimente qui evalue rapidement des entreprises a partir de leur site web.
+
+Site : {url}
+Titre : {titre}
+Description : {meta}
+Secteur detecte : {secteur}
+
+Donne une ESTIMATION APPROXIMATIVE (pas une certitude) du potentiel de croissance de cette entreprise : pourrait-elle devenir un jour un acteur important et reconnu dans son domaine, ou est-elle structurellement limitee (activite locale, marche de niche, difficile a reproduire ailleurs) ?
+
+Reponds en 2 parties exactement :
+SCORE: [un chiffre entre 0 et 100]
+ANALYSE: [3-4 phrases expliquant ton estimation, en rappelant que c'est une approximation basee sur des indices limites, pas une certitude]"""
+
+        data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 300}
+        r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=30)
+        contenu = r.json()["choices"][0]["message"]["content"]
+
+        score = 50
+        analyse = contenu
+        if "SCORE:" in contenu and "ANALYSE:" in contenu:
+            try:
+                partie_score = contenu.split("SCORE:")[1].split("ANALYSE:")[0].strip()
+                score = int(''.join(c for c in partie_score if c.isdigit())[:3] or "50")
+                analyse = contenu.split("ANALYSE:")[1].strip()
+            except Exception:
+                pass
+
+        return {"score": max(0, min(100, score)), "analyse": analyse, "error": None}
+    except Exception as e:
+        return {"score": None, "analyse": None, "error": str(e)}
