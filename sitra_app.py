@@ -1715,45 +1715,45 @@ Reponds UNIQUEMENT avec les sections demandees, sans introduction ni markdown ni
                             del st.session_state[k]
                     st.rerun()
 
- # ── ONGLET POTENTIEL DE CROISSANCE ──
-if show_potentiel:
-    tab_potentiel_idx = tabs_list.index("Potentiel de croissance")
-    with tabs[tab_potentiel_idx]:
-        st.markdown("### Potentiel de croissance de votre entreprise")
-        st.caption("Une estimation approximative — pas une prédiction garantie — basée sur ce que SITRA peut lire sur votre site.")
+# ── ONGLET POTENTIEL DE CROISSANCE ──
+    if show_potentiel:
+        tab_potentiel_idx = tabs_list.index("Potentiel de croissance")
+        with tabs[tab_potentiel_idx]:
+            st.markdown("### Potentiel de croissance de votre entreprise")
+            st.caption("Une estimation approximative — pas une prédiction garantie — basée sur ce que SITRA peut lire sur votre site.")
 
-        with st.spinner("Analyse du potentiel de croissance..."):
-            site_est_produit = is_produit_web(result)
+            with st.spinner("Analyse du potentiel de croissance..."):
+                site_est_produit = is_produit_web(result)
 
-        if not site_est_produit:
-            st.info("Cette analyse est conçue pour les sites qui sont eux-mêmes un produit (SaaS, outil en ligne, application). Pour un site vitrine (restaurant, artisan, commerce local), consultez plutôt l'onglet **Optimiser mon site** pour améliorer votre référencement local.")
-        else:
-            secteur_info = detect_secteur_et_concurrents(result["final_url"], "")
-            secteur = secteur_info.get("secteur", "Autre")
-
-            with st.spinner("L'IA évalue le potentiel de votre entreprise..."):
-                estimation = estimer_potentiel_croissance(result, secteur)
-
-            if estimation.get("error") or estimation.get("score") is None:
-                st.warning("Impossible de générer l'estimation pour le moment. Réessayez dans quelques instants.")
+            if not site_est_produit:
+                st.info("Cette analyse est conçue pour les sites qui sont eux-mêmes un produit (SaaS, outil en ligne, application). Pour un site vitrine (restaurant, artisan, commerce local), consultez plutôt l'onglet **Optimiser mon site** pour améliorer votre référencement local.")
             else:
-                score = estimation["score"]
-                if score >= 70:
-                    couleur = "#16a34a"; fond = "#f0fdf4"; bordure = "#86efac"
-                elif score >= 40:
-                    couleur = "#d97706"; fond = "#fffbeb"; bordure = "#fcd34d"
+                secteur_info = detect_secteur_et_concurrents(result["final_url"], "")
+                secteur = secteur_info.get("secteur", "Autre")
+
+                with st.spinner("L'IA évalue le potentiel de votre entreprise..."):
+                    estimation = estimer_potentiel_croissance(result, secteur)
+
+                if estimation.get("error") or estimation.get("score") is None:
+                    st.warning("Impossible de générer l'estimation pour le moment. Réessayez dans quelques instants.")
                 else:
-                    couleur = "#dc2626"; fond = "#fef2f2"; bordure = "#fca5a5"
+                    score = estimation["score"]
+                    if score >= 70:
+                        couleur = "#16a34a"; fond = "#f0fdf4"; bordure = "#86efac"
+                    elif score >= 40:
+                        couleur = "#d97706"; fond = "#fffbeb"; bordure = "#fcd34d"
+                    else:
+                        couleur = "#dc2626"; fond = "#fef2f2"; bordure = "#fca5a5"
 
-                st.markdown(f"""
-                <div style="background:{fond};border:2px solid {bordure};border-radius:14px;padding:20px 24px;margin-bottom:16px">
-                    <div style="font-size:44px;font-weight:700;color:{couleur};line-height:1">{score}/100</div>
-                    <div style="font-size:13px;color:{couleur};font-weight:600;margin-top:4px">Estimation du potentiel de croissance</div>
-                </div>
-                """, unsafe_allow_html=True)
+                    st.markdown(f"""
+                    <div style="background:{fond};border:2px solid {bordure};border-radius:14px;padding:20px 24px;margin-bottom:16px">
+                        <div style="font-size:44px;font-weight:700;color:{couleur};line-height:1">{score}/100</div>
+                        <div style="font-size:13px;color:{couleur};font-weight:600;margin-top:4px">Estimation du potentiel de croissance</div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
-                st.markdown(estimation["analyse"])
-                st.caption("⚠️ Cette estimation se base uniquement sur le contenu visible du site (titre, description, secteur détecté) et ne prend pas en compte des facteurs déterminants comme le financement, l'équipe, la concurrence réelle ou le timing du marché.")
+                    st.markdown(estimation["analyse"])
+                    st.caption("⚠️ Cette estimation se base uniquement sur le contenu visible du site (titre, description, secteur détecté) et ne prend pas en compte des facteurs déterminants comme le financement, l'équipe, la concurrence réelle ou le timing du marché.")
                              
 # ── HERO ─────────────────────────────────────────────────────────────────────
 st.markdown("""
