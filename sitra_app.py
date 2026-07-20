@@ -1715,7 +1715,7 @@ Reponds UNIQUEMENT avec les sections demandees, sans introduction ni markdown ni
                             del st.session_state[k]
                     st.rerun()
 
-          # ── ONGLET POTENTIEL DE CROISSANCE ──
+# ── ONGLET POTENTIEL DE CROISSANCE ──
     if show_potentiel:
         tab_potentiel_idx = tabs_list.index("Potentiel de croissance")
         with tabs[tab_potentiel_idx]:
@@ -1733,16 +1733,14 @@ Reponds UNIQUEMENT avec les sections demandees, sans introduction ni markdown ni
                 if cle_potentiel not in st.session_state:
                     secteur_info = detect_secteur_et_concurrents(result["final_url"], "")
                     secteur = secteur_info.get("secteur", "Autre")
-                    concurrents = secteur_info.get("concurrents", [])
-
                     with st.spinner("L'IA évalue le potentiel de votre entreprise..."):
-                        estimation = estimer_potentiel_croissance(result, secteur, concurrents)
+                        estimation = estimer_potentiel_croissance(result, secteur)
                     st.session_state[cle_potentiel] = estimation
 
                 estimation = st.session_state[cle_potentiel]
 
                 if estimation.get("error") or estimation.get("score") is None:
-                    st.warning("Impossible de générer l'estimation pour le moment. Réessayez dans quelques instants.")
+                    st.warning("Impossible de générer l'estimation pour le moment.")
                     if st.button("Réessayer", key=f"retry_potentiel_{idx}"):
                         del st.session_state[cle_potentiel]
                         st.rerun()
@@ -1765,6 +1763,12 @@ Reponds UNIQUEMENT avec les sections demandees, sans introduction ni markdown ni
                     </div>
                     """, unsafe_allow_html=True)
 
+                    concurrents_cibles = estimation.get("concurrents_cibles") or []
+                    if concurrents_cibles:
+                        st.markdown("**🎯 Concurrents à dépasser (ambitieux mais imaginable)**")
+                        st.markdown(", ".join(concurrents_cibles))
+                        st.markdown("")
+
                     col_f1, col_f2 = st.columns(2)
                     with col_f1:
                         st.markdown("**✅ Points forts**")
@@ -1777,7 +1781,14 @@ Reponds UNIQUEMENT avec les sections demandees, sans introduction ni markdown ni
 
                     st.markdown("")
                     st.markdown(estimation["analyse"])
-                    st.caption("⚠️ Cette estimation se base uniquement sur le contenu visible du site (titre, description, secteur détecté, concurrents identifiés) et ne prend pas en compte des facteurs déterminants comme le financement, l'équipe, la concurrence réelle ou le timing du marché.")       
+                    st.caption("⚠️ Cette estimation se base uniquement sur le contenu visible du site — elle ne prend pas en compte des facteurs déterminants comme le financement, l'équipe, la concurrence réelle ou le timing du marché.")
+
+                    if st.button("Régénérer l'estimation", key=f"btn_regen_potentiel_{idx}"):
+                        del st.session_state[cle_potentiel]
+                        st.rerun()
+
+                    st.divider()
+                    st.caption("💡 Vous connaissez un concurrent précis et voulez voir exactement quoi améliorer pour arriver à son niveau ? Utilisez l'onglet **Mode comparatif** dans le menu de gauche.")
                     
 # ── HERO ─────────────────────────────────────────────────────────────────────
 st.markdown("""
