@@ -1762,7 +1762,12 @@ Reponds UNIQUEMENT avec les sections demandees, sans introduction ni markdown ni
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
-
+                    
+signaux = estimation.get("signaux_concrets") or []
+                    if signaux:
+                        st.caption("📊 Chiffres réels trouvés sur votre site : " + ", ".join(signaux))
+                    else:
+                        st.caption("📊 Aucun chiffre concret (nombre de clients, tarifs, ancienneté...) trouvé sur votre site — l'estimation reste donc générale, sans montant inventé.")
                     concurrents_cibles = estimation.get("concurrents_cibles") or []
                     if concurrents_cibles:
                         st.markdown("**🎯 Concurrents à dépasser (ambitieux mais imaginable)**")
