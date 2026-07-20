@@ -724,22 +724,32 @@ def is_produit_web(result: dict) -> bool:
     # ne se decrit pas toujours avec des mots evidents.
     return score_produit >= score_vitrine
 
-def estimer_potentiel_croissance(result: dict, secteur: str = "Autre") -> dict:
+def estimer_potentiel_croissance(result: dict, secteur: str = "Autre", concurrents: list = None) -> dict:
     """
     Demande a l'IA une estimation approximative du potentiel de croissance
-    de l'entreprise (pas juste du site techniquement). C'est une approximation
-    d'expert, pas une prediction garantie.
+    de l'entreprise. Regarde le secteur, les vrais concurrents detectes,
+    et des signaux de traction visibles sur le site (avis, temoignages).
+    C'est une approximation d'expert, pas une prediction garantie.
     """
     try:
         import requests as req
         import os
         api_key = os.environ.get("MISTRAL_API_KEY", "")
         if not api_key:
-            return {"score": None, "analyse": None, "error": "Cle API manquante"}
+            return {"score": None, "points_forts": None, "points_faibles": None, "analyse": None, "error": "Cle API manquante"}
 
         titre = result.get("seo", {}).get("title", "") or ""
         meta = result.get("seo", {}).get("meta_description", "") or ""
         url = result.get("final_url", "") or ""
+        concurrents = concurrents or []
+        concurrents_str = ", ".join(concurrents) if concurrents else "aucun identifie"
+
+        # Signaux de traction detectables dans le texte du site
+        texte_complet = f"{titre} {meta}".lower()
+        mots_traction = ["avis", "témoignage", "temoignage", "client depuis", "clients satisfaits",
+                          "ils nous font confiance", "vu dans", "partenaire officiel", "certifié", "certifie"]
+        signaux_traction = [m for m in mots_traction if m in texte_complet]
+        traction_str = ", ".join(signaux_traction) if signaux_traction else "aucun signal de traction detecte (pas d'avis/temoignages visibles)"
 
         headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
         prompt = f"""Tu es un investisseur experimente qui evalue rapidement des entreprises a partir de leur site web.
@@ -748,27 +758,48 @@ Site : {url}
 Titre : {titre}
 Description : {meta}
 Secteur detecte : {secteur}
+Concurrents identifies dans ce secteur : {concurrents_str}
+Signaux de traction detectes sur le site : {traction_str}
 
-Donne une ESTIMATION APPROXIMATIVE (pas une certitude) du potentiel de croissance de cette entreprise : pourrait-elle devenir un jour un acteur important et reconnu dans son domaine, ou est-elle structurellement limitee (activite locale, marche de niche, difficile a reproduire ailleurs) ?
+Donne une ESTIMATION APPROXIMATIVE (pas une certitude) du potentiel de croissance de cette entreprise face a ces concurrents.
 
-Reponds en 2 parties exactement :
+Reponds en 4 parties EXACTEMENT, sans markdown, sans etoiles, texte brut uniquement :
 SCORE: [un chiffre entre 0 et 100]
+FORTS: [2-3 points forts courts separes par des points-virgules]
+FAIBLES: [2-3 points faibles courts separes par des points-virgules]
 ANALYSE: [3-4 phrases expliquant ton estimation, en rappelant que c'est une approximation basee sur des indices limites, pas une certitude]"""
 
-        data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 300}
+        data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 400}
         r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=30)
         contenu = r.json()["choices"][0]["message"]["content"]
+        contenu = contenu.replace("**", "").replace("*", "")
 
         score = 50
+        points_forts = []
+        points_faibles = []
         analyse = contenu
-        if "SCORE:" in contenu and "ANALYSE:" in contenu:
-            try:
-                partie_score = contenu.split("SCORE:")[1].split("ANALYSE:")[0].strip()
-                score = int(''.join(c for c in partie_score if c.isdigit())[:3] or "50")
-                analyse = contenu.split("ANALYSE:")[1].strip()
-            except Exception:
-                pass
 
-        return {"score": max(0, min(100, score)), "analyse": analyse, "error": None}
+        try:
+            if "SCORE:" in contenu:
+                partie_score = contenu.split("SCORE:")[1].split("FORTS:")[0].strip()
+                score = int(''.join(c for c in partie_score if c.isdigit())[:3] or "50")
+            if "FORTS:" in contenu and "FAIBLES:" in contenu:
+                partie_forts = contenu.split("FORTS:")[1].split("FAIBLES:")[0].strip()
+                points_forts = [p.strip(" -;") for p in partie_forts.split(";") if p.strip(" -;")]
+            if "FAIBLES:" in contenu and "ANALYSE:" in contenu:
+                partie_faibles = contenu.split("FAIBLES:")[1].split("ANALYSE:")[0].strip()
+                points_faibles = [p.strip(" -;") for p in partie_faibles.split(";") if p.strip(" -;")]
+            if "ANALYSE:" in contenu:
+                analyse = contenu.split("ANALYSE:")[1].strip()
+        except Exception:
+            pass
+
+        return {
+            "score": max(0, min(100, score)),
+            "points_forts": points_forts,
+            "points_faibles": points_faibles,
+            "analyse": analyse,
+            "error": None,
+        }
     except Exception as e:
-        return {"score": None, "analyse": None, "error": str(e)}
+        return {"score": None, "points_forts": None, "points_faibles": None, "analyse": None, "error": str(e)}
