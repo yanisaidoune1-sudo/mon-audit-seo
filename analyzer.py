@@ -724,11 +724,12 @@ def is_produit_web(result: dict) -> bool:
     # ne se decrit pas toujours avec des mots evidents.
     return score_produit >= score_vitrine
 
-def estimer_potentiel_croissance(result: dict, secteur: str = "Autre", concurrents: list = None) -> dict:
+def estimer_potentiel_croissance(result: dict, secteur: str = "Autre") -> dict:
     """
     Demande a l'IA une estimation approximative du potentiel de croissance
-    de l'entreprise. Regarde le secteur, les vrais concurrents detectes,
-    et des signaux de traction visibles sur le site (avis, temoignages).
+    de l'entreprise. L'IA identifie elle-meme 2-3 concurrents ambitieux mais
+    realistes (pas des geants generalistes hors-sujet), avec un score,
+    des points forts/faibles, et une analyse courte.
     C'est une approximation d'expert, pas une prediction garantie.
     """
     try:
@@ -736,15 +737,12 @@ def estimer_potentiel_croissance(result: dict, secteur: str = "Autre", concurren
         import os
         api_key = os.environ.get("MISTRAL_API_KEY", "")
         if not api_key:
-            return {"score": None, "points_forts": None, "points_faibles": None, "analyse": None, "error": "Cle API manquante"}
+            return {"score": None, "concurrents_cibles": None, "points_forts": None, "points_faibles": None, "analyse": None, "error": "Cle API manquante"}
 
         titre = result.get("seo", {}).get("title", "") or ""
         meta = result.get("seo", {}).get("meta_description", "") or ""
         url = result.get("final_url", "") or ""
-        concurrents = concurrents or []
-        concurrents_str = ", ".join(concurrents) if concurrents else "aucun identifie"
 
-        # Signaux de traction detectables dans le texte du site
         texte_complet = f"{titre} {meta}".lower()
         mots_traction = ["avis", "témoignage", "temoignage", "client depuis", "clients satisfaits",
                           "ils nous font confiance", "vu dans", "partenaire officiel", "certifié", "certifie"]
@@ -758,13 +756,19 @@ Site : {url}
 Titre : {titre}
 Description : {meta}
 Secteur detecte : {secteur}
-Concurrents identifies dans ce secteur : {concurrents_str}
 Signaux de traction detectes sur le site : {traction_str}
 
-Donne une ESTIMATION APPROXIMATIVE (pas une certitude) du potentiel de croissance de cette entreprise face a ces concurrents.
+Identifie toi-meme 2-3 concurrents AMBITIEUX MAIS REALISTES pour ce produit precis :
+des acteurs qu'il serait difficile mais imaginable de rattraper un jour, dans le meme
+type de produit ou de marche de niche. INTERDICTION ABSOLUE de citer des geants
+generalistes hors-sujet (Google, Wikipedia, Amazon, Facebook, Yelp...) sauf si le
+produit rivalise reellement avec eux a armes egales.
 
-Reponds en 4 parties EXACTEMENT, sans markdown, sans etoiles, texte brut uniquement :
+Donne une ESTIMATION APPROXIMATIVE (pas une certitude) du potentiel de croissance de cette entreprise.
+
+Reponds en 5 parties EXACTEMENT, sans markdown, sans etoiles, texte brut uniquement :
 SCORE: [un chiffre entre 0 et 100]
+CONCURRENTS: [2-3 concurrents ambitieux mais realistes, separes par des virgules]
 FORTS: [2-3 points forts courts separes par des points-virgules]
 FAIBLES: [2-3 points faibles courts separes par des points-virgules]
 ANALYSE: [3-4 phrases expliquant ton estimation, en rappelant que c'est une approximation basee sur des indices limites, pas une certitude]"""
@@ -775,14 +779,18 @@ ANALYSE: [3-4 phrases expliquant ton estimation, en rappelant que c'est une appr
         contenu = contenu.replace("**", "").replace("*", "")
 
         score = 50
+        concurrents_cibles = []
         points_forts = []
         points_faibles = []
         analyse = contenu
 
         try:
             if "SCORE:" in contenu:
-                partie_score = contenu.split("SCORE:")[1].split("FORTS:")[0].strip()
+                partie_score = contenu.split("SCORE:")[1].split("CONCURRENTS:")[0].strip()
                 score = int(''.join(c for c in partie_score if c.isdigit())[:3] or "50")
+            if "CONCURRENTS:" in contenu and "FORTS:" in contenu:
+                partie_conc = contenu.split("CONCURRENTS:")[1].split("FORTS:")[0].strip()
+                concurrents_cibles = [c.strip(" -,") for c in partie_conc.split(",") if c.strip(" -,")]
             if "FORTS:" in contenu and "FAIBLES:" in contenu:
                 partie_forts = contenu.split("FORTS:")[1].split("FAIBLES:")[0].strip()
                 points_forts = [p.strip(" -;") for p in partie_forts.split(";") if p.strip(" -;")]
@@ -796,10 +804,11 @@ ANALYSE: [3-4 phrases expliquant ton estimation, en rappelant que c'est une appr
 
         return {
             "score": max(0, min(100, score)),
+            "concurrents_cibles": concurrents_cibles,
             "points_forts": points_forts,
             "points_faibles": points_faibles,
             "analyse": analyse,
             "error": None,
         }
     except Exception as e:
-        return {"score": None, "points_forts": None, "points_faibles": None, "analyse": None, "error": str(e)}
+        return {"score": None, "concurrents_cibles": None, "points_forts": None, "points_faibles": None, "analyse": None, "error": str(e)}
