@@ -724,30 +724,83 @@ def is_produit_web(result: dict) -> bool:
     # ne se decrit pas toujours avec des mots evidents.
     return score_produit >= score_vitrine
 
+def extraire_signaux_concrets(html: str) -> list:
+    """
+    Cherche dans le texte reel du site des chiffres deja publies par le
+    site lui-meme (nombre de clients, annee de creation, avis, tarifs).
+    Sert a ancrer l'estimation IA dans des donnees reelles plutot que de
+    la laisser deviner un chiffre d'affaires dans le vide.
+    """
+    if not html:
+        return []
+    try:
+        soup = BeautifulSoup(html, "lxml")
+        for tag in soup(["script", "style"]):
+            tag.decompose()
+        texte = soup.get_text(" ", strip=True)
+    except Exception:
+        return []
+
+    signaux = []
+
+    for m in re.finditer(r'(\d[\d\s]{0,6})\s*\+?\s*(clients?|utilisateurs?|abonn[ée]s?|membres?|entreprises?)', texte, re.I):
+        signaux.append(f"{m.group(1).strip()} {m.group(2)}")
+
+    for m in re.finditer(r'depuis\s+(19|20)\d{2}', texte, re.I):
+        signaux.append(m.group(0))
+
+    for m in re.finditer(r'\d{1,2}\s*ans?\s*d.exp[ée]rience', texte, re.I):
+        signaux.append(m.group(0))
+
+    for m in re.finditer(r'\d[.,]\d\s*/\s*5|\d+\s*avis', texte, re.I):
+        signaux.append(m.group(0))
+
+    for m in re.finditer(r'(?:à partir de\s*)?\d+[\.,]?\d*\s*€\s*(?:/\s*(?:mois|an|mo|jour))?', texte, re.I):
+        signaux.append(m.group(0))
+
+    signaux_uniques = []
+    for s in signaux:
+        s = s.strip()
+        if s and s not in signaux_uniques:
+            signaux_uniques.append(s)
+    return signaux_uniques[:10]
+
+
 def estimer_potentiel_croissance(result: dict, secteur: str = "Autre") -> dict:
     """
-    Demande a l'IA une estimation approximative du potentiel de croissance
-    de l'entreprise. L'IA identifie elle-meme 2-3 concurrents ambitieux mais
-    realistes (pas des geants generalistes hors-sujet), avec un score,
-    des points forts/faibles, et une analyse courte.
-    C'est une approximation d'expert, pas une prediction garantie.
+    Demande a l'IA une estimation approximative du potentiel de croissance.
+    Cherche d'abord les vrais chiffres deja publies sur le site (clients,
+    anciennete, tarifs...) pour ancrer l'analyse dans du reel. L'IA n'a
+    JAMAIS le droit d'inventer un chiffre d'affaires precis sans base
+    reelle. C'est une approximation d'expert, pas une prediction garantie,
+    et encore moins un acces aux vrais comptes de l'entreprise.
     """
     try:
         import requests as req
         import os
         api_key = os.environ.get("MISTRAL_API_KEY", "")
         if not api_key:
-            return {"score": None, "concurrents_cibles": None, "points_forts": None, "points_faibles": None, "analyse": None, "error": "Cle API manquante"}
+            return {"score": None, "concurrents_cibles": None, "points_forts": None, "points_faibles": None, "analyse": None, "signaux_concrets": [], "error": "Cle API manquante"}
 
         titre = result.get("seo", {}).get("title", "") or ""
         meta = result.get("seo", {}).get("meta_description", "") or ""
         url = result.get("final_url", "") or ""
 
+        # Va chercher les vrais chiffres publies sur le site (si il y en a)
+        signaux_concrets = []
+        try:
+            r_site = req.get(url, timeout=TIMEOUT, headers=HEADERS)
+            if r_site.status_code == 200:
+                signaux_concrets = extraire_signaux_concrets(r_site.text)
+        except Exception:
+            pass
+        signaux_str = ", ".join(signaux_concrets) if signaux_concrets else "aucun chiffre concret trouve sur le site (pas de nombre de clients, tarifs ou anciennete affiches)"
+
         texte_complet = f"{titre} {meta}".lower()
         mots_traction = ["avis", "témoignage", "temoignage", "client depuis", "clients satisfaits",
                           "ils nous font confiance", "vu dans", "partenaire officiel", "certifié", "certifie"]
         signaux_traction = [m for m in mots_traction if m in texte_complet]
-        traction_str = ", ".join(signaux_traction) if signaux_traction else "aucun signal de traction detecte (pas d'avis/temoignages visibles)"
+        traction_str = ", ".join(signaux_traction) if signaux_traction else "aucun signal de traction detecte dans le titre/description"
 
         headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
         prompt = f"""Tu es un investisseur experimente qui evalue rapidement des entreprises a partir de leur site web.
@@ -756,13 +809,22 @@ Site : {url}
 Titre : {titre}
 Description : {meta}
 Secteur detecte : {secteur}
-Signaux de traction detectes sur le site : {traction_str}
+Chiffres et signaux concrets REELLEMENT trouves sur le site : {signaux_str}
+Autres signaux de traction (titre/description) : {traction_str}
 
 Identifie toi-meme 2-3 concurrents AMBITIEUX MAIS REALISTES pour ce produit precis :
 des acteurs qu'il serait difficile mais imaginable de rattraper un jour, dans le meme
 type de produit ou de marche de niche. INTERDICTION ABSOLUE de citer des geants
 generalistes hors-sujet (Google, Wikipedia, Amazon, Facebook, Yelp...) sauf si le
 produit rivalise reellement avec eux a armes egales.
+
+REGLE ABSOLUE SUR L'ARGENT : n'invente JAMAIS un chiffre d'affaires ou un montant en
+euros precis si aucun tarif ou nombre de clients reel n'apparait dans les "chiffres
+concrets" ci-dessus. Dans ce cas, decris le potentiel UNIQUEMENT en termes qualitatifs
+(faible / modere / eleve), sans avancer le moindre montant. Si et seulement si des
+chiffres concrets reels sont fournis ci-dessus, tu peux donner un ordre de grandeur
+tres approximatif base dessus, en precisant explicitement le calcul et en rappelant
+que c'est une supposition grossiere, pas un chiffre reel.
 
 Donne une ESTIMATION APPROXIMATIVE (pas une certitude) du potentiel de croissance de cette entreprise.
 
@@ -808,7 +870,8 @@ ANALYSE: [3-4 phrases expliquant ton estimation, en rappelant que c'est une appr
             "points_forts": points_forts,
             "points_faibles": points_faibles,
             "analyse": analyse,
+            "signaux_concrets": signaux_concrets,
             "error": None,
         }
     except Exception as e:
-        return {"score": None, "concurrents_cibles": None, "points_forts": None, "points_faibles": None, "analyse": None, "error": str(e)}
+        return {"score": None, "concurrents_cibles": None, "points_forts": None, "points_faibles": None, "analyse": None, "signaux_concrets": [], "error": str(e)}
