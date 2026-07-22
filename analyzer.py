@@ -768,18 +768,18 @@ def extraire_signaux_concrets(html: str) -> list:
 def estimer_potentiel_croissance(result: dict, secteur: str = "Autre") -> dict:
     """
     Demande a l'IA une estimation approximative du potentiel de croissance,
-    avec un plan d'action de 3 recommandations priorisees. Cherche d'abord
-    les vrais chiffres deja publies sur le site pour ancrer l'analyse dans
-    du reel. L'IA n'a JAMAIS le droit d'inventer un chiffre d'affaires precis
-    sans base reelle. C'est une approximation d'expert, pas une prediction
-    garantie.
+    avec 5 criteres notes separement (pour un graphique radar) et un plan
+    d'action de 3 recommandations priorisees. Cherche d'abord les vrais
+    chiffres deja publies sur le site. L'IA n'a JAMAIS le droit d'inventer
+    un chiffre d'affaires precis sans base reelle. C'est une approximation
+    d'expert, pas une prediction garantie.
     """
     try:
         import requests as req
         import os
         api_key = os.environ.get("MISTRAL_API_KEY", "")
         if not api_key:
-            return {"score": None, "concurrents_cibles": None, "points_forts": None, "points_faibles": None, "plan_action": None, "analyse": None, "signaux_concrets": [], "error": "Cle API manquante"}
+            return {"score": None, "criteres": None, "concurrents_cibles": None, "points_forts": None, "points_faibles": None, "plan_action": None, "analyse": None, "signaux_concrets": [], "error": "Cle API manquante"}
 
         titre = result.get("seo", {}).get("title", "") or ""
         meta = result.get("seo", {}).get("meta_description", "") or ""
@@ -792,13 +792,13 @@ def estimer_potentiel_croissance(result: dict, secteur: str = "Autre") -> dict:
                 signaux_concrets = extraire_signaux_concrets(r_site.text)
         except Exception:
             pass
-        signaux_str = ", ".join(signaux_concrets) if signaux_concrets else "aucun chiffre concret trouve sur le site (pas de nombre de clients, tarifs ou anciennete affiches)"
+        signaux_str = ", ".join(signaux_concrets) if signaux_concrets else "aucun chiffre concret trouve sur le site"
 
         texte_complet = f"{titre} {meta}".lower()
         mots_traction = ["avis", "témoignage", "temoignage", "client depuis", "clients satisfaits",
                           "ils nous font confiance", "vu dans", "partenaire officiel", "certifié", "certifie"]
         signaux_traction = [m for m in mots_traction if m in texte_complet]
-        traction_str = ", ".join(signaux_traction) if signaux_traction else "aucun signal de traction detecte dans le titre/description"
+        traction_str = ", ".join(signaux_traction) if signaux_traction else "aucun signal de traction detecte"
 
         headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
         prompt = f"""Tu es un investisseur experimente qui evalue rapidement des entreprises a partir de leur site web.
@@ -808,36 +808,38 @@ Titre : {titre}
 Description : {meta}
 Secteur detecte : {secteur}
 Chiffres et signaux concrets REELLEMENT trouves sur le site : {signaux_str}
-Autres signaux de traction (titre/description) : {traction_str}
+Autres signaux de traction : {traction_str}
 
-Identifie toi-meme 2-3 concurrents AMBITIEUX MAIS REALISTES pour ce produit precis :
-des acteurs qu'il serait difficile mais imaginable de rattraper un jour. INTERDICTION
-ABSOLUE de citer des geants generalistes hors-sujet (Google, Wikipedia, Amazon,
-Facebook, Yelp...) sauf si le produit rivalise reellement avec eux a armes egales.
+Identifie toi-meme 2-3 concurrents AMBITIEUX MAIS REALISTES (interdiction de citer des
+geants generalistes hors-sujet type Google, Wikipedia, Amazon, sauf si pertinent).
 
-REGLE ABSOLUE SUR L'ARGENT : n'invente JAMAIS un chiffre d'affaires ou un montant en
-euros precis si aucun tarif ou nombre de clients reel n'apparait dans les "chiffres
-concrets" ci-dessus.
+REGLE ABSOLUE SUR L'ARGENT : n'invente JAMAIS un chiffre d'affaires precis sans base reelle.
 
-Donne aussi un PLAN D'ACTION de 3 recommandations concretes et priorisees (la plus
-importante en premier) pour ameliorer ce potentiel de croissance. Chaque recommandation
-doit etre actionnable, pas vague (ex: "Ajoutez des temoignages clients visibles —
-actuellement aucune preuve sociale n'est affichee" plutot que "ameliorez la confiance").
+Note aussi ce site sur 5 CRITERES separes, chacun de 0 a 100 :
+- NOTORIETE : potentiel de notoriete/reconnaissance de marque
+- DIFFERENCIATION : a quel point l'offre se distingue des concurrents
+- TRACTION : preuves sociales visibles (avis, clients, temoignages)
+- SCALABILITE : facilite a grandir/se reproduire sans limite geographique
+- PRESENTATION : qualite et professionnalisme du site lui-meme
 
-Reponds en 6 parties EXACTEMENT, sans markdown, sans etoiles, texte brut uniquement :
-SCORE: [un chiffre entre 0 et 100]
-CONCURRENTS: [2-3 concurrents ambitieux mais realistes, separes par des virgules]
-FORTS: [2-3 points forts courts separes par des points-virgules]
-FAIBLES: [2-3 points faibles courts separes par des points-virgules]
-PLAN: [3 recommandations concretes et priorisees, separees par des points-virgules]
-ANALYSE: [3-4 phrases expliquant ton estimation, en rappelant que c'est une approximation basee sur des indices limites, pas une certitude]"""
+Donne un PLAN D'ACTION de 3 recommandations concretes et priorisees.
 
-        data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 550}
+Reponds en 7 parties EXACTEMENT, sans markdown, texte brut :
+SCORE: [chiffre entre 0 et 100]
+CRITERES: [5 chiffres entre 0 et 100 separes par des virgules, dans l'ordre NOTORIETE,DIFFERENCIATION,TRACTION,SCALABILITE,PRESENTATION]
+CONCURRENTS: [2-3 concurrents, separes par des virgules]
+FORTS: [2-3 points forts separes par des points-virgules]
+FAIBLES: [2-3 points faibles separes par des points-virgules]
+PLAN: [3 recommandations separees par des points-virgules]
+ANALYSE: [3-4 phrases, rappelant que c'est une approximation]"""
+
+        data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 600}
         r = req.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=30)
         contenu = r.json()["choices"][0]["message"]["content"]
         contenu = contenu.replace("**", "").replace("*", "")
 
         score = 50
+        criteres = {"Notoriété": 50, "Différenciation": 50, "Traction": 50, "Scalabilité": 50, "Présentation": 50}
         concurrents_cibles = []
         points_forts = []
         points_faibles = []
@@ -846,8 +848,14 @@ ANALYSE: [3-4 phrases expliquant ton estimation, en rappelant que c'est une appr
 
         try:
             if "SCORE:" in contenu:
-                partie_score = contenu.split("SCORE:")[1].split("CONCURRENTS:")[0].strip()
+                partie_score = contenu.split("SCORE:")[1].split("CRITERES:")[0].strip()
                 score = int(''.join(c for c in partie_score if c.isdigit())[:3] or "50")
+            if "CRITERES:" in contenu and "CONCURRENTS:" in contenu:
+                partie_crit = contenu.split("CRITERES:")[1].split("CONCURRENTS:")[0].strip()
+                nombres = [int(''.join(c for c in n if c.isdigit())[:3] or "50") for n in partie_crit.split(",") if n.strip()]
+                noms_criteres = ["Notoriété", "Différenciation", "Traction", "Scalabilité", "Présentation"]
+                if len(nombres) == 5:
+                    criteres = {noms_criteres[i]: max(0, min(100, nombres[i])) for i in range(5)}
             if "CONCURRENTS:" in contenu and "FORTS:" in contenu:
                 partie_conc = contenu.split("CONCURRENTS:")[1].split("FORTS:")[0].strip()
                 concurrents_cibles = [c.strip(" -,") for c in partie_conc.split(",") if c.strip(" -,")]
@@ -867,6 +875,7 @@ ANALYSE: [3-4 phrases expliquant ton estimation, en rappelant que c'est une appr
 
         return {
             "score": max(0, min(100, score)),
+            "criteres": criteres,
             "concurrents_cibles": concurrents_cibles,
             "points_forts": points_forts,
             "points_faibles": points_faibles,
@@ -876,4 +885,4 @@ ANALYSE: [3-4 phrases expliquant ton estimation, en rappelant que c'est une appr
             "error": None,
         }
     except Exception as e:
-        return {"score": None, "concurrents_cibles": None, "points_forts": None, "points_faibles": None, "plan_action": None, "analyse": None, "signaux_concrets": [], "error": str(e)}
+        return {"score": None, "criteres": None, "concurrents_cibles": None, "points_forts": None, "points_faibles": None, "plan_action": None, "analyse": None, "signaux_concrets": [], "error": str(e)}
