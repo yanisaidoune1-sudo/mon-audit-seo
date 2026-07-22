@@ -1787,6 +1787,14 @@ Reponds UNIQUEMENT avec les sections demandees, sans introduction ni markdown ni
 
                     st.markdown("")
                     st.markdown(estimation["analyse"])
+
+                    plan_action = estimation.get("plan_action") or []
+                    if plan_action:
+                        st.markdown("")
+                        st.markdown("**📋 Plan d'action prioritaire**")
+                        for i, action in enumerate(plan_action):
+                            st.markdown(f"{i+1}. {action}")
+
                     st.caption("⚠️ Cette estimation se base uniquement sur le contenu visible du site — elle ne prend pas en compte des facteurs déterminants comme le financement, l'équipe, la concurrence réelle ou le timing du marché.")
 
                     if st.button("Régénérer l'estimation", key=f"btn_regen_potentiel_{idx}"):
