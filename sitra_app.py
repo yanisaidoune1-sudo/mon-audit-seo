@@ -1763,6 +1763,34 @@ Reponds UNIQUEMENT avec les sections demandees, sans introduction ni markdown ni
                     </div>
                     """, unsafe_allow_html=True)
 
+                    criteres = estimation.get("criteres") or {}
+                    if criteres:
+                        import plotly.graph_objects as go
+                        noms = list(criteres.keys())
+                        valeurs = list(criteres.values())
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatterpolar(
+                            r=valeurs + [valeurs[0]],
+                            theta=noms + [noms[0]],
+                            fill='toself',
+                            fillcolor='rgba(124,106,247,0.25)',
+                            line=dict(color='#7c6af7', width=2),
+                            name='Score'
+                        ))
+                        fig.update_layout(
+                            polar=dict(
+                                radialaxis=dict(visible=True, range=[0, 100], showticklabels=True, gridcolor='#2a2a4e'),
+                                angularaxis=dict(gridcolor='#2a2a4e'),
+                                bgcolor='rgba(0,0,0,0)'
+                            ),
+                            showlegend=False,
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            font=dict(color='#ccc'),
+                            height=350,
+                            margin=dict(l=60, r=60, t=30, b=30)
+                        )
+                        st.plotly_chart(fig, use_container_width=True, key=f"radar_{idx}")
+
                     signaux = estimation.get("signaux_concrets") or []
                     if signaux:
                         st.caption("📊 Chiffres réels trouvés sur votre site : " + ", ".join(signaux))
