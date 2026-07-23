@@ -822,15 +822,15 @@ Note aussi ce site sur 5 CRITERES separes, chacun de 0 a 100 :
 - SCALABILITE : facilite a grandir/se reproduire sans limite geographique
 - PRESENTATION : qualite et professionnalisme du site lui-meme
 
-Donne un PLAN D'ACTION de 3 recommandations concretes et priorisees.
+Donne un PLAN D'ACTION de 3 a 5 recommandations concretes et priorisees, autant que pertinent.
 
 Reponds en 7 parties EXACTEMENT, sans markdown, texte brut :
 SCORE: [chiffre entre 0 et 100]
 CRITERES: [5 chiffres entre 0 et 100 separes par des virgules, dans l'ordre NOTORIETE,DIFFERENCIATION,TRACTION,SCALABILITE,PRESENTATION]
 CONCURRENTS: [2-3 concurrents, separes par des virgules]
-FORTS: [2-3 points forts separes par des points-virgules]
-FAIBLES: [2-3 points faibles separes par des points-virgules]
-PLAN: [3 recommandations separees par des points-virgules]
+FORTS: [3 a 5 points forts, autant que pertinent, separes par des points-virgules]
+FAIBLES: [3 a 5 points faibles, autant que pertinent, separes par des points-virgules]
+PLAN: [3 a 5 recommandations, autant que pertinent, separees par des points-virgules]
 ANALYSE: [3-4 phrases, rappelant que c'est une approximation]"""
 
         data = {"model": "mistral-small-latest", "messages": [{"role": "user", "content": prompt}], "max_tokens": 600}
