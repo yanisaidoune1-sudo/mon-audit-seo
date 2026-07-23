@@ -1763,8 +1763,10 @@ Reponds UNIQUEMENT avec les sections demandees, sans introduction ni markdown ni
                     </div>
                     """, unsafe_allow_html=True)
 
-                    criteres = estimation.get("criteres") or {}
+criteres = estimation.get("criteres") or {}
                     if criteres:
+                        st.markdown("**📊 Profil de croissance sur 5 critères**")
+                        st.caption("Plus la zone colorée est grande et équilibrée, plus le potentiel est solide sur l'ensemble des critères — un seul pic isolé ne suffit pas à garantir une vraie croissance.")
                         import plotly.graph_objects as go
                         noms = list(criteres.keys())
                         valeurs = list(criteres.values())
@@ -1775,7 +1777,7 @@ Reponds UNIQUEMENT avec les sections demandees, sans introduction ni markdown ni
                             fill='toself',
                             fillcolor='rgba(124,106,247,0.25)',
                             line=dict(color='#7c6af7', width=2),
-                            name='Score'
+                            name='Votre site'
                         ))
                         fig.update_layout(
                             polar=dict(
@@ -1789,7 +1791,16 @@ Reponds UNIQUEMENT avec les sections demandees, sans introduction ni markdown ni
                             height=350,
                             margin=dict(l=60, r=60, t=30, b=30)
                         )
-                        st.plotly_chart(fig, use_container_width=True, key=f"radar_{idx}")
+                        st.plotly_chart(fig, use_container_width=True, key=f"radar_{idx}", config={'displayModeBar': False})
+
+                        with st.expander("Que signifie chaque critère ?"):
+                            st.markdown("""
+- **Notoriété** : potentiel de reconnaissance de marque dans son secteur
+- **Différenciation** : à quel point l'offre se distingue des concurrents
+- **Traction** : preuves sociales visibles (avis, clients, témoignages)
+- **Scalabilité** : facilité à grandir sans limite géographique
+- **Présentation** : qualité et professionnalisme du site lui-même
+                            """)
 
                     signaux = estimation.get("signaux_concrets") or []
                     if signaux:
