@@ -1763,7 +1763,7 @@ Reponds UNIQUEMENT avec les sections demandees, sans introduction ni markdown ni
                     </div>
                     """, unsafe_allow_html=True)
 
-criteres = estimation.get("criteres") or {}
+                    criteres = estimation.get("criteres") or {}
                     if criteres:
                         st.markdown("**📊 Profil de croissance sur 5 critères**")
                         st.caption("Plus la zone colorée est grande et équilibrée, plus le potentiel est solide sur l'ensemble des critères — un seul pic isolé ne suffit pas à garantir une vraie croissance.")
