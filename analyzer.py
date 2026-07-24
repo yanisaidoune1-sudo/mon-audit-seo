@@ -886,3 +886,120 @@ ANALYSE: [3-4 phrases, rappelant que c'est une approximation]"""
         }
     except Exception as e:
         return {"score": None, "criteres": None, "concurrents_cibles": None, "points_forts": None, "points_faibles": None, "plan_action": None, "analyse": None, "signaux_concrets": [], "error": str(e)}
+
+def get_connexion_historique():
+    """
+    Ouvre une connexion a la base de donnees Neon et cree la table
+    d'historique si elle n'existe pas encore. Retourne None si la
+    connexion echoue (pas de secret configure, ou probleme reseau).
+    """
+    try:
+        import psycopg2
+        import os
+        db_url = os.environ.get("NEON_DATABASE_URL", "")
+        if not db_url:
+            return None
+        conn = psycopg2.connect(db_url)
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS historique_potentiel (
+                id SERIAL PRIMARY KEY,
+                url TEXT NOT NULL,
+                date_analyse TIMESTAMP DEFAULT NOW(),
+                score INTEGER,
+                criteres JSONB,
+                concurrents_cibles JSONB,
+                points_forts JSONB,
+                points_faibles JSONB,
+                plan_action JSONB,
+                analyse TEXT
+            )
+        """)
+        conn.commit()
+        cur.close()
+        return conn
+    except Exception:
+        return None
+
+
+def sauvegarder_historique(url: str, estimation: dict) -> bool:
+    """
+    Enregistre un nouveau resultat d'estimation dans l'historique permanent.
+    Retourne True si la sauvegarde a reussi, False sinon (ne bloque jamais
+    l'affichage meme si ca echoue).
+    """
+    conn = get_connexion_historique()
+    if not conn:
+        return False
+    try:
+        import json
+        url_normalisee = url.strip().lower().replace("https://", "").replace("http://", "").replace("www.", "").rstrip("/")
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO historique_potentiel
+                (url, score, criteres, concurrents_cibles, points_forts, points_faibles, plan_action, analyse)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            url_normalisee,
+            estimation.get("score"),
+            json.dumps(estimation.get("criteres") or {}),
+            json.dumps(estimation.get("concurrents_cibles") or []),
+            json.dumps(estimation.get("points_forts") or []),
+            json.dumps(estimation.get("points_faibles") or []),
+            json.dumps(estimation.get("plan_action") or []),
+            estimation.get("analyse") or "",
+        ))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return False
+
+
+def lire_historique(url: str, limite: int = 10) -> list:
+    """
+    Relit les N derniers resultats stockes pour un site donne, du plus
+    recent au plus ancien. Retourne une liste vide si rien n'est trouve
+    ou si la connexion echoue.
+    """
+    conn = get_connexion_historique()
+    if not conn:
+        return []
+    try:
+        url_normalisee = url.strip().lower().replace("https://", "").replace("http://", "").replace("www.", "").rstrip("/")
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT date_analyse, score, criteres, concurrents_cibles, points_forts, points_faibles, plan_action, analyse
+            FROM historique_potentiel
+            WHERE url = %s
+            ORDER BY date_analyse DESC
+            LIMIT %s
+        """, (url_normalisee, limite))
+        lignes = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        historique = []
+        for ligne in lignes:
+            historique.append({
+                "date": ligne[0],
+                "score": ligne[1],
+                "criteres": ligne[2],
+                "concurrents_cibles": ligne[3],
+                "points_forts": ligne[4],
+                "points_faibles": ligne[5],
+                "plan_action": ligne[6],
+                "analyse": ligne[7],
+            })
+        return historique
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return []
